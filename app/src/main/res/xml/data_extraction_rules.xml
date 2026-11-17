@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  No application data leaves the device through a platform backup or a device-to-device
+  transfer. WIDGORA stores credentials for the user's private infrastructure, so every
+  domain is excluded on purpose rather than selectively.
+
+  android:allowBackup="false" in the manifest covers Android 11 and lower; this file
+  covers Android 12 and higher.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

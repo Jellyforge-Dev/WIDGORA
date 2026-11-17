@@ -1,10 +1,11 @@
 # WIDGORA — Roadmap
 
-**Current state: planning. A private repository exists and is empty. There is no source code, no
-build and no released artefact.**
+**Current state: a project skeleton that builds. Four Gradle modules, a placeholder screen and a
+lean continuous integration file exist. No milestone below is implemented, no integration
+retrieves data, and no artefact has been released.**
 
-This roadmap lists intentions, not promises. Nothing here is implemented. Items carry the
-evidence markers used throughout the project documentation:
+This roadmap lists intentions, not promises. Items carry the evidence markers used throughout
+the project documentation:
 
 | Marker | Meaning |
 |---|---|
@@ -38,7 +39,7 @@ No feature is advertised as available before it works against real data on real 
 - Reality check of the first integration's available interfaces `[V]`.
 - Assessment of further planned integrations and their licensing situation.
 
-## Phase 1 — Architecture and documentation · in progress
+## Phase 1 — Architecture and documentation · complete
 
 - Module structure, dependency rules and promotion triggers.
 - Domain model: instance lifecycle and widget display states as separate concerns.
@@ -55,16 +56,24 @@ misrepresent the state of the project.
 | Step | State |
 |---|---|
 | Private repository created | **done** |
-| Local version control initialised | **pending** |
-| Gradle and Android project structure, four modules, version catalog | **pending** |
-| First successful build | **pending** |
+| Local version control initialised | **done** |
+| Gradle and Android project structure, four modules, version catalog | **done** |
+| First successful build | **done** |
+
+The last row means one specific thing and nothing more: assembling the debug application,
+running the unit tests and running lint all completed locally. The application displays a
+placeholder and does nothing else.
 
 Also part of this phase:
 
-- Android SDK and a pinned Temurin 21 LTS toolchain.
-- Continuous integration: assemble, unit tests, lint. Kept deliberately lean.
+- Android SDK and a pinned Temurin 21 LTS toolchain. The Gradle wrapper pins the distribution
+  by checksum.
+- Continuous integration: assemble, unit tests, lint. Kept deliberately lean. The workflow file
+  exists but has not run yet, so its behaviour is unproven `[U]`.
 - Work proceeds through feature branches and pull requests.
 - No feature work begins before the build is green.
+- Not yet done in this phase: nothing has been installed on or started from a television, so
+  no statement about on-device behaviour is possible `[U]`.
 
 ---
 
