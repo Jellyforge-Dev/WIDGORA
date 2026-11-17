@@ -1,0 +1,83 @@
+# WIDGORA — ignore rules
+
+# ---------------------------------------------------------------------------
+# Credentials, secrets and signing material
+# ---------------------------------------------------------------------------
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.cer
+*.der
+keystore.properties
+signing.properties
+secrets.properties
+credentials.properties
+*.secrets
+.env
+.env.*
+!.env.example
+google-services.json
+
+# ---------------------------------------------------------------------------
+# Local machine configuration — paths differ per developer
+# ---------------------------------------------------------------------------
+local.properties
+
+# ---------------------------------------------------------------------------
+# Build output and caches
+# ---------------------------------------------------------------------------
+.gradle/
+.kotlin/
+build/
+captures/
+.cxx/
+*.hprof
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json
+lint-results*.html
+lint-results*.xml
+
+# ---------------------------------------------------------------------------
+# Keep the Gradle wrapper in version control.
+#
+# The wrapper is required to build the project reproducibly. It is listed here
+# explicitly as a safeguard, and no "*.jar" pattern appears anywhere in this file,
+# so that gradle-wrapper.jar cannot be excluded by accident. Note that "gradle/" is
+# NOT ignored above — only the ".gradle/" cache directory is.
+# ---------------------------------------------------------------------------
+!gradlew
+!gradlew.bat
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# ---------------------------------------------------------------------------
+# IDE and editor state
+# ---------------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*~
+
+# ---------------------------------------------------------------------------
+# Operating system artefacts
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Scratch files
+# ---------------------------------------------------------------------------
+*.log
+*.bak
+*.orig
+*.rej
