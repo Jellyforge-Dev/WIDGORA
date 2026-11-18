@@ -125,8 +125,18 @@ These are distinct concerns and are never merged:
 **Integration instance lifecycle** (`core/data`)
 
 ```
-configured  ->  enabled  ->  fetching  ->  failing
+configured  ->  enabled       the user enables the instance
+enabled     ->  fetching      a retrieval starts
+fetching    ->  enabled       the retrieval succeeded
+fetching    ->  failing       the retrieval failed
+failing     ->  fetching      a retry starts
+enabled     ->  configured    the user disables the instance
+fetching    ->  configured    disabled while a retrieval is running
+failing     ->  configured    disabled while in failure
 ```
+
+Every other transition is rejected, including a transition from a state to itself: repeating a
+transition into the state a caller already holds hides a logic error instead of surfacing it.
 
 **Widget display state** (`app/design`)
 
