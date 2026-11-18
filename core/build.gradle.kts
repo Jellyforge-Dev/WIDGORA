@@ -12,6 +12,11 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
+
+        // Instrumented tests exist for the parts that cannot run without the platform: the
+        // keystore and a real preference file. They are started by hand on a device or
+        // emulator and are deliberately not part of the continuous integration run.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -57,6 +62,16 @@ dependencies {
     // dependency; the transport interface is what the rest of the project sees.
     implementation(libs.okhttp)
 
+    // Storage stays an implementation detail: the repository exposes its own types, so no
+    // consumer needs to know what it is stored in.
+    implementation(libs.androidx.datastore.preferences)
+
+    // Part of this module's own public API, because the repository hands out a Flow.
+    api(libs.kotlinx.coroutines.core)
+
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.okhttp.mockwebserver)
+
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }
