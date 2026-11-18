@@ -1,9 +1,11 @@
 # WIDGORA — Architecture
 
-**Project status: planning. A private repository exists and is empty. No source code, no build
-system and no application structure exist yet.** This document describes the intended
-architecture so that it can be reviewed before implementation begins. Nothing described here is
-implemented unless this document says so explicitly.
+**Project status: a project skeleton that builds, passes continuous integration and starts on an
+emulator. Four Gradle modules, a placeholder screen and a lean continuous integration workflow
+exist. None of the components described below is implemented, no integration retrieves data, and
+no artefact has been released.** This document describes the intended architecture so that it can
+be reviewed before implementation begins. Nothing described here is implemented unless this
+document says so explicitly.
 
 ---
 

@@ -1,8 +1,9 @@
 # WIDGORA — Roadmap
 
-**Current state: a project skeleton that builds. Four Gradle modules, a placeholder screen and a
-lean continuous integration file exist. No milestone below is implemented, no integration
-retrieves data, and no artefact has been released.**
+**Current state: a project skeleton that builds, passes continuous integration and starts on an
+emulator. Four Gradle modules, a placeholder screen and a lean continuous integration workflow
+exist. No milestone below is implemented, no integration retrieves data, and no artefact has
+been released.**
 
 This roadmap lists intentions, not promises. Items carry the evidence markers used throughout
 the project documentation:
@@ -48,7 +49,7 @@ No feature is advertised as available before it works against real data on real 
 - Security concept.
 - This documentation set: `ARCHITECTURE.md`, `ROADMAP.md`, `SECURITY.md`.
 
-## Phase 2 — Project setup
+## Phase 2 — Project setup · complete
 
 These are four separate steps and are tracked separately, because conflating them would
 misrepresent the state of the project.
@@ -68,12 +69,13 @@ Also part of this phase:
 
 - Android SDK and a pinned Temurin 21 LTS toolchain. The Gradle wrapper pins the distribution
   by checksum.
-- Continuous integration: assemble, unit tests, lint. Kept deliberately lean. The workflow file
-  exists but has not run yet, so its behaviour is unproven `[U]`.
+- Continuous integration: assemble, unit tests, lint. Kept deliberately lean. The workflow has
+  run and passed, both on the pull request and on the default branch after the merge `[V]`.
 - Work proceeds through feature branches and pull requests.
 - No feature work begins before the build is green.
-- Not yet done in this phase: nothing has been installed on or started from a television, so
-  no statement about on-device behaviour is possible `[U]`.
+- The application has been installed and started on an emulator — Google TV, API 36, x86_64 —
+  where it displays its placeholder screen `[V]`. Behaviour on real television hardware remains
+  unverified `[U]`, as does focus behaviour driven by an actual remote control.
 
 ---
 
