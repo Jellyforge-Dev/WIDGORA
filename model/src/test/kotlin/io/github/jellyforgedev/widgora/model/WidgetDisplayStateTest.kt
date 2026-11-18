@@ -30,9 +30,18 @@ class WidgetDisplayStateTest {
         )
     }
 
+    /**
+     * The number is pinned so that adding a cause is a deliberate act. It grew from five to six
+     * when a service answering "no such endpoint" turned out to need a cause of its own: that
+     * condition is usually the user's to fix, and reporting it as unknown would hide it.
+     */
     @Test
     fun everyReasonIsDistinctAndTheSetIsFixed() {
-        assertEquals(5, WidgetDisplayState.Error.Reason.entries.size)
+        assertEquals(6, WidgetDisplayState.Error.Reason.entries.size)
+        assertEquals(
+            WidgetDisplayState.Error.Reason.UNKNOWN,
+            WidgetDisplayState.Error.Reason.entries.last(),
+        )
     }
 
     /**

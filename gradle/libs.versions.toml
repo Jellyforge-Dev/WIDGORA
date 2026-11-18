@@ -32,12 +32,25 @@ activityCompose = "1.13.0"
 composeBom = "2026.09.00"
 tvMaterial = "1.1.0"
 
+# Networking
+# Latest stable release according to the publishing repository's own metadata, where both
+# <latest> and <release> name this version. The project states a minimum of Android 5.0
+# (API level 21) and Java 8, which is below this project's own minimum of API 28.
+okhttp = "5.5.1"
+
 [libraries]
 # Test only. The version follows the Kotlin version above, because kotlin-test ships with the
 # compiler and must not drift away from it. The framework-specific artifact is named directly:
 # the plain kotlin-test module relies on a variant rule that the Android unit test tasks do not
 # apply, which leaves the test annotations unresolved.
 kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+
+# Test only. The mock server of the same project, so that HTTP failure modes are exercised
+# against a real socket instead of a stubbed client. The artifact id carries the 3 of the
+# mockwebserver3 namespace that the 5.x line uses; its metadata lists this version as current.
+okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver3", version.ref = "okhttp" }
+
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }

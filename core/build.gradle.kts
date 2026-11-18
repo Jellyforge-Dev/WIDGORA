@@ -20,10 +20,22 @@ android {
     }
 
     testOptions {
-        unitTests.all {
+        unitTests.all { test ->
             // Same test framework as :model, so assertions and annotations behave identically
             // in both modules.
-            it.useJUnitPlatform()
+            test.useJUnitPlatform()
+
+            // The hand probe against a real installation reads these two variables and is
+            // skipped when either is missing. They are forwarded explicitly because a test
+            // process inherits the environment of the build daemon, which was captured when
+            // that daemon started, not the environment of the shell running this build.
+            // Nothing in this repository supplies a value.
+            for (name in listOf("WIDGORA_KUMA_URL", "WIDGORA_KUMA_KEY")) {
+                val supplied = providers.environmentVariable(name)
+                if (supplied.isPresent) {
+                    test.environment(name, supplied.get())
+                }
+            }
         }
     }
 }
@@ -41,5 +53,10 @@ kotlin {
 dependencies {
     implementation(project(":model"))
 
+    // The only module that talks to a network. :model, :bridge and :app must not gain this
+    // dependency; the transport interface is what the rest of the project sees.
+    implementation(libs.okhttp)
+
     testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.okhttp.mockwebserver)
 }

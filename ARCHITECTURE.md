@@ -360,7 +360,7 @@ In the standalone application the design system is fully authoritative. Inside a
 | `jvmTarget` | 17 | `[U]` |
 | `minSdk` / `targetSdk` | 28 / 36 | `[V]` matching the intended host launcher's reach |
 | UI | Jetpack Compose, `androidx.tv:tv-material` | `[V]` |
-| HTTP | OkHttp with kotlinx.serialization | `[U]` |
+| HTTP | OkHttp, in the data module only | `[V]` in use for the first integration, behind the transport interface. No serialisation library yet: the first endpoint answers with text, not JSON |
 | Persistence | DataStore and JSON at MVP scale | `[U]` |
 | Credentials | Android Keystore, AES-GCM, non-exportable key | `[U]` |
 | Background work | WorkManager | `[V]` for its interval limits |
