@@ -6,6 +6,7 @@
     <string name="dashboard_no_instance">Noch keine Instanz eingerichtet. Öffne die Einstellungen, um eine anzulegen.</string>
     <string name="dashboard_no_data_yet">Noch keine Daten.</string>
     <string name="dashboard_last_updated">Zuletzt aktualisiert: %1$s</string>
+    <string name="dashboard_last_updated_outdated">Nicht mehr aktuell. Letzte erfolgreiche Aktualisierung: %1$s</string>
 
     <string name="dashboard_state_loading">Wird geladen …</string>
     <string name="dashboard_state_ok">Aktuell</string>
@@ -21,6 +22,28 @@
     <string name="dashboard_notice_disabled">Abgeschaltet.</string>
     <string name="dashboard_notice_secret_unusable">Der API-Schlüssel fehlt oder ist nicht mehr lesbar. Bitte in den Einstellungen neu eingeben.</string>
     <string name="dashboard_notice_entry_invalid">Diese Instanz ist ungültig gespeichert. Korrigiere sie in den Einstellungen oder lösche sie.</string>
+
+    <plurals name="summary_up">
+        <item quantity="one">%1$d aktiv</item>
+        <item quantity="other">%1$d aktiv</item>
+    </plurals>
+    <plurals name="summary_down">
+        <item quantity="one">%1$d ausgefallen</item>
+        <item quantity="other">%1$d ausgefallen</item>
+    </plurals>
+    <plurals name="summary_pending">
+        <item quantity="one">%1$d wartend</item>
+        <item quantity="other">%1$d wartend</item>
+    </plurals>
+    <plurals name="summary_maintenance">
+        <item quantity="one">%1$d in Wartung</item>
+        <item quantity="other">%1$d in Wartung</item>
+    </plurals>
+    <plurals name="summary_unknown">
+        <item quantity="one">%1$d unbekannt</item>
+        <item quantity="other">%1$d unbekannt</item>
+    </plurals>
+    <string name="summary_separator">", "</string>
 
     <string name="settings_title">Uptime-Kuma-Instanz</string>
     <string name="settings_back_hint">Mit der Zurück-Taste verlässt du diesen Bildschirm.</string>

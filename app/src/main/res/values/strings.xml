@@ -8,6 +8,7 @@
     <string name="dashboard_no_instance">No instance set up yet. Open the settings to add one.</string>
     <string name="dashboard_no_data_yet">No data yet.</string>
     <string name="dashboard_last_updated">Last updated: %1$s</string>
+    <string name="dashboard_last_updated_outdated">No longer current. Last successful update: %1$s</string>
 
     <string name="dashboard_state_loading">Loading…</string>
     <string name="dashboard_state_ok">Current</string>
@@ -23,6 +24,35 @@
     <string name="dashboard_notice_disabled">Switched off.</string>
     <string name="dashboard_notice_secret_unusable">The API key is missing or can no longer be read. Please enter it again in the settings.</string>
     <string name="dashboard_notice_entry_invalid">This instance is stored invalidly. Correct it in the settings or delete it.</string>
+
+    <!--
+      The parts of the summary. Each one is a whole phrase, so a translation decides for itself
+      where the number goes. They are plurals so that a language needing separate forms has them
+      available; neither of the two languages shipped inflects these words.
+      Keep them short: a snapshot value holds at most 64 characters, and five parts at once can
+      reach that.
+    -->
+    <plurals name="summary_up">
+        <item quantity="one">%1$d up</item>
+        <item quantity="other">%1$d up</item>
+    </plurals>
+    <plurals name="summary_down">
+        <item quantity="one">%1$d down</item>
+        <item quantity="other">%1$d down</item>
+    </plurals>
+    <plurals name="summary_pending">
+        <item quantity="one">%1$d pending</item>
+        <item quantity="other">%1$d pending</item>
+    </plurals>
+    <plurals name="summary_maintenance">
+        <item quantity="one">%1$d in maintenance</item>
+        <item quantity="other">%1$d in maintenance</item>
+    </plurals>
+    <plurals name="summary_unknown">
+        <item quantity="one">%1$d unknown</item>
+        <item quantity="other">%1$d unknown</item>
+    </plurals>
+    <string name="summary_separator">", "</string>
 
     <string name="settings_title">Uptime Kuma instance</string>
     <string name="settings_back_hint">Press back to leave this screen.</string>

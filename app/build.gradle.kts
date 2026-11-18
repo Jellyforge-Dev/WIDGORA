@@ -72,5 +72,9 @@ dependencies {
     // settings screen, rather than relied upon through another module.
     implementation(libs.kotlinx.coroutines.core)
 
+    // The annotation for a preview ships in the release build; the renderer behind it does not.
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
     testImplementation(libs.kotlin.test.junit5)
 }

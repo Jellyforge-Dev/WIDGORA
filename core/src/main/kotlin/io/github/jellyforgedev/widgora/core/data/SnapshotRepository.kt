@@ -3,6 +3,7 @@ package io.github.jellyforgedev.widgora.core.data
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaMetricsClient
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaReadResult
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSnapshotMapper
+import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSummaryTemplates
 import io.github.jellyforgedev.widgora.model.DisplayStateRule
 import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.model.IntegrationInstanceState
@@ -34,6 +35,8 @@ class SnapshotRepository(
     private val client: KumaMetricsClient,
     private val clock: Clock,
     private val staleAfterMs: Long,
+    /** The wording of the summary. It comes from the application's resources. */
+    private val summaryTemplates: KumaSummaryTemplates,
 ) : WidgetSnapshotSource {
 
     /** What is known about one instance between retrievals. */
@@ -145,6 +148,7 @@ class SnapshotRepository(
                         title = config.displayName,
                         monitors = result.monitors,
                         retrievedAtEpochMs = now,
+                        templates = summaryTemplates,
                     ),
                     outcome = Outcome.Retrieved,
                     lifecycle = lifecycle.transitionTo(IntegrationInstanceState.ENABLED),

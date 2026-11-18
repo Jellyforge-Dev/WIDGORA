@@ -83,6 +83,8 @@ androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 # which tv-material does not provide.
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+# Debug builds only: it carries the preview renderer and would otherwise ship in a release.
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-tv-material = { module = "androidx.tv:tv-material", version.ref = "tvMaterial" }
 
 [plugins]

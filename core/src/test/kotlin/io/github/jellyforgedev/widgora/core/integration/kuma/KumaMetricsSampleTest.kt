@@ -85,6 +85,7 @@ class KumaMetricsSampleTest {
             title = "Uptime Kuma",
             monitors = monitors(),
             retrievedAtEpochMs = 1_700_000_000_000,
+            templates = KumaSummaryTemplates.Numeric,
         )
         assertEquals("35 up, 0 down", snapshot.primaryValue)
         assertEquals("kuma-home-kuma-summary", snapshot.widgetId.value)

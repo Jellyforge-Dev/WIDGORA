@@ -362,6 +362,23 @@ In the standalone application the design system is fully authoritative. Inside a
 (variant B2) typography and focus behaviour follow the host, while `accent_token` and
 `icon_token` carry WIDGORA's identity.
 
+**What is implemented** `[V]`: colours, text sizes, spacing, shapes, focus marks and the
+overscan margin exist as named tokens in one file, and the tile reads them rather than inventing
+values. The brand colours were measured from the logo file by decoding it and grouping its
+chromatic pixels, not chosen by eye; that file is neither modified nor copied into the
+application. Every colour that carries text or marks a state is checked against the backdrop and
+against a surface with the WCAG formula by a test, and no state is distinguished by colour
+alone: each carries a word and a mark as well. Text sizes have a floor, also asserted by a test.
+The overscan margin follows Google's stated 5 % rule of 48 dp horizontally and 27 dp vertically.
+
+**Localisation.** No display text is assembled in the integration any more. The summary's
+wording arrives as whole phrases for a given count, which the application resolves from its
+resources — as Android plurals, so a language needing separate forms has them. The counts and
+the order of the parts stay in the integration and are tested there; the words do not.
+
+Still open `[U]`: how all of this reads on real television hardware, and a second widget size or
+information density.
+
 ---
 
 ## 8. Build and toolchain
