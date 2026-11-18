@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="placeholder_message">Projektgerüst. Noch keine Funktion umgesetzt.</string>
+
+    <string name="home_settings_action">Einstellungen</string>
+
+    <string name="settings_title">Uptime-Kuma-Instanz</string>
+    <string name="settings_back_hint">Mit der Zurück-Taste verlässt du diesen Bildschirm.</string>
+
+    <string name="settings_display_name">Name</string>
+    <string name="settings_address">Adresse</string>
+    <string name="settings_address_hint">https://kuma.example.com</string>
+    <string name="settings_api_key">API-Schlüssel</string>
+
+    <string name="settings_api_key_new">Lege in Uptime Kuma unter Einstellungen, API-Schlüssel einen Schlüssel an.</string>
+    <string name="settings_api_key_stored">Schlüssel gespeichert. Leer lassen, um ihn zu behalten.</string>
+    <string name="settings_api_key_unreadable">Der gespeicherte Schlüssel ist nicht mehr lesbar und muss neu eingegeben werden.</string>
+
+    <string name="settings_invalid_entry">Diese gespeicherte Instanz erfüllt die Regeln nicht mehr. Korrigiere sie oder lösche sie.</string>
+
+    <string name="settings_save">Speichern</string>
+    <string name="settings_test">Verbindung testen</string>
+    <string name="settings_delete">Löschen</string>
+    <string name="settings_delete_question">Diese Instanz, ihren Schlüssel und ihre gespeicherten Daten löschen?</string>
+    <string name="settings_delete_confirm">Ja, löschen</string>
+    <string name="settings_delete_cancel">Behalten</string>
+
+    <string name="settings_saved">Gespeichert.</string>
+
+    <string name="settings_error_display_name_required">Bitte einen Namen eingeben.</string>
+    <string name="settings_error_api_key_required">Bitte den API-Schlüssel eingeben.</string>
+    <string name="settings_error_api_key_for_changed_address">Die Adresse wurde geändert. Bitte den API-Schlüssel erneut eingeben: der gespeicherte gehört zur vorherigen Adresse und wird nirgends anders hingesendet.</string>
+
+    <string name="settings_address_error_not_an_address">Das ist keine vollständige Adresse. Sie muss mit https:// beginnen.</string>
+    <string name="settings_address_error_not_https">Es werden nur verschlüsselte Adressen akzeptiert. Bitte https:// verwenden.</string>
+    <string name="settings_address_error_host_missing">Die Adresse nennt keinen Host.</string>
+    <string name="settings_address_error_credentials_in_address">Bitte Benutzername und Passwort aus der Adresse entfernen. Der Schlüssel gehört in das Feld darunter.</string>
+    <string name="settings_address_error_query_not_allowed">Bitte den Teil nach dem Fragezeichen entfernen.</string>
+    <string name="settings_address_error_fragment_not_allowed">Bitte den Teil nach dem Rautezeichen entfernen.</string>
+
+    <string name="settings_test_running">Test läuft …</string>
+    <string name="settings_test_reachable">Verbunden. Gefundene Monitore: %1$d.</string>
+    <string name="settings_test_unauthorized">Der Schlüssel wurde abgelehnt. Bitte prüfen.</string>
+    <string name="settings_test_endpoint_not_found">Nicht gefunden. Entweder ist die Adresse falsch, oder die Prometheus-Schnittstelle ist in Uptime Kuma unter Einstellungen, API-Schlüssel abgeschaltet.</string>
+    <string name="settings_test_unreachable">Nicht erreichbar. Der Server hat nicht geantwortet, oder sein Zertifikat wurde nicht akzeptiert.</string>
+    <string name="settings_test_malformed">Die Antwort war nicht lesbar. Ist diese Adresse eine Uptime-Kuma-Installation?</string>
+    <string name="settings_test_oversized">Die Antwort war zu groß und wurde verworfen.</string>
+    <string name="settings_test_unknown">Der Versuch ist aus unbekanntem Grund fehlgeschlagen.</string>
+    <string name="settings_test_address_rejected">Die Adresse wurde abgewiesen, bevor etwas gesendet wurde. Es wird nur https akzeptiert.</string>
+</resources>

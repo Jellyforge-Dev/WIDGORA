@@ -32,7 +32,7 @@ class InstanceRepositoryTest {
 
         repository.save(config(), API_KEY)
 
-        assertEquals(listOf(config()), repository.instances.first())
+        assertEquals(listOf(StoredInstance.Valid(config())), repository.instances.first())
     }
 
     @Test
@@ -45,7 +45,7 @@ class InstanceRepositoryTest {
         val repository = repository()
         repository.save(config(), API_KEY)
 
-        assertEquals(config(), repository.instance(InstanceId("home-kuma")))
+        assertEquals(StoredInstance.Valid(config()), repository.instance(InstanceId("home-kuma")))
         assertNull(repository.instance(InstanceId("other")))
     }
 
@@ -98,18 +98,31 @@ class InstanceRepositoryTest {
     }
 
     /**
-     * A key the platform can no longer decrypt, after keystore material was discarded, is
-     * reported as missing so that the user is asked for it again.
+     * A key the platform can no longer decrypt, after keystore material was discarded, is its
+     * own case. Reporting it as absent would show a screen that looks as if nothing had ever
+     * been configured, and the user would never learn that what they entered is gone.
      */
     @Test
-    fun aSecretThatCannotBeDecryptedIsMissing() = runBlocking {
+    fun aSecretThatCannotBeDecryptedIsUnreadableAndNotMissing() = runBlocking {
         val secrets = FakeSecretStore()
         val repository = InstanceRepository(InMemoryPreferencesDataStore(), secrets)
         repository.save(config(), API_KEY)
 
         secrets.decryptionFails = true
 
+        assertEquals(SecretState.Unreadable, repository.secretOf(InstanceId("home-kuma")))
+    }
+
+    @Test
+    fun theThreeSecretStatesAreDistinct() = runBlocking {
+        val secrets = FakeSecretStore()
+        val repository = InstanceRepository(InMemoryPreferencesDataStore(), secrets)
+
         assertEquals(SecretState.Missing, repository.secretOf(InstanceId("home-kuma")))
+        repository.save(config(), API_KEY)
+        assertTrue(repository.secretOf(InstanceId("home-kuma")) is SecretState.Present)
+        secrets.decryptionFails = true
+        assertEquals(SecretState.Unreadable, repository.secretOf(InstanceId("home-kuma")))
     }
 
     @Test
@@ -122,7 +135,7 @@ class InstanceRepositoryTest {
         val state = repository.secretOf(InstanceId("home-kuma"))
         assertTrue(state is SecretState.Present, state.toString())
         assertEquals(API_KEY, state.apiKey)
-        assertEquals("Renamed", repository.instances.first().single().displayName)
+        assertEquals("Renamed", valid(repository.instances.first().single()).displayName)
     }
 
     @Test
@@ -157,15 +170,16 @@ class InstanceRepositoryTest {
         val repository = repository()
         repository.save(config(enabled = true), API_KEY)
 
-        assertTrue(repository.instances.first().single().enabled)
+        assertTrue(valid(repository.instances.first().single()).enabled)
     }
 
     /**
-     * Stored values that no longer pass the current rules are left out instead of taking the
-     * list down. The entry is unusable for a request either way.
+     * Stored values that no longer pass the current rules are reported as invalid, carrying what
+     * was stored, rather than vanishing. A hidden entry is storage the user can neither see nor
+     * correct nor remove.
      */
     @Test
-    fun anEntryThatNoLongerValidatesIsLeftOut() = runBlocking {
+    fun anEntryThatNoLongerValidatesIsReportedAsInvalid() = runBlocking {
         val store = InMemoryPreferencesDataStore()
         val repository = InstanceRepository(store, FakeSecretStore())
         repository.save(config(), API_KEY)
@@ -175,6 +189,49 @@ class InstanceRepositoryTest {
                 this[stringPreferencesKey("instance.home-kuma.baseUrl")] = "http://insecure.invalid"
             }
         }
+
+        val stored = repository.instances.first().single()
+        assertEquals(
+            StoredInstance.Invalid(
+                instanceId = InstanceId("home-kuma"),
+                displayName = "Uptime Kuma",
+                baseUrl = "http://insecure.invalid",
+            ),
+            stored,
+        )
+    }
+
+    @Test
+    fun anEntryWithoutADisplayNameIsReportedAsInvalid() = runBlocking {
+        val store = InMemoryPreferencesDataStore()
+        val repository = InstanceRepository(store, FakeSecretStore())
+        repository.save(config(), API_KEY)
+
+        store.updateData { preferences ->
+            preferences.toMutablePreferences().apply {
+                remove(stringPreferencesKey("instance.home-kuma.displayName"))
+            }
+        }
+
+        val stored = repository.instances.first().single()
+        assertTrue(stored is StoredInstance.Invalid, stored.toString())
+        assertNull(stored.displayName)
+        assertEquals("https://kuma.example.invalid", stored.baseUrl)
+    }
+
+    /** The point of reporting an invalid entry: it can be got rid of. */
+    @Test
+    fun anInvalidEntryCanBeDeleted() = runBlocking {
+        val store = InMemoryPreferencesDataStore()
+        val repository = InstanceRepository(store, FakeSecretStore())
+        repository.save(config(), API_KEY)
+        store.updateData { preferences ->
+            preferences.toMutablePreferences().apply {
+                this[stringPreferencesKey("instance.home-kuma.baseUrl")] = "http://insecure.invalid"
+            }
+        }
+
+        repository.delete(InstanceId("home-kuma"))
 
         assertEquals(emptyList(), repository.instances.first())
     }
@@ -187,6 +244,11 @@ class InstanceRepositoryTest {
 
     private fun repository(): InstanceRepository =
         InstanceRepository(InMemoryPreferencesDataStore(), FakeSecretStore())
+
+    private fun valid(stored: StoredInstance): InstanceConfig {
+        assertTrue(stored is StoredInstance.Valid, stored.toString())
+        return stored.config
+    }
 
     private fun config(
         id: String = "home-kuma",

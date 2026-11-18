@@ -44,7 +44,7 @@ class InstanceRepositoryDeviceTest {
     fun anInstanceAndItsSecretSurviveARoundTripThroughRealStorage() = runBlocking {
         repository.save(config(), API_KEY)
 
-        assertEquals(listOf(config()), repository.instances.first())
+        assertEquals(listOf(StoredInstance.Valid(config())), repository.instances.first())
         val state = repository.secretOf(INSTANCE_ID)
         assertTrue(state.toString(), state is SecretState.Present)
         assertEquals(API_KEY, (state as SecretState.Present).apiKey)
@@ -71,7 +71,7 @@ class InstanceRepositoryDeviceTest {
 
         repository.delete(INSTANCE_ID)
 
-        assertEquals(emptyList<InstanceConfig>(), repository.instances.first())
+        assertEquals(emptyList<StoredInstance>(), repository.instances.first())
         assertEquals(SecretState.Missing, repository.secretOf(INSTANCE_ID))
         val raw = String(file.readBytes(), Charsets.ISO_8859_1)
         assertFalse(raw.contains("https://kuma.example.invalid"))

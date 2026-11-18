@@ -30,6 +30,13 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests.all { test ->
+            // Same test framework as the other modules, so assertions behave identically.
+            test.useJUnitPlatform()
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
         targetCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
@@ -55,4 +62,15 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.tv.material)
+
+    // Text input: androidx.tv:tv-material 1.1.0 ships no text field, so the basic one from
+    // Compose Foundation is used. The library is already in the tree through tv-material; it is
+    // declared here because this module uses it directly.
+    implementation(libs.androidx.compose.foundation)
+
+    // Used directly for the dispatcher of the connection test and for the state flow of the
+    // settings screen, rather than relied upon through another module.
+    implementation(libs.kotlinx.coroutines.core)
+
+    testImplementation(libs.kotlin.test.junit5)
 }

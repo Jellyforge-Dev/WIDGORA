@@ -66,8 +66,17 @@ against the user's services themselves.
   also confirms that a tampered ciphertext or vector is refused and that removing one instance
   leaves another readable. Real hardware remains unverified `[U]`.
 - A credential that can no longer be decrypted — after the operating system discarded keystore
-  material, for instance — is reported as **absent**, so the user is asked to enter it again.
-  It is never an empty credential and never a crash.
+  material, for instance — is reported as **unreadable**, which is a state of its own and not
+  the same as absent. The screen then says so and asks for the credential again, rather than
+  looking as though nothing had ever been configured. It is never an empty credential and never
+  a crash.
+- A stored credential is only ever used against the **exact address it was entered for**. Once
+  that address is edited, the credential field becomes mandatory again, because sending a saved
+  credential to a changed address would hand it to a server the user never typed it for.
+- A stored credential is **never read back into a screen**. The settings screen's state has no
+  field that could hold it, not even a masked one, so it cannot be rendered, logged or caught in
+  a screenshot. The screen knows only whether a credential exists, and an empty input field
+  means "keep the stored one". Entry itself is masked.
 - The stored configuration of an instance carries no credential at all: its type has no field
   for one, and an address containing credentials, such as `https://user:pass@host`, is refused
   when the instance is saved. A credential belongs in the keystore, not in an address.
