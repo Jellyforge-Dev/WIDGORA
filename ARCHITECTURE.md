@@ -93,7 +93,8 @@ Three rules that must hold:
 
 1. **Nothing depends on `:app`.**
 2. **`:bridge` cannot reach integrations.** The read interface `WidgetSnapshotSource` is declared
-   in `:model`, implemented in `:core`, and wired by `:app`. A `ContentProvider` is instantiated
+   in `:model`, implemented in `:core` — by the snapshot repository since the dashboard exists
+   `[V]` — and wired by `:app`. A `ContentProvider` is instantiated
    by the system, so it resolves the implementation through a holder owned by the application
    class rather than by depending on `:core` `[U]`.
 3. **Integrations never depend on each other and never on a concrete transport.** `:app` wires
@@ -183,6 +184,19 @@ can be delayed further by Doze and App Standby `[V]`.
 
 Per-instance refresh intervals, rate-limit awareness, offline behaviour and cache retention are
 handled in `core/data`.
+
+**What is implemented** `[V]`: retrieval while the application is in the foreground, every 60
+seconds, plus a manual refresh. The interval and the staleness threshold of 3 minutes are two
+named constants in one place in `:app`. Retrieval stops when the application leaves the
+foreground and starts again when it returns, which is also what refreshes the dashboard after a
+visit to the settings. Two retrievals of the same instance never run at once: a refresh that
+arrives while one is running is dropped rather than queued.
+
+A failed retrieval keeps the last successful snapshot and shows it with its own timestamp,
+marked as outdated or unreachable. A failure never looks like a current value. Snapshots live in
+memory only; nothing decides yet for how long a stale value may be shown after a restart.
+
+Background refresh with WorkManager is **not** implemented `[U]`.
 
 ---
 

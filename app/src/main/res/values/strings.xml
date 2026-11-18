@@ -2,9 +2,27 @@
 <resources>
     <!-- The product name is not translated, in any language. -->
     <string name="app_name" translatable="false">WIDGORA</string>
-    <string name="placeholder_message">Project setup. No features implemented yet.</string>
-
     <string name="home_settings_action">Settings</string>
+
+    <string name="dashboard_refresh">Refresh</string>
+    <string name="dashboard_no_instance">No instance set up yet. Open the settings to add one.</string>
+    <string name="dashboard_no_data_yet">No data yet.</string>
+    <string name="dashboard_last_updated">Last updated: %1$s</string>
+
+    <string name="dashboard_state_loading">Loading…</string>
+    <string name="dashboard_state_ok">Current</string>
+    <string name="dashboard_state_empty">Nothing to report</string>
+    <string name="dashboard_state_stale">Outdated</string>
+    <string name="dashboard_state_offline">Not reachable</string>
+    <string name="dashboard_state_error_unauthorized">Key rejected</string>
+    <string name="dashboard_state_error_endpoint_not_found">Not found: address or interface</string>
+    <string name="dashboard_state_error_malformed">Answer not readable</string>
+    <string name="dashboard_state_error_oversized">Answer too large</string>
+    <string name="dashboard_state_error_unknown">Retrieval failed</string>
+
+    <string name="dashboard_notice_disabled">Switched off.</string>
+    <string name="dashboard_notice_secret_unusable">The API key is missing or can no longer be read. Please enter it again in the settings.</string>
+    <string name="dashboard_notice_entry_invalid">This instance is stored invalidly. Correct it in the settings or delete it.</string>
 
     <string name="settings_title">Uptime Kuma instance</string>
     <string name="settings_back_hint">Press back to leave this screen.</string>

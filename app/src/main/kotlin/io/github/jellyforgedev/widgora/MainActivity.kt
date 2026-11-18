@@ -4,62 +4,108 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
-import androidx.tv.material3.Text
 import androidx.tv.material3.darkColorScheme
+import io.github.jellyforgedev.widgora.core.data.SnapshotRepository
+import io.github.jellyforgedev.widgora.dashboard.DashboardScreen
+import io.github.jellyforgedev.widgora.dashboard.DashboardTiming
 import io.github.jellyforgedev.widgora.settings.ConnectionTester
 import io.github.jellyforgedev.widgora.settings.InstanceStore
 import io.github.jellyforgedev.widgora.settings.SettingsScreen
 import io.github.jellyforgedev.widgora.settings.SettingsStateHolder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // tv-material3 applies its light colour scheme unless one is passed in, which is wrong for a
 // television. This is the library's own dark scheme, held in one place so it is not rebuilt on
 // every recomposition. No project colour is defined here: the design system is a separate,
-// later step and is not anticipated by this screen.
-private val PlaceholderColorScheme = darkColorScheme()
+// later step.
+private val WidgoraColorScheme = darkColorScheme()
 
 class MainActivity : ComponentActivity() {
+
+    /**
+     * Whether this activity is in the foreground.
+     *
+     * Read from the activity's own callbacks rather than through a lifecycle library: the
+     * dependency tree carries lifecycle-runtime-compose only as a constraint, not as an actual
+     * dependency, and one boolean is not worth adding one for.
+     */
+    private val foreground = MutableStateFlow(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val widgora = application as WidgoraApplication
         setContent {
-            MaterialTheme(colorScheme = PlaceholderColorScheme) {
+            MaterialTheme(colorScheme = WidgoraColorScheme) {
                 WidgoraApp(
                     instanceStore = widgora.instanceStore,
                     connectionTester = widgora.connectionTester,
+                    snapshots = widgora.snapshots,
+                    foreground = foreground.collectAsState().value,
                 )
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        foreground.value = true
+    }
+
+    override fun onPause() {
+        foreground.value = false
+        super.onPause()
+    }
 }
 
 /**
- * The whole application at this stage: a placeholder screen and the settings screen.
+ * The whole application at this stage: the dashboard and the settings screen.
  *
  * Navigation is one flag rather than a navigation library. There are two destinations, and the
  * back key is the only way out of the second one, which is what a television remote offers.
  */
 @Composable
-private fun WidgoraApp(instanceStore: InstanceStore, connectionTester: ConnectionTester) {
+private fun WidgoraApp(
+    instanceStore: InstanceStore,
+    connectionTester: ConnectionTester,
+    snapshots: SnapshotRepository,
+    foreground: Boolean,
+) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    val views by snapshots.views.collectAsState()
+    val scope = rememberCoroutineScope()
+
+    /**
+     * Retrieves while the dashboard is actually in front of the user, and stops otherwise.
+     *
+     * The effect is keyed on both conditions, so leaving the foreground or opening the settings
+     * cancels it and coming back starts it again — which is also what makes the dashboard
+     * refresh after returning from the settings.
+     */
+    LaunchedEffect(foreground, showSettings) {
+        if (!foreground || showSettings) return@LaunchedEffect
+        while (true) {
+            withContext(Dispatchers.IO) { snapshots.refresh() }
+            delay(DashboardTiming.REFRESH_INTERVAL_MS)
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), shape = RectangleShape) {
         if (showSettings) {
@@ -69,28 +115,13 @@ private fun WidgoraApp(instanceStore: InstanceStore, connectionTester: Connectio
             }
             SettingsScreen(holder)
         } else {
-            PlaceholderScreen(onOpenSettings = { showSettings = true })
-        }
-    }
-}
-
-@Composable
-private fun PlaceholderScreen(onOpenSettings: () -> Unit) {
-    // The surface passes its minimum constraints on to its content, so a single child fills the
-    // screen and draws in its top left corner. Centring is therefore done by a box of its own
-    // rather than by aligning the child.
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            Text(text = stringResource(R.string.placeholder_message))
-            Button(onClick = onOpenSettings) {
-                Text(stringResource(R.string.home_settings_action))
-            }
+            DashboardScreen(
+                views = views,
+                onRefresh = {
+                    scope.launch { withContext(Dispatchers.IO) { snapshots.refresh() } }
+                },
+                onOpenSettings = { showSettings = true },
+            )
         }
     }
 }

@@ -70,6 +70,10 @@ against the user's services themselves.
   the same as absent. The screen then says so and asks for the credential again, rather than
   looking as though nothing had ever been configured. It is never an empty credential and never
   a crash.
+- A credential is read from the store only at the moment a retrieval needs it, and it is never
+  held in a field, in a dashboard state or in anything the screen renders. An instance whose
+  credential cannot be read is not retrieved at all; it reports that the credential has to be
+  entered again.
 - A stored credential is only ever used against the **exact address it was entered for**. Once
   that address is edited, the credential field becomes mandatory again, because sending a saved
   credential to a changed address would hand it to a server the user never typed it for.
