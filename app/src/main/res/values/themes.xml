@@ -4,5 +4,12 @@
       Minimal platform theme. The application draws its own interface with Compose,
       so this theme only has to provide a window without a system action bar.
     -->
-    <style name="Theme.Widgora" parent="@android:style/Theme.Material.NoActionBar" />
+    <style name="Theme.Widgora" parent="@android:style/Theme.Material.NoActionBar">
+        <!--
+          The window is drawn before Compose paints its first frame. Stating a dark
+          background here is what keeps starting the application from flashing a bright
+          frame. This is a platform colour, not a project colour.
+        -->
+        <item name="android:windowBackground">@android:color/background_dark</item>
+    </style>
 </resources>
