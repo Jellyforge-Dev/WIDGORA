@@ -1,0 +1,526 @@
+# HELP monitor_cert_days_remaining The number of days remaining until the certificate expires
+# TYPE monitor_cert_days_remaining gauge
+monitor_cert_days_remaining{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null"} 40
+monitor_cert_days_remaining{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null"} 4139
+monitor_cert_days_remaining{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null"} 43
+monitor_cert_days_remaining{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null"} 40
+monitor_cert_days_remaining{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null"} 40
+monitor_cert_days_remaining{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null"} 40
+monitor_cert_days_remaining{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null"} 651
+monitor_cert_days_remaining{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null"} 66
+monitor_cert_days_remaining{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null"} 43
+
+# HELP monitor_cert_is_valid Is the certificate still valid? (1 = Yes, 0= No)
+# TYPE monitor_cert_is_valid gauge
+monitor_cert_is_valid{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null"} 0
+monitor_cert_is_valid{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null"} 0
+monitor_cert_is_valid{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_cert_is_valid{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+
+# HELP monitor_uptime_ratio Uptime ratio calculated over sliding window specified by the 'window' label. (0.0 - 1.0)
+# TYPE monitor_uptime_ratio gauge
+monitor_uptime_ratio{monitor_id="1",monitor_name="Service 20",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{monitor_id="1",monitor_name="Service 20",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.8138858159780674
+monitor_uptime_ratio{monitor_id="1",monitor_name="Service 20",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.8569017954276549
+monitor_uptime_ratio{tag_01="",monitor_id="2",monitor_name="Service 21",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-01.example.invalid",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_01="",monitor_id="2",monitor_name="Service 21",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-01.example.invalid",monitor_port="null",window="30d"} 0.9999759863602526
+monitor_uptime_ratio{tag_01="",monitor_id="2",monitor_name="Service 21",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-01.example.invalid",monitor_port="null",window="365d"} 0.999481013410455
+monitor_uptime_ratio{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9995190689174241
+monitor_uptime_ratio{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.957911142645312
+monitor_uptime_ratio{tag_06="",monitor_id="5",monitor_name="Service 22",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-02.example.invalid",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_06="",monitor_id="5",monitor_name="Service 22",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-02.example.invalid",monitor_port="null",window="30d"} 0.9999039500540281
+monitor_uptime_ratio{tag_06="",monitor_id="5",monitor_name="Service 22",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-02.example.invalid",monitor_port="null",window="365d"} 0.9998534160014262
+monitor_uptime_ratio{tag_06="",monitor_id="6",monitor_name="Service 23",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_06="",monitor_id="6",monitor_name="Service 23",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="null",window="30d"} 1
+monitor_uptime_ratio{tag_06="",monitor_id="6",monitor_name="Service 23",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="null",window="365d"} 0.9998613422074321
+monitor_uptime_ratio{tag_06="",monitor_id="7",monitor_name="Service 24",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-04.example.invalid",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_06="",monitor_id="7",monitor_name="Service 24",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-04.example.invalid",monitor_port="null",window="30d"} 0.9999759898196835
+monitor_uptime_ratio{tag_06="",monitor_id="7",monitor_name="Service 24",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-04.example.invalid",monitor_port="null",window="365d"} 0.9678441992910909
+monitor_uptime_ratio{tag_02="",monitor_id="8",monitor_name="Service 25",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-05.example.invalid",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_02="",monitor_id="8",monitor_name="Service 25",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-05.example.invalid",monitor_port="null",window="30d"} 1
+monitor_uptime_ratio{tag_02="",monitor_id="8",monitor_name="Service 25",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-05.example.invalid",monitor_port="null",window="365d"} 0.9998613422074321
+monitor_uptime_ratio{tag_07="",monitor_id="10",monitor_name="Service 26",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-06.example.invalid",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_07="",monitor_id="10",monitor_name="Service 26",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-06.example.invalid",monitor_port="null",window="30d"} 1
+monitor_uptime_ratio{tag_07="",monitor_id="10",monitor_name="Service 26",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-06.example.invalid",monitor_port="null",window="365d"} 0.9998336086713653
+monitor_uptime_ratio{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9998557241445644
+monitor_uptime_ratio{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9997810195728687
+monitor_uptime_ratio{tag_08="",monitor_id="11",monitor_name="Service 27",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-07.example.invalid",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_08="",monitor_id="11",monitor_name="Service 27",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-07.example.invalid",monitor_port="null",window="30d"} 1
+monitor_uptime_ratio{tag_08="",monitor_id="11",monitor_name="Service 27",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-07.example.invalid",monitor_port="null",window="365d"} 0.9892048112526859
+monitor_uptime_ratio{monitor_id="12",monitor_name="Service 28",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.9937238493723849
+monitor_uptime_ratio{monitor_id="12",monitor_name="Service 28",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9934345013347442
+monitor_uptime_ratio{monitor_id="12",monitor_name="Service 28",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9933184324717036
+monitor_uptime_ratio{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.99860529986053
+monitor_uptime_ratio{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9980994996150885
+monitor_uptime_ratio{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9980817523709461
+monitor_uptime_ratio{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.99860529986053
+monitor_uptime_ratio{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9981962048149307
+monitor_uptime_ratio{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9988954447027037
+monitor_uptime_ratio{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.997907949790795
+monitor_uptime_ratio{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9987512607463619
+monitor_uptime_ratio{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9734495338467775
+monitor_uptime_ratio{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.9965132496513249
+monitor_uptime_ratio{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9956242636982184
+monitor_uptime_ratio{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9979482417185559
+monitor_uptime_ratio{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.997907949790795
+monitor_uptime_ratio{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9972836538461538
+monitor_uptime_ratio{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9985550624419445
+monitor_uptime_ratio{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.99860529986053
+monitor_uptime_ratio{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9985817989519734
+monitor_uptime_ratio{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9992260553429964
+monitor_uptime_ratio{tag_04="",monitor_id="19",monitor_name="Service 29",monitor_type="docker",monitor_url="https://service-22.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_04="",monitor_id="19",monitor_name="Service 29",monitor_type="docker",monitor_url="https://service-22.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9995193347593069
+monitor_uptime_ratio{tag_04="",monitor_id="19",monitor_name="Service 29",monitor_type="docker",monitor_url="https://service-22.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9995914805854123
+monitor_uptime_ratio{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9987499399009567
+monitor_uptime_ratio{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9974278773637331
+monitor_uptime_ratio{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9994951923076923
+monitor_uptime_ratio{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9994759388436512
+monitor_uptime_ratio{monitor_id="22",monitor_name="Service 30",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{monitor_id="22",monitor_name="Service 30",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9980293672346254
+monitor_uptime_ratio{monitor_id="22",monitor_name="Service 30",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9519421402401307
+monitor_uptime_ratio{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.999567671430287
+monitor_uptime_ratio{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9537810123970222
+monitor_uptime_ratio{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9996396915759891
+monitor_uptime_ratio{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9539180014998274
+monitor_uptime_ratio{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9995675883441036
+monitor_uptime_ratio{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9536409124998512
+monitor_uptime_ratio{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.99860529986053
+monitor_uptime_ratio{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9993756453665682
+monitor_uptime_ratio{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9994511019001108
+monitor_uptime_ratio{monitor_id="29",monitor_name="Service 31",monitor_type="docker",monitor_url="https://service-23.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{monitor_id="29",monitor_name="Service 31",monitor_type="docker",monitor_url="https://service-23.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9997047709022201
+monitor_uptime_ratio{monitor_id="29",monitor_name="Service 31",monitor_type="docker",monitor_url="https://service-23.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9997047709022201
+monitor_uptime_ratio{monitor_id="30",monitor_name="Service 32",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{monitor_id="30",monitor_name="Service 32",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9982942813538019
+monitor_uptime_ratio{monitor_id="30",monitor_name="Service 32",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9982942813538019
+monitor_uptime_ratio{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.999647621444752
+monitor_uptime_ratio{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.999647621444752
+monitor_uptime_ratio{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9991943199556876
+monitor_uptime_ratio{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9991943199556876
+monitor_uptime_ratio{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.99860529986053
+monitor_uptime_ratio{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9965251548572291
+monitor_uptime_ratio{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9965251548572291
+monitor_uptime_ratio{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9997482123073824
+monitor_uptime_ratio{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9997482123073824
+monitor_uptime_ratio{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1
+monitor_uptime_ratio{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9998489502039172
+monitor_uptime_ratio{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9998489502039172
+monitor_uptime_ratio{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.999302649930265
+monitor_uptime_ratio{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.9997484403300463
+monitor_uptime_ratio{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.9997484403300463
+monitor_uptime_ratio{monitor_id="37",monitor_name="Service 33",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="389",window="1d"} 1
+monitor_uptime_ratio{monitor_id="37",monitor_name="Service 33",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="389",window="30d"} 0.9998993811943452
+monitor_uptime_ratio{monitor_id="37",monitor_name="Service 33",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="389",window="365d"} 0.9998993811943452
+monitor_uptime_ratio{monitor_id="38",monitor_name="Service 34",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-08.example.invalid",monitor_port="4444",window="1d"} 1
+monitor_uptime_ratio{monitor_id="38",monitor_name="Service 34",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-08.example.invalid",monitor_port="4444",window="30d"} 0.9999496323159062
+monitor_uptime_ratio{monitor_id="38",monitor_name="Service 34",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-08.example.invalid",monitor_port="4444",window="365d"} 0.9999496323159062
+
+# HELP monitor_response_time_seconds Average response time in seconds calculated over sliding window specified by the 'window' label
+# TYPE monitor_response_time_seconds gauge
+monitor_response_time_seconds{monitor_id="1",monitor_name="Service 20",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1.146673640167364
+monitor_response_time_seconds{monitor_id="1",monitor_name="Service 20",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 1.078076884436959
+monitor_response_time_seconds{monitor_id="1",monitor_name="Service 20",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.1690537806793593
+monitor_response_time_seconds{tag_01="",monitor_id="2",monitor_name="Service 21",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-01.example.invalid",monitor_port="null",window="1d"} 0.0005444334494773512
+monitor_response_time_seconds{tag_01="",monitor_id="2",monitor_name="Service 21",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-01.example.invalid",monitor_port="null",window="30d"} 0.0005708229671965802
+monitor_response_time_seconds{tag_01="",monitor_id="2",monitor_name="Service 21",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-01.example.invalid",monitor_port="null",window="365d"} 0.0006104218697975296
+monitor_response_time_seconds{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.3121177700348432
+monitor_response_time_seconds{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.32774192849925426
+monitor_response_time_seconds{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.3520663004806192
+monitor_response_time_seconds{tag_06="",monitor_id="5",monitor_name="Service 22",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-02.example.invalid",monitor_port="null",window="1d"} 0.0005229073170731711
+monitor_response_time_seconds{tag_06="",monitor_id="5",monitor_name="Service 22",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-02.example.invalid",monitor_port="null",window="30d"} 0.000566833793616868
+monitor_response_time_seconds{tag_06="",monitor_id="5",monitor_name="Service 22",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-02.example.invalid",monitor_port="null",window="365d"} 0.0006136991100650607
+monitor_response_time_seconds{tag_06="",monitor_id="6",monitor_name="Service 23",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="null",window="1d"} 0.0004362641114982575
+monitor_response_time_seconds{tag_06="",monitor_id="6",monitor_name="Service 23",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="null",window="30d"} 0.0004908491295473645
+monitor_response_time_seconds{tag_06="",monitor_id="6",monitor_name="Service 23",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="null",window="365d"} 0.0005460452245577192
+monitor_response_time_seconds{tag_06="",monitor_id="7",monitor_name="Service 24",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-04.example.invalid",monitor_port="null",window="1d"} 0.00050524791086351
+monitor_response_time_seconds{tag_06="",monitor_id="7",monitor_name="Service 24",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-04.example.invalid",monitor_port="null",window="30d"} 0.0005017193142527854
+monitor_response_time_seconds{tag_06="",monitor_id="7",monitor_name="Service 24",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-04.example.invalid",monitor_port="null",window="365d"} 0.0005669310703821968
+monitor_response_time_seconds{tag_02="",monitor_id="8",monitor_name="Service 25",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-05.example.invalid",monitor_port="null",window="1d"} 0.00029357839721254347
+monitor_response_time_seconds{tag_02="",monitor_id="8",monitor_name="Service 25",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-05.example.invalid",monitor_port="null",window="30d"} 0.00032796707888101795
+monitor_response_time_seconds{tag_02="",monitor_id="8",monitor_name="Service 25",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-05.example.invalid",monitor_port="null",window="365d"} 0.0004009330110743507
+monitor_response_time_seconds{tag_07="",monitor_id="10",monitor_name="Service 26",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-06.example.invalid",monitor_port="null",window="1d"} 0.00006658913649025072
+monitor_response_time_seconds{tag_07="",monitor_id="10",monitor_name="Service 26",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-06.example.invalid",monitor_port="null",window="30d"} 0.00007003618855509959
+monitor_response_time_seconds{tag_07="",monitor_id="10",monitor_name="Service 26",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-06.example.invalid",monitor_port="null",window="365d"} 0.00009157201386825173
+monitor_response_time_seconds{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.336381881533101
+monitor_response_time_seconds{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.3234099228012794
+monitor_response_time_seconds{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.3740384574029605
+monitor_response_time_seconds{tag_08="",monitor_id="11",monitor_name="Service 27",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-07.example.invalid",monitor_port="null",window="1d"} 0.002276585365853659
+monitor_response_time_seconds{tag_08="",monitor_id="11",monitor_name="Service 27",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-07.example.invalid",monitor_port="null",window="30d"} 0.0023016247388516664
+monitor_response_time_seconds{tag_08="",monitor_id="11",monitor_name="Service 27",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-07.example.invalid",monitor_port="null",window="365d"} 0.0022663609384455685
+monitor_response_time_seconds{monitor_id="12",monitor_name="Service 28",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1.3727291228070175
+monitor_response_time_seconds{monitor_id="12",monitor_name="Service 28",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.8217185048900941
+monitor_response_time_seconds{monitor_id="12",monitor_name="Service 28",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.13566349059167723
+monitor_response_time_seconds{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.6496222067039106
+monitor_response_time_seconds{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.5467160452168046
+monitor_response_time_seconds{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.3402421437941856
+monitor_response_time_seconds{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.4611054469273743
+monitor_response_time_seconds{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.45776175790285284
+monitor_response_time_seconds{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.23682947968831417
+monitor_response_time_seconds{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.277832285115304
+monitor_response_time_seconds{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.3364750901659053
+monitor_response_time_seconds{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.2568122129551383
+monitor_response_time_seconds{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.34338628411476557
+monitor_response_time_seconds{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.32822798290309324
+monitor_response_time_seconds{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.15243921546794342
+monitor_response_time_seconds{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.24177009084556256
+monitor_response_time_seconds{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.2118490852556223
+monitor_response_time_seconds{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.14319844166169748
+monitor_response_time_seconds{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.22166829608938549
+monitor_response_time_seconds{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.23023108586284088
+monitor_response_time_seconds{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.14463406166959933
+monitor_response_time_seconds{tag_04="",monitor_id="19",monitor_name="Service 29",monitor_type="docker",monitor_url="https://service-22.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0
+monitor_response_time_seconds{tag_04="",monitor_id="19",monitor_name="Service 29",monitor_type="docker",monitor_url="https://service-22.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.019885379686109202
+monitor_response_time_seconds{tag_04="",monitor_id="19",monitor_name="Service 29",monitor_type="docker",monitor_url="https://service-22.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.07836738149390976
+monitor_response_time_seconds{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.2915676429567643
+monitor_response_time_seconds{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.2680826072305395
+monitor_response_time_seconds{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.16544214514254785
+monitor_response_time_seconds{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.2850976290097629
+monitor_response_time_seconds{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.2517430914644412
+monitor_response_time_seconds{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.15957961763198766
+monitor_response_time_seconds{monitor_id="22",monitor_name="Service 30",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 1.328813110181311
+monitor_response_time_seconds{monitor_id="22",monitor_name="Service 30",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.712625273904982
+monitor_response_time_seconds{monitor_id="22",monitor_name="Service 30",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.12327185974441426
+monitor_response_time_seconds{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.04999651567944251
+monitor_response_time_seconds{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.054515126030228046
+monitor_response_time_seconds{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.06100747246712074
+monitor_response_time_seconds{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.04489958158995816
+monitor_response_time_seconds{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.05128832660515187
+monitor_response_time_seconds{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.055337250171578305
+monitor_response_time_seconds{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.04115191637630662
+monitor_response_time_seconds{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.059272272825590624
+monitor_response_time_seconds{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.058724667953796474
+monitor_response_time_seconds{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.27424022346368715
+monitor_response_time_seconds{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.28072446356056424
+monitor_response_time_seconds{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.17061619163471559
+monitor_response_time_seconds{monitor_id="29",monitor_name="Service 31",monitor_type="docker",monitor_url="https://service-23.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0
+monitor_response_time_seconds{monitor_id="29",monitor_name="Service 31",monitor_type="docker",monitor_url="https://service-23.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.00860819603289629
+monitor_response_time_seconds{monitor_id="29",monitor_name="Service 31",monitor_type="docker",monitor_url="https://service-23.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.00860819603289629
+monitor_response_time_seconds{monitor_id="30",monitor_name="Service 32",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.9936813110181311
+monitor_response_time_seconds{monitor_id="30",monitor_name="Service 32",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.730803866906475
+monitor_response_time_seconds{monitor_id="30",monitor_name="Service 32",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.730803866906475
+monitor_response_time_seconds{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.060019525801952585
+monitor_response_time_seconds{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.061345654144425416
+monitor_response_time_seconds{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.061345654144425416
+monitor_response_time_seconds{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.329455369595537
+monitor_response_time_seconds{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.34703900619865935
+monitor_response_time_seconds{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.34703900619865935
+monitor_response_time_seconds{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.2037332402234637
+monitor_response_time_seconds{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.2623969072164949
+monitor_response_time_seconds{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.2623969072164949
+monitor_response_time_seconds{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.09435076708507671
+monitor_response_time_seconds{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.09260534931748349
+monitor_response_time_seconds{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.09260534931748349
+monitor_response_time_seconds{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.11122733612273362
+monitor_response_time_seconds{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.09272006244334775
+monitor_response_time_seconds{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.09272006244334775
+monitor_response_time_seconds{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null",window="1d"} 0.1594347522679693
+monitor_response_time_seconds{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null",window="30d"} 0.1569024206129535
+monitor_response_time_seconds{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null",window="365d"} 0.1569024206129535
+monitor_response_time_seconds{monitor_id="37",monitor_name="Service 33",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="389",window="1d"} 0.0019477351916376306
+monitor_response_time_seconds{monitor_id="37",monitor_name="Service 33",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="389",window="30d"} 0.004785559748427676
+monitor_response_time_seconds{monitor_id="37",monitor_name="Service 33",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="389",window="365d"} 0.004785559748427676
+monitor_response_time_seconds{monitor_id="38",monitor_name="Service 34",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-08.example.invalid",monitor_port="4444",window="1d"} 0
+monitor_response_time_seconds{monitor_id="38",monitor_name="Service 34",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-08.example.invalid",monitor_port="4444",window="30d"} 0
+monitor_response_time_seconds{monitor_id="38",monitor_name="Service 34",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-08.example.invalid",monitor_port="4444",window="365d"} 0
+
+# HELP monitor_response_time Monitor Response Time (ms)
+# TYPE monitor_response_time gauge
+monitor_response_time{monitor_id="1",monitor_name="Service 20",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null"} 841
+monitor_response_time{tag_01="",monitor_id="2",monitor_name="Service 21",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-01.example.invalid",monitor_port="null"} 1.22
+monitor_response_time{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null"} 224
+monitor_response_time{tag_06="",monitor_id="5",monitor_name="Service 22",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-02.example.invalid",monitor_port="null"} 4.82
+monitor_response_time{tag_06="",monitor_id="6",monitor_name="Service 23",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="null"} 0.329
+monitor_response_time{tag_06="",monitor_id="7",monitor_name="Service 24",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-04.example.invalid",monitor_port="null"} 0.347
+monitor_response_time{tag_02="",monitor_id="8",monitor_name="Service 25",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-05.example.invalid",monitor_port="null"} 0.308
+monitor_response_time{tag_07="",monitor_id="10",monitor_name="Service 26",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-06.example.invalid",monitor_port="null"} 0.042
+monitor_response_time{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null"} 455
+monitor_response_time{tag_08="",monitor_id="11",monitor_name="Service 27",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-07.example.invalid",monitor_port="null"} 1.3
+monitor_response_time{monitor_id="12",monitor_name="Service 28",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null"} 829
+monitor_response_time{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null"} 706
+monitor_response_time{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null"} 54
+monitor_response_time{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null"} 2682
+monitor_response_time{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null"} 38
+monitor_response_time{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null"} 27
+monitor_response_time{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null"} 51
+monitor_response_time{tag_04="",monitor_id="19",monitor_name="Service 29",monitor_type="docker",monitor_url="https://service-22.example.invalid/",monitor_hostname="null",monitor_port="null"} -1
+monitor_response_time{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null"} 40
+monitor_response_time{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null"} 34
+monitor_response_time{monitor_id="22",monitor_name="Service 30",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null"} 802
+monitor_response_time{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null"} 13
+monitor_response_time{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null"} 13
+monitor_response_time{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null"} 12
+monitor_response_time{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null"} 16
+monitor_response_time{monitor_id="29",monitor_name="Service 31",monitor_type="docker",monitor_url="https://service-23.example.invalid/",monitor_hostname="null",monitor_port="null"} -1
+monitor_response_time{monitor_id="30",monitor_name="Service 32",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null"} 4
+monitor_response_time{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null"} 21
+monitor_response_time{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null"} 218
+monitor_response_time{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null"} 107
+monitor_response_time{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null"} 21
+monitor_response_time{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null"} 24
+monitor_response_time{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null"} 25
+monitor_response_time{monitor_id="37",monitor_name="Service 33",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="389"} 1
+monitor_response_time{monitor_id="38",monitor_name="Service 34",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-08.example.invalid",monitor_port="4444"} -1
+
+# HELP monitor_status Monitor Status (1 = UP, 0= DOWN, 2= PENDING, 3= MAINTENANCE)
+# TYPE monitor_status gauge
+monitor_status{monitor_id="1",monitor_name="Service 20",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_01="",monitor_id="2",monitor_name="Service 21",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-01.example.invalid",monitor_port="null"} 1
+monitor_status{tag_01="",monitor_id="3",monitor_name="Service 01",monitor_type="http",monitor_url="https://service-01.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_06="",monitor_id="5",monitor_name="Service 22",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-02.example.invalid",monitor_port="null"} 1
+monitor_status{tag_06="",monitor_id="6",monitor_name="Service 23",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="null"} 1
+monitor_status{tag_06="",monitor_id="7",monitor_name="Service 24",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-04.example.invalid",monitor_port="null"} 1
+monitor_status{tag_02="",monitor_id="8",monitor_name="Service 25",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-05.example.invalid",monitor_port="null"} 1
+monitor_status{tag_07="",monitor_id="10",monitor_name="Service 26",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-06.example.invalid",monitor_port="null"} 1
+monitor_status{tag_02="",monitor_id="9",monitor_name="Service 02",monitor_type="http",monitor_url="https://service-02.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_08="",monitor_id="11",monitor_name="Service 27",monitor_type="ping",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-07.example.invalid",monitor_port="null"} 1
+monitor_status{monitor_id="12",monitor_name="Service 28",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_03="",monitor_id="13",monitor_name="Service 03",monitor_type="http",monitor_url="https://service-03.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_03="",monitor_id="14",monitor_name="Service 04",monitor_type="http",monitor_url="https://service-04.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_03="",monitor_id="15",monitor_name="Service 05",monitor_type="http",monitor_url="https://service-05.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_03="",monitor_id="16",monitor_name="Service 06",monitor_type="http",monitor_url="https://service-06.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_03="",monitor_id="17",monitor_name="Service 07",monitor_type="http",monitor_url="https://service-07.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_03="",monitor_id="18",monitor_name="Service 08",monitor_type="http",monitor_url="https://service-08.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_04="",monitor_id="19",monitor_name="Service 29",monitor_type="docker",monitor_url="https://service-22.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_04="",monitor_id="20",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-09.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_04="",monitor_id="21",monitor_name="Service 10",monitor_type="http",monitor_url="https://service-10.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="22",monitor_name="Service 30",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_04="",monitor_id="23",monitor_name="Service 09",monitor_type="http",monitor_url="https://service-11.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_05="",monitor_id="25",monitor_name="Service 11",monitor_type="http",monitor_url="https://service-12.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{tag_05="",monitor_id="26",monitor_name="Service 12",monitor_type="http",monitor_url="https://service-13.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="28",monitor_name="Service 13",monitor_type="http",monitor_url="https://service-14.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="29",monitor_name="Service 31",monitor_type="docker",monitor_url="https://service-23.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="30",monitor_name="Service 32",monitor_type="group",monitor_url="https://service-21.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="31",monitor_name="Service 14",monitor_type="http",monitor_url="https://service-15.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="32",monitor_name="Service 15",monitor_type="http",monitor_url="https://service-16.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="33",monitor_name="Service 16",monitor_type="http",monitor_url="https://service-17.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="34",monitor_name="Service 17",monitor_type="http",monitor_url="https://service-18.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="35",monitor_name="Service 18",monitor_type="http",monitor_url="https://service-19.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="36",monitor_name="Service 19",monitor_type="http",monitor_url="https://service-20.example.invalid/",monitor_hostname="null",monitor_port="null"} 1
+monitor_status{monitor_id="37",monitor_name="Service 33",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-03.example.invalid",monitor_port="389"} 1
+monitor_status{monitor_id="38",monitor_name="Service 34",monitor_type="port",monitor_url="https://service-21.example.invalid/",monitor_hostname="host-08.example.invalid",monitor_port="4444"} 1
+
+# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
+# TYPE process_cpu_user_seconds_total counter
+process_cpu_user_seconds_total 686.1386199999998
+
+# HELP process_cpu_system_seconds_total Total system CPU time spent in seconds.
+# TYPE process_cpu_system_seconds_total counter
+process_cpu_system_seconds_total 145.285527
+
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 831.4241470000002
+
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1794943744
+
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 172421120
+
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 33725788160
+
+# HELP process_heap_bytes Process heap size in bytes.
+# TYPE process_heap_bytes gauge
+process_heap_bytes 345300992
+
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 24
+
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+process_max_fds 524288
+
+# HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
+# TYPE nodejs_eventloop_lag_seconds gauge
+nodejs_eventloop_lag_seconds 0.004134679
+
+# HELP nodejs_eventloop_lag_min_seconds The minimum recorded event loop delay.
+# TYPE nodejs_eventloop_lag_min_seconds gauge
+nodejs_eventloop_lag_min_seconds 0.00001024
+
+# HELP nodejs_eventloop_lag_max_seconds The maximum recorded event loop delay.
+# TYPE nodejs_eventloop_lag_max_seconds gauge
+nodejs_eventloop_lag_max_seconds 35.064381439
+
+# HELP nodejs_eventloop_lag_mean_seconds The mean of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_mean_seconds gauge
+nodejs_eventloop_lag_mean_seconds 0.010469788610837125
+
+# HELP nodejs_eventloop_lag_stddev_seconds The standard deviation of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_stddev_seconds gauge
+nodejs_eventloop_lag_stddev_seconds 0.04710268757112794
+
+# HELP nodejs_eventloop_lag_p50_seconds The 50th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p50_seconds gauge
+nodejs_eventloop_lag_p50_seconds 0.010100735
+
+# HELP nodejs_eventloop_lag_p90_seconds The 90th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p90_seconds gauge
+nodejs_eventloop_lag_p90_seconds 0.010182655
+
+# HELP nodejs_eventloop_lag_p99_seconds The 99th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p99_seconds gauge
+nodejs_eventloop_lag_p99_seconds 0.011272191
+
+# HELP nodejs_active_handles Number of active libuv handles grouped by handle type. Every handle type is C++ class name.
+# TYPE nodejs_active_handles gauge
+nodejs_active_handles{type="Socket"} 4
+nodejs_active_handles{type="Server"} 1
+
+# HELP nodejs_active_handles_total Total number of active handles.
+# TYPE nodejs_active_handles_total gauge
+nodejs_active_handles_total 5
+
+# HELP nodejs_active_requests Number of active libuv requests grouped by request type. Every request type is C++ class name.
+# TYPE nodejs_active_requests gauge
+
+# HELP nodejs_active_requests_total Total number of active requests.
+# TYPE nodejs_active_requests_total gauge
+nodejs_active_requests_total 0
+
+# HELP nodejs_heap_size_total_bytes Process heap size from Node.js in bytes.
+# TYPE nodejs_heap_size_total_bytes gauge
+nodejs_heap_size_total_bytes 129404928
+
+# HELP nodejs_heap_size_used_bytes Process heap size used from Node.js in bytes.
+# TYPE nodejs_heap_size_used_bytes gauge
+nodejs_heap_size_used_bytes 119766648
+
+# HELP nodejs_external_memory_bytes Node.js external memory size in bytes.
+# TYPE nodejs_external_memory_bytes gauge
+nodejs_external_memory_bytes 41807073
+
+# HELP nodejs_heap_space_size_total_bytes Process heap space size total from Node.js in bytes.
+# TYPE nodejs_heap_space_size_total_bytes gauge
+nodejs_heap_space_size_total_bytes{space="read_only"} 0
+nodejs_heap_space_size_total_bytes{space="new"} 1048576
+nodejs_heap_space_size_total_bytes{space="old"} 88391680
+nodejs_heap_space_size_total_bytes{space="code"} 5767168
+nodejs_heap_space_size_total_bytes{space="shared"} 0
+nodejs_heap_space_size_total_bytes{space="trusted"} 3194880
+nodejs_heap_space_size_total_bytes{space="new_large_object"} 0
+nodejs_heap_space_size_total_bytes{space="large_object"} 30687232
+nodejs_heap_space_size_total_bytes{space="code_large_object"} 315392
+nodejs_heap_space_size_total_bytes{space="shared_large_object"} 0
+nodejs_heap_space_size_total_bytes{space="trusted_large_object"} 0
+
+# HELP nodejs_heap_space_size_used_bytes Process heap space size used from Node.js in bytes.
+# TYPE nodejs_heap_space_size_used_bytes gauge
+nodejs_heap_space_size_used_bytes{space="read_only"} 0
+nodejs_heap_space_size_used_bytes{space="new"} 823544
+nodejs_heap_space_size_used_bytes{space="old"} 81137544
+nodejs_heap_space_size_used_bytes{space="code"} 4604416
+nodejs_heap_space_size_used_bytes{space="shared"} 0
+nodejs_heap_space_size_used_bytes{space="trusted"} 2529688
+nodejs_heap_space_size_used_bytes{space="new_large_object"} 0
+nodejs_heap_space_size_used_bytes{space="large_object"} 30395344
+nodejs_heap_space_size_used_bytes{space="code_large_object"} 279808
+nodejs_heap_space_size_used_bytes{space="shared_large_object"} 0
+nodejs_heap_space_size_used_bytes{space="trusted_large_object"} 0
+
+# HELP nodejs_heap_space_size_available_bytes Process heap space size available from Node.js in bytes.
+# TYPE nodejs_heap_space_size_available_bytes gauge
+nodejs_heap_space_size_available_bytes{space="read_only"} 0
+nodejs_heap_space_size_available_bytes{space="new"} 207368
+nodejs_heap_space_size_available_bytes{space="old"} 5372584
+nodejs_heap_space_size_available_bytes{space="code"} 801600
+nodejs_heap_space_size_available_bytes{space="shared"} 0
+nodejs_heap_space_size_available_bytes{space="trusted"} 606248
+nodejs_heap_space_size_available_bytes{space="new_large_object"} 1048576
+nodejs_heap_space_size_available_bytes{space="large_object"} 0
+nodejs_heap_space_size_available_bytes{space="code_large_object"} 0
+nodejs_heap_space_size_available_bytes{space="shared_large_object"} 0
+nodejs_heap_space_size_available_bytes{space="trusted_large_object"} 0
+
+# HELP nodejs_version_info Node.js version info.
+# TYPE nodejs_version_info gauge
+nodejs_version_info{version="0",major="0",minor="0",patch="0"} 1
+
+# HELP nodejs_gc_duration_seconds Garbage collection duration by kind, one of major, minor, incremental or weakcb.
+# TYPE nodejs_gc_duration_seconds histogram
+nodejs_gc_duration_seconds_bucket{le="0.001",kind="minor"} 9105
+nodejs_gc_duration_seconds_bucket{le="0.01",kind="minor"} 16651
+nodejs_gc_duration_seconds_bucket{le="0.1",kind="minor"} 17362
+nodejs_gc_duration_seconds_bucket{le="1",kind="minor"} 17608
+nodejs_gc_duration_seconds_bucket{le="2",kind="minor"} 17617
+nodejs_gc_duration_seconds_bucket{le="5",kind="minor"} 17628
+nodejs_gc_duration_seconds_bucket{le="+Inf",kind="minor"} 17636
+nodejs_gc_duration_seconds_sum{kind="minor"} 249.8574202889206
+nodejs_gc_duration_seconds_count{kind="minor"} 17636
+nodejs_gc_duration_seconds_bucket{le="0.001",kind="major"} 0
+nodejs_gc_duration_seconds_bucket{le="0.01",kind="major"} 2
+nodejs_gc_duration_seconds_bucket{le="0.1",kind="major"} 325
+nodejs_gc_duration_seconds_bucket{le="1",kind="major"} 360
+nodejs_gc_duration_seconds_bucket{le="2",kind="major"} 362
+nodejs_gc_duration_seconds_bucket{le="5",kind="major"} 363
+nodejs_gc_duration_seconds_bucket{le="+Inf",kind="major"} 363
+nodejs_gc_duration_seconds_sum{kind="major"} 21.7669190633297
+nodejs_gc_duration_seconds_count{kind="major"} 363
+nodejs_gc_duration_seconds_bucket{le="0.001",kind="incremental"} 113
+nodejs_gc_duration_seconds_bucket{le="0.01",kind="incremental"} 256
+nodejs_gc_duration_seconds_bucket{le="0.1",kind="incremental"} 319
+nodejs_gc_duration_seconds_bucket{le="1",kind="incremental"} 329
+nodejs_gc_duration_seconds_bucket{le="2",kind="incremental"} 330
+nodejs_gc_duration_seconds_bucket{le="5",kind="incremental"} 330
+nodejs_gc_duration_seconds_bucket{le="+Inf",kind="incremental"} 330
+nodejs_gc_duration_seconds_sum{kind="incremental"} 6.560206606268876
+nodejs_gc_duration_seconds_count{kind="incremental"} 330
+
+# HELP app_version The service version by package.json
+# TYPE app_version gauge
+app_version{version="0",major="0",minor="0",patch="0"} 1
+
+# HELP http_request_duration_seconds Duration of HTTP requests in seconds
+# TYPE http_request_duration_seconds histogram
+
+# HELP http_request_size_bytes Size of HTTP requests in bytes
+# TYPE http_request_size_bytes histogram
+
+# HELP http_response_size_bytes Size of HTTP response in bytes
+# TYPE http_response_size_bytes histogram
+
+# HELP expressjs_number_of_open_connections Number of open connections to the Express.js server
+# TYPE expressjs_number_of_open_connections gauge
+expressjs_number_of_open_connections 1

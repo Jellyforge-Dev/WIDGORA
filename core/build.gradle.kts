@@ -18,6 +18,14 @@ android {
         sourceCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
         targetCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
     }
+
+    testOptions {
+        unitTests.all {
+            // Same test framework as :model, so assertions and annotations behave identically
+            // in both modules.
+            it.useJUnitPlatform()
+        }
+    }
 }
 
 kotlin {
@@ -32,4 +40,6 @@ kotlin {
 
 dependencies {
     implementation(project(":model"))
+
+    testImplementation(libs.kotlin.test.junit5)
 }

@@ -57,6 +57,17 @@ class InstanceIdTest {
         }
     }
 
+    /**
+     * A widget identifier is built from an instance identifier plus a prefix and a suffix, so
+     * the instance limit has to stay below the widget limit. Pinning both numbers here makes a
+     * later change to either one visible.
+     */
+    @Test
+    fun theLimitLeavesRoomForADerivedWidgetId() {
+        assertEquals(32, InstanceId.MAX_LENGTH)
+        assertEquals(64, WidgetId.MAX_LENGTH)
+    }
+
     @Test
     fun parseOrNullReturnsNullInsteadOfThrowing() {
         assertNull(InstanceId.parseOrNull("Kuma 1"))
