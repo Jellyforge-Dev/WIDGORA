@@ -1,9 +1,11 @@
 # WIDGORA — Roadmap
 
-**Current state: a project skeleton that builds, passes continuous integration and starts on an
-emulator. Four Gradle modules, a placeholder screen and a lean continuous integration workflow
-exist. No milestone below is implemented, no integration retrieves data, and no artefact has
-been released.**
+**Current state: the first integration retrieves real data and the application displays it.** An
+Uptime Kuma instance can be set up on the television — address and API key, the key encrypted by
+the device keystore — its metrics are retrieved over HTTPS, and the home screen shows the
+resulting summary together with the time it was obtained. Anything below that is not described
+as implemented is not implemented: there is no design system, no widget per monitor, no detail
+view, no background refresh, no bridge to a host launcher, and no release has been made.
 
 This roadmap lists intentions, not promises. Items carry the evidence markers used throughout
 the project documentation:

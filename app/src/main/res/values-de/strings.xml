@@ -1,8 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="placeholder_message">Projektgerüst. Noch keine Funktion umgesetzt.</string>
-
     <string name="home_settings_action">Einstellungen</string>
+
+    <string name="dashboard_refresh">Aktualisieren</string>
+    <string name="dashboard_no_instance">Noch keine Instanz eingerichtet. Öffne die Einstellungen, um eine anzulegen.</string>
+    <string name="dashboard_no_data_yet">Noch keine Daten.</string>
+    <string name="dashboard_last_updated">Zuletzt aktualisiert: %1$s</string>
+
+    <string name="dashboard_state_loading">Wird geladen …</string>
+    <string name="dashboard_state_ok">Aktuell</string>
+    <string name="dashboard_state_empty">Nichts zu melden</string>
+    <string name="dashboard_state_stale">Veraltet</string>
+    <string name="dashboard_state_offline">Nicht erreichbar</string>
+    <string name="dashboard_state_error_unauthorized">Schlüssel abgelehnt</string>
+    <string name="dashboard_state_error_endpoint_not_found">Nicht gefunden: Adresse oder Schnittstelle</string>
+    <string name="dashboard_state_error_malformed">Antwort nicht lesbar</string>
+    <string name="dashboard_state_error_oversized">Antwort zu groß</string>
+    <string name="dashboard_state_error_unknown">Abruf fehlgeschlagen</string>
+
+    <string name="dashboard_notice_disabled">Abgeschaltet.</string>
+    <string name="dashboard_notice_secret_unusable">Der API-Schlüssel fehlt oder ist nicht mehr lesbar. Bitte in den Einstellungen neu eingeben.</string>
+    <string name="dashboard_notice_entry_invalid">Diese Instanz ist ungültig gespeichert. Korrigiere sie in den Einstellungen oder lösche sie.</string>
 
     <string name="settings_title">Uptime-Kuma-Instanz</string>
     <string name="settings_back_hint">Mit der Zurück-Taste verlässt du diesen Bildschirm.</string>
