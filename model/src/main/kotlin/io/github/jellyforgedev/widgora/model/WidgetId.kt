@@ -13,19 +13,19 @@ package io.github.jellyforgedev.widgora.model
 value class WidgetId(val value: String) {
 
     init {
-        require(IdentifierSyntax.isValid(value)) { INVALID_MESSAGE }
+        require(IdentifierSyntax.isValid(value, MAX_LENGTH)) { INVALID_MESSAGE }
     }
 
     override fun toString(): String = value
 
     companion object {
 
-        const val MAX_LENGTH: Int = IdentifierSyntax.MAX_LENGTH
+        const val MAX_LENGTH = 64
 
         private const val INVALID_MESSAGE =
             "WidgetId must be 1 to 64 characters of a-z, 0-9, '-' or '_'"
 
         fun parseOrNull(raw: String): WidgetId? =
-            if (IdentifierSyntax.isValid(raw)) WidgetId(raw) else null
+            if (IdentifierSyntax.isValid(raw, MAX_LENGTH)) WidgetId(raw) else null
     }
 }

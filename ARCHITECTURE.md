@@ -391,7 +391,7 @@ adds indirection without benefit.
 
 | Question | Marker |
 |---|---|
-| Exact metric names and labels of the first integration's endpoint, against a real instance | `[U]` |
+| Metric names and labels of the first integration's endpoint, including the sliding window label, the varying tag labels, missing values written as text and the numeric meaning of its status gauge: settled against a captured response of a running instance and against the upstream source | `[V]` |
 | Whether deferred consent is acceptable in practice, given the host shows nothing until approval | `[U]` |
 | Whether notifications are reliably visible on Android TV, as a possible consent prompt | `[U]` |
 | Whether a third-party application can publish to the Watch Next provider on the target device | `[U]` |

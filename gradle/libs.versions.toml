@@ -33,6 +33,12 @@ composeBom = "2026.09.00"
 tvMaterial = "1.1.0"
 
 [libraries]
+# Test only. The version follows the Kotlin version above, because kotlin-test ships with the
+# compiler and must not drift away from it. The framework-specific artifact is named directly:
+# the plain kotlin-test module relies on a variant rule that the Android unit test tasks do not
+# apply, which leaves the test annotations unresolved.
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }

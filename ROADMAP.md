@@ -98,8 +98,10 @@ The first milestone that produces something usable. It depends on nobody outside
 **Completion criterion:** runs on real hardware against a real installation, with real data, with
 no third-party cooperation involved.
 
-**Open verification** `[U]`: exact metric names and labels of the metrics endpoint, confirmed
-against a live instance rather than assumed.
+**Verified** `[V]`: the metric names and labels of the metrics endpoint, including the sliding
+window label, the varying tag labels, missing values written as text and the numeric meaning of
+its status gauge, settled against a captured response of a running instance and against the
+upstream source rather than assumed.
 
 ## M1 — Provider Bridge
 

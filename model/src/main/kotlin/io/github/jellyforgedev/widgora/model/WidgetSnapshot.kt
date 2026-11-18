@@ -32,8 +32,8 @@ data class WidgetSnapshot(
         require(title.codePointCount() <= MAX_DISPLAY_TEXT_LENGTH) { TITLE_TOO_LONG }
         require(primaryValue.codePointCount() <= MAX_DISPLAY_TEXT_LENGTH) { VALUE_TOO_LONG }
         require(updatedAtEpochMs >= 0) { "updatedAtEpochMs must not be negative" }
-        require(IdentifierSyntax.isValid(iconToken)) { "iconToken: " + TOKEN_SYNTAX }
-        require(IdentifierSyntax.isValid(accentToken)) { "accentToken: " + TOKEN_SYNTAX }
+        require(IdentifierSyntax.isValid(iconToken, TOKEN_MAX_LENGTH)) { "iconToken: " + TOKEN_SYNTAX }
+        require(IdentifierSyntax.isValid(accentToken, TOKEN_MAX_LENGTH)) { "accentToken: " + TOKEN_SYNTAX }
     }
 
     companion object {
@@ -42,6 +42,7 @@ data class WidgetSnapshot(
 
         private const val TITLE_TOO_LONG = "title exceeds 64 code points; use truncating()"
         private const val VALUE_TOO_LONG = "primaryValue exceeds 64 code points; use truncating()"
+        private const val TOKEN_MAX_LENGTH = 64
         private const val TOKEN_SYNTAX = "1 to 64 characters of a-z, 0-9, '-' or '_'"
 
         /**
