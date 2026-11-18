@@ -1,0 +1,46 @@
+# WIDGORA dependency versions.
+#
+# Only stable releases are listed here. No alpha, beta or release-candidate versions.
+# Every entry was taken from the publishing repository's own metadata, not from memory.
+
+[versions]
+# Build tooling
+agp = "9.5.1"
+# Android Gradle plugin 9.5.1 resolves kotlin-gradle-plugin 2.2.10 itself and brings
+# built-in Kotlin support. Pinning the same version keeps exactly one Kotlin on the
+# shared buildscript classpath instead of silently upgrading the one AGP was tested with.
+kotlin = "2.2.10"
+
+# SDK levels
+# compileSdk: highest installed stable platform. Android Gradle plugin 9.5 documents
+# API level 37 as the maximum API level it supports.
+compileSdk = "37"
+# minSdk / targetSdk match the reach documented in ARCHITECTURE.md, which is the reach
+# of the host launcher WIDGORA is meant to sit next to. These are product decisions and
+# are not changed to follow whatever platform happens to be installed.
+minSdk = "28"
+targetSdk = "36"
+
+# JVM
+# The toolchain that compiles the project. The bytecode target is kept lower on purpose,
+# see jvmTarget below.
+jdkToolchain = "21"
+jvmTarget = "17"
+
+# AndroidX
+activityCompose = "1.13.0"
+composeBom = "2026.09.00"
+tvMaterial = "1.1.0"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-tv-material = { module = "androidx.tv:tv-material", version.ref = "tvMaterial" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

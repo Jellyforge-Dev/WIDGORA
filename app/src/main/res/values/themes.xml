@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Minimal platform theme. The application draws its own interface with Compose,
+      so this theme only has to provide a window without a system action bar.
+    -->
+    <style name="Theme.Widgora" parent="@android:style/Theme.Material.NoActionBar" />
+</resources>
