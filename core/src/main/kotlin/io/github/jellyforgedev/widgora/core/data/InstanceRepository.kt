@@ -33,14 +33,45 @@ sealed interface SecretState {
         override fun toString(): String = "Present(apiKey=***)"
     }
 
-    /**
-     * There is no usable secret, and the user has to enter one.
-     *
-     * Never stored and no longer decryptable are deliberately the same case. They call for the
-     * same action, and distinguishing them would mean telling the user something about the state
-     * of the keystore that they can do nothing with.
-     */
+    /** Nothing was ever stored for this instance. */
     data object Missing : SecretState
+
+    /**
+     * A secret is stored but can no longer be decrypted, because the key material behind it is
+     * gone or was replaced.
+     *
+     * It is a case of its own rather than absence: the user has to be told that what they
+     * entered is lost, instead of being shown a screen that looks as if they had never
+     * configured anything.
+     */
+    data object Unreadable : SecretState
+}
+
+/**
+ * A stored instance, whether or not it still satisfies the rules.
+ *
+ * An entry that no longer validates is reported rather than hidden. Hiding it leaves the user
+ * with storage they can neither see, correct nor remove.
+ */
+sealed interface StoredInstance {
+
+    val instanceId: InstanceId
+
+    data class Valid(val config: InstanceConfig) : StoredInstance {
+
+        override val instanceId: InstanceId get() = config.instanceId
+    }
+
+    /**
+     * The stored values cannot form a configuration — an address that the current rules reject,
+     * for instance. What was stored is carried along so that a screen can offer it for
+     * correction.
+     */
+    data class Invalid(
+        override val instanceId: InstanceId,
+        val displayName: String?,
+        val baseUrl: String?,
+    ) : StoredInstance
 }
 
 /**
@@ -65,7 +96,7 @@ class InstanceRepository internal constructor(
      * worse than one that is short, and the alternative is an exception inside a flow that the
      * user interface collects.
      */
-    val instances: Flow<List<InstanceConfig>> = dataStore.data
+    val instances: Flow<List<StoredInstance>> = dataStore.data
         .catch { failure ->
             // A damaged or unreadable file reads as "nothing configured" instead of taking the
             // screen down with it.
@@ -73,7 +104,7 @@ class InstanceRepository internal constructor(
         }
         .map { preferences -> readAll(preferences) }
 
-    suspend fun instance(instanceId: InstanceId): InstanceConfig? =
+    suspend fun instance(instanceId: InstanceId): StoredInstance? =
         instances.first().firstOrNull { it.instanceId == instanceId }
 
     /**
@@ -107,7 +138,8 @@ class InstanceRepository internal constructor(
 
         val stored = EncryptedSecret(ciphertextBase64 = ciphertext, ivBase64 = iv)
         val plain = secretStore.decrypt(instanceId, stored)
-        return if (plain.isNullOrEmpty()) SecretState.Missing else SecretState.Present(plain)
+        // Something was stored, so an unsuccessful decryption is a loss to report, not absence.
+        return if (plain.isNullOrEmpty()) SecretState.Unreadable else SecretState.Present(plain)
     }
 
     /** Removes the configuration, the stored ciphertext and the key material, in that order. */
@@ -132,25 +164,33 @@ class InstanceRepository internal constructor(
         }
     }
 
-    private fun readAll(preferences: Preferences): List<InstanceConfig> =
+    private fun readAll(preferences: Preferences): List<StoredInstance> =
         preferences[idsKey].orEmpty().sorted().mapNotNull { id -> read(preferences, id) }
 
-    private fun read(preferences: Preferences, id: String): InstanceConfig? {
+    private fun read(preferences: Preferences, id: String): StoredInstance? {
+        // An identifier the current rules reject cannot be addressed at all: it could not be
+        // passed to a delete either. Such an entry is the one case that is skipped.
         val instanceId = InstanceId.parseOrNull(id) ?: return null
-        val displayName = preferences[displayNameKey(id)] ?: return null
-        val baseUrl = preferences[baseUrlKey(id)] ?: return null
+        val displayName = preferences[displayNameKey(id)]
+        val baseUrl = preferences[baseUrlKey(id)]
         val enabled = preferences[enabledKey(id)] ?: false
         return try {
-            InstanceConfig(
+            StoredInstance.Valid(
+                InstanceConfig(
+                    instanceId = instanceId,
+                    displayName = requireNotNull(displayName) { "displayName missing" },
+                    baseUrl = requireNotNull(baseUrl) { "baseUrl missing" },
+                    enabled = enabled,
+                ),
+            )
+        } catch (rejected: IllegalArgumentException) {
+            // Stored values that no longer satisfy the current rules. The entry is reported as
+            // invalid, with what was stored, so that it can be corrected or removed.
+            StoredInstance.Invalid(
                 instanceId = instanceId,
                 displayName = displayName,
                 baseUrl = baseUrl,
-                enabled = enabled,
             )
-        } catch (rejected: IllegalArgumentException) {
-            // Stored values that no longer satisfy the current rules. Reporting the entry as
-            // absent is the only honest option: it cannot be used for a request.
-            null
         }
     }
 

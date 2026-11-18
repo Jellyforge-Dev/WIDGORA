@@ -9,7 +9,12 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
+    <!-- The only two permissions the first milestone asks for, as stated in SECURITY.md. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
+        android:name=".WidgoraApplication"
         android:allowBackup="false"
         android:banner="@drawable/tv_banner_placeholder"
         android:dataExtractionRules="@xml/data_extraction_rules"

@@ -1,5 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">WIDGORA</string>
+    <!-- The product name is not translated, in any language. -->
+    <string name="app_name" translatable="false">WIDGORA</string>
     <string name="placeholder_message">Project setup. No features implemented yet.</string>
+
+    <string name="home_settings_action">Settings</string>
+
+    <string name="settings_title">Uptime Kuma instance</string>
+    <string name="settings_back_hint">Press back to leave this screen.</string>
+
+    <string name="settings_display_name">Name</string>
+    <string name="settings_address">Address</string>
+    <string name="settings_address_hint">https://kuma.example.com</string>
+    <string name="settings_api_key">API key</string>
+
+    <string name="settings_api_key_new">Create a key in Uptime Kuma under Settings, API keys.</string>
+    <string name="settings_api_key_stored">Key saved. Leave empty to keep it.</string>
+    <string name="settings_api_key_unreadable">The saved key can no longer be read and has to be entered again.</string>
+
+    <string name="settings_invalid_entry">This saved instance no longer meets the rules. Correct it or delete it.</string>
+
+    <string name="settings_save">Save</string>
+    <string name="settings_test">Test connection</string>
+    <string name="settings_delete">Delete</string>
+    <string name="settings_delete_question">Delete this instance, its key and its stored data?</string>
+    <string name="settings_delete_confirm">Yes, delete</string>
+    <string name="settings_delete_cancel">Keep</string>
+
+    <string name="settings_saved">Saved.</string>
+
+    <string name="settings_error_display_name_required">Please enter a name.</string>
+    <string name="settings_error_api_key_required">Please enter the API key.</string>
+    <string name="settings_error_api_key_for_changed_address">The address has changed. Please enter the API key again: the saved one belongs to the previous address and is not sent anywhere else.</string>
+
+    <string name="settings_address_error_not_an_address">That is not a complete address. It has to start with https://.</string>
+    <string name="settings_address_error_not_https">Only encrypted addresses are accepted. Please use https://.</string>
+    <string name="settings_address_error_host_missing">The address names no host.</string>
+    <string name="settings_address_error_credentials_in_address">Please remove the user name and password from the address. The key belongs in the field below.</string>
+    <string name="settings_address_error_query_not_allowed">Please remove the part after the question mark.</string>
+    <string name="settings_address_error_fragment_not_allowed">Please remove the part after the number sign.</string>
+
+    <string name="settings_test_running">Testing…</string>
+    <string name="settings_test_reachable">Connected. Monitors found: %1$d.</string>
+    <string name="settings_test_unauthorized">The key was rejected. Please check it.</string>
+    <string name="settings_test_endpoint_not_found">Not found. Either the address is wrong, or the Prometheus interface is switched off in Uptime Kuma under Settings, API keys.</string>
+    <string name="settings_test_unreachable">Not reachable. The server did not answer, or its certificate was not accepted.</string>
+    <string name="settings_test_malformed">The answer could not be read. Is this address an Uptime Kuma installation?</string>
+    <string name="settings_test_oversized">The answer was too large and was discarded.</string>
+    <string name="settings_test_unknown">The attempt failed for an unknown reason.</string>
+    <string name="settings_test_address_rejected">The address was refused before anything was sent. Only https is accepted.</string>
 </resources>

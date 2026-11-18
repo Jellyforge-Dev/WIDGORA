@@ -359,12 +359,12 @@ In the standalone application the design system is fully authoritative. Inside a
 | Toolchain JDK | Temurin 21 LTS, pinned in the toolchain block | `[V]` within the supported range: AGP 9 requires JDK 17 or newer, Gradle supports JVM 17 to 27 |
 | `jvmTarget` | 17 | `[U]` |
 | `minSdk` / `targetSdk` | 28 / 36 | `[V]` matching the intended host launcher's reach |
-| UI | Jetpack Compose, `androidx.tv:tv-material` | `[V]` |
+| UI | Jetpack Compose, `androidx.tv:tv-material` | `[V]`. That library ships no text field `[V]`, so text input uses the basic field from Compose Foundation, which is already in the tree through it. No second Material library is added for one component |
 | HTTP | OkHttp, in the data module only | `[V]` in use for the first integration, behind the transport interface. No serialisation library yet: the first endpoint answers with text, not JSON |
 | Persistence | DataStore, key-value variant, in the data module only | `[V]` in use for instance configuration. The typed variant is not used: it would require a serialisation library, and an instance is a handful of scalar fields |
 | Credentials | Android Keystore, AES-256-GCM, non-exportable key, one alias per instance | `[V]` in use: non-exportability from the platform documentation, and the round trip, the fresh vector per encryption, the refusal of a tampered ciphertext and the destruction of key material on deletion from instrumented tests on an emulator. Real television hardware remains `[U]` |
 | Background work | WorkManager | `[V]` for its interval limits |
-| Dependency injection | none at MVP scale; manual constructor injection | `[U]` |
+| Dependency injection | none at MVP scale; manual constructor injection | `[V]` in use. The application class builds the repository once and hands it to a screen's state holder through the constructor. A screen depends on a small interface it declares itself, which is what makes its state holder testable without a device |
 | Licence | **not yet decided** | `[O]` |
 
 Retrofit is deliberately not used: the first integration returns Prometheus text rather than
