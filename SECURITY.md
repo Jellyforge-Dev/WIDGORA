@@ -54,8 +54,23 @@ against the user's services themselves.
   device by backup either, but that follows from the key being bound to the device keystore and
   from this application declaring no backup, not from a documented keystore flag: the platform
   documentation describes no such flag `[V]`.
-- Each integration instance has its own credential entry. Removing an instance destroys its
-  credentials.
+- The key is AES-256 in GCM mode, and every encryption uses a fresh random initialisation
+  vector. That is enforced by the platform rather than by convention: the key is generated with
+  randomised encryption required, so an operation that would reuse a vector is refused `[V]`,
+  shown on an emulator by instrumented tests that encrypt the same text twice and compare both
+  the vectors and the ciphertexts. Behaviour on real television hardware remains unverified
+  `[U]`.
+- Each integration instance has its own credential entry under its own keystore alias. Removing
+  an instance removes its stored ciphertext **and** destroys its key material, so what was
+  encrypted for it is unreadable afterwards `[V]`, shown by the same instrumented run, which
+  also confirms that a tampered ciphertext or vector is refused and that removing one instance
+  leaves another readable. Real hardware remains unverified `[U]`.
+- A credential that can no longer be decrypted — after the operating system discarded keystore
+  material, for instance — is reported as **absent**, so the user is asked to enter it again.
+  It is never an empty credential and never a crash.
+- The stored configuration of an instance carries no credential at all: its type has no field
+  for one, and an address containing credentials, such as `https://user:pass@host`, is refused
+  when the instance is saved. A credential belongs in the keystore, not in an address.
 - A logging wrapper masks known credential fields. No integration logs raw request or response
   bodies at any level that ships in a release build.
 - `androidx.security:security-crypto` is **deprecated** and is not used `[V]`. The platform

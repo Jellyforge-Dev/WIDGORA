@@ -361,8 +361,8 @@ In the standalone application the design system is fully authoritative. Inside a
 | `minSdk` / `targetSdk` | 28 / 36 | `[V]` matching the intended host launcher's reach |
 | UI | Jetpack Compose, `androidx.tv:tv-material` | `[V]` |
 | HTTP | OkHttp, in the data module only | `[V]` in use for the first integration, behind the transport interface. No serialisation library yet: the first endpoint answers with text, not JSON |
-| Persistence | DataStore and JSON at MVP scale | `[U]` |
-| Credentials | Android Keystore, AES-GCM, non-exportable key | `[U]` |
+| Persistence | DataStore, key-value variant, in the data module only | `[V]` in use for instance configuration. The typed variant is not used: it would require a serialisation library, and an instance is a handful of scalar fields |
+| Credentials | Android Keystore, AES-256-GCM, non-exportable key, one alias per instance | `[V]` in use: non-exportability from the platform documentation, and the round trip, the fresh vector per encryption, the refusal of a tampered ciphertext and the destruction of key material on deletion from instrumented tests on an emulator. Real television hardware remains `[U]` |
 | Background work | WorkManager | `[V]` for its interval limits |
 | Dependency injection | none at MVP scale; manual constructor injection | `[U]` |
 | Licence | **not yet decided** | `[O]` |
