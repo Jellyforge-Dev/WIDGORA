@@ -39,6 +39,15 @@ sealed interface WidgetDisplayState {
             OVERSIZED,
 
             /**
+             * The service answered that the requested endpoint does not exist.
+             *
+             * It is kept apart from the other causes because it is the one the user can usually
+             * fix: either the configured address is wrong, or the interface is switched off on
+             * the server. The response does not distinguish the two, so neither may be claimed.
+             */
+            ENDPOINT_NOT_FOUND,
+
+            /**
              * Fallback for anything a classification does not recognise. It is the default so
              * that an unmapped condition can never silently become a more specific claim.
              */

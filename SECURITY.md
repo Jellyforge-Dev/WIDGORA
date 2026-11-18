@@ -50,13 +50,18 @@ against the user's services themselves.
 
 - Credentials are **never** placed in source code, resources, build files, logs or commits.
 - Credentials are encrypted with an AES-GCM key held in the Android Keystore. The key is
-  generated on the device, is non-exportable, and is excluded from backup `[U]`.
+  generated on the device and its material is non-exportable `[V]`. It is not carried off the
+  device by backup either, but that follows from the key being bound to the device keystore and
+  from this application declaring no backup, not from a documented keystore flag: the platform
+  documentation describes no such flag `[V]`.
 - Each integration instance has its own credential entry. Removing an instance destroys its
   credentials.
 - A logging wrapper masks known credential fields. No integration logs raw request or response
   bodies at any level that ships in a release build.
-- The project avoids `androidx.security:security-crypto`; its deprecation status must be checked
-  before any use `[U]`.
+- `androidx.security:security-crypto` is **deprecated** and is not used `[V]`. The platform
+  documentation states that all of its APIs were deprecated in the stable 1.1.0 release, that no
+  further releases will follow, and that the replacement is direct use of the Android Keystore,
+  which is what this project does.
 - WIDGORA requests only `INTERNET` and `ACCESS_NETWORK_STATE` for the first milestone. No
   accessibility service, no overlay permission, no system settings permission.
 
@@ -68,8 +73,17 @@ against the user's services themselves.
   confirms it explicitly. A pinned certificate applies to that instance only. A changed
   fingerprint causes the fetch to fail and asks the user again, rather than silently accepting it
   `[U]`.
-- Plain HTTP is permitted only for an address the user has entered deliberately, and is marked as
-  unencrypted in the interface.
+- **Plain HTTP is refused.** The transport rejects any address that is not `https`, before a
+  connection is attempted, and the application ships no network security configuration that would
+  permit cleartext. Android itself disables cleartext by default for applications targeting API
+  level 28 and above `[V]`, so platform and application agree rather than one relying on the
+  other.
+- Permitting plain HTTP for a single address the user entered deliberately, marked as unencrypted
+  in the interface, remains a possible later step. It is not implemented, and it is not free: the
+  platform cannot grant cleartext for a host that is unknown when the application is built, so
+  such a step would have to permit cleartext application-wide in the network security
+  configuration and carry the restriction in application code instead. That trade is to be
+  decided deliberately, not inherited.
 
 ---
 
