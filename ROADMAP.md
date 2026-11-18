@@ -3,9 +3,10 @@
 **Current state: the first integration retrieves real data and the application displays it.** An
 Uptime Kuma instance can be set up on the television — address and API key, the key encrypted by
 the device keystore — its metrics are retrieved over HTTPS, and the home screen shows the
-resulting summary together with the time it was obtained. Anything below that is not described
-as implemented is not implemented: there is no design system, no widget per monitor, no detail
-view, no background refresh, no bridge to a host launcher, and no release has been made.
+resulting summary together with the time it was obtained, in a design system whose brand colours
+were measured from the project's own logo and whose contrast is checked by tests. Anything below
+that is not described as implemented is not implemented: there is no widget per monitor, no
+detail view, no background refresh, no bridge to a host launcher, and no release has been made.
 
 This roadmap lists intentions, not promises. Items carry the evidence markers used throughout
 the project documentation:

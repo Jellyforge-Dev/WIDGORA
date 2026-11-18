@@ -3,6 +3,7 @@ package io.github.jellyforgedev.widgora.core.data
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaMetricsClient
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSnapshotMapper
+import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSummaryTemplates
 import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState.Error.Reason
@@ -275,6 +276,9 @@ class SnapshotRepositoryTest {
             client = KumaMetricsClient(transport),
             clock = clock,
             staleAfterMs = STALE_AFTER_MS,
+            // The numeric templates keep the expectations in this file about counts rather
+            // than about wording; the wording is tested where it is assembled.
+            summaryTemplates = KumaSummaryTemplates.Numeric,
         )
 
         suspend fun configure(enabled: Boolean = true) {

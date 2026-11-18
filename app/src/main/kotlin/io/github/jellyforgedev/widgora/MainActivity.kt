@@ -16,12 +16,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
-import androidx.tv.material3.darkColorScheme
 import io.github.jellyforgedev.widgora.core.data.SnapshotRepository
-import io.github.jellyforgedev.widgora.dashboard.DashboardScreen
 import io.github.jellyforgedev.widgora.dashboard.DashboardTiming
+import io.github.jellyforgedev.widgora.design.WidgoraTheme
+import io.github.jellyforgedev.widgora.ui.HomeScreen
 import io.github.jellyforgedev.widgora.settings.ConnectionTester
 import io.github.jellyforgedev.widgora.settings.InstanceStore
 import io.github.jellyforgedev.widgora.settings.SettingsScreen
@@ -31,12 +30,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-// tv-material3 applies its light colour scheme unless one is passed in, which is wrong for a
-// television. This is the library's own dark scheme, held in one place so it is not rebuilt on
-// every recomposition. No project colour is defined here: the design system is a separate,
-// later step.
-private val WidgoraColorScheme = darkColorScheme()
 
 class MainActivity : ComponentActivity() {
 
@@ -53,7 +46,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val widgora = application as WidgoraApplication
         setContent {
-            MaterialTheme(colorScheme = WidgoraColorScheme) {
+            WidgoraTheme {
                 WidgoraApp(
                     instanceStore = widgora.instanceStore,
                     connectionTester = widgora.connectionTester,
@@ -115,7 +108,7 @@ private fun WidgoraApp(
             }
             SettingsScreen(holder)
         } else {
-            DashboardScreen(
+            HomeScreen(
                 views = views,
                 onRefresh = {
                     scope.launch { withContext(Dispatchers.IO) { snapshots.refresh() } }
