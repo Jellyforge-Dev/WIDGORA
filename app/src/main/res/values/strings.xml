@@ -109,6 +109,11 @@
       has four lines, and the sentence explaining what to do belongs on the screen that offers it.
     -->
     <string name="widget_config_unreadable">The saved settings cannot be read.</string>
+    <!--
+      The time on the compact variant, where it shares a line with the state. Short on purpose:
+      the long sentence would be cut off there, and the time is the part that has to survive.
+    -->
+    <string name="widget_updated_compact">at %1$s</string>
 
     <string name="settings_title">Uptime Kuma instance</string>
     <string name="settings_back_hint">Press back to leave this screen.</string>
@@ -150,6 +155,13 @@
     <string name="settings_reset_done">The saved settings have been removed. You can set the instance up again.</string>
 
     <string name="settings_saved">Saved.</string>
+
+    <!--
+      Only ever drawn by a debug build. The label lives here because the row that draws it does;
+      the screen it opens, and the permission that screen needs, exist only in the debug source
+      set.
+    -->
+    <string name="settings_debug_widget_host">Widget host (debug)</string>
 
     <!--
       A write that did not happen. Saying so is the whole point: the previous version let the

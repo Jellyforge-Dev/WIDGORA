@@ -32,6 +32,14 @@
     <dimen name="widget_corner_radius">12dp</dimen>
     <!-- WidgoraSpacing.Medium -->
     <dimen name="widget_padding">16dp</dimen>
+    <!--
+      WidgoraSpacing.Small, for the compact variant.
+
+      Smaller than the full variant's, on purpose. A host already puts a padding of its own around
+      a widget — measured at 12/4/12/20 dp on Android 14 — so adding another 16dp all round spends
+      height the compact variant does not have on a margin that is already there.
+    -->
+    <dimen name="widget_padding_compact">8dp</dimen>
     <!-- WidgoraFocus.BorderWidth -->
     <dimen name="widget_focus_border">4dp</dimen>
     <!-- WidgoraFocus.RestingBorderWidth -->
@@ -45,5 +53,17 @@
     <dimen name="widget_text_state">20sp</dimen>
     <!-- WidgoraText.Caption.size -->
     <dimen name="widget_text_footer">18sp</dimen>
+
+    <!--
+      The compact variant's three sizes. Smaller than the full variant's, every one of them still
+      well above the 18sp floor, and each one chosen because the larger value does not fit the
+      box the widget is declared for once the host's own padding is taken off it.
+    -->
+    <!-- WidgoraText.Label.size -->
+    <dimen name="widget_text_compact_title">20sp</dimen>
+    <!-- WidgoraText.WidgetValue.size -->
+    <dimen name="widget_text_compact_counts">28sp</dimen>
+    <!-- WidgoraText.Caption.size -->
+    <dimen name="widget_text_compact_line">18sp</dimen>
 
 </resources>

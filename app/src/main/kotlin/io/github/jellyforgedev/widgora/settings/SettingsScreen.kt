@@ -1,5 +1,6 @@
 package io.github.jellyforgedev.widgora.settings
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.tv.material3.Button
 import androidx.tv.material3.Text
+import io.github.jellyforgedev.widgora.BuildConfig
 import io.github.jellyforgedev.widgora.R
 import io.github.jellyforgedev.widgora.core.data.InstanceAddress
 import io.github.jellyforgedev.widgora.design.WidgoraColors
@@ -160,6 +163,7 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
             if (state.configurationUnreadable) {
                 Action(stringResource(R.string.settings_reset), holder::requestReset)
             }
+            DebugWidgetHostAction()
         }
 
         if (state.savedJustNow) {
@@ -196,6 +200,41 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/**
+ * The way into the widget host, in a debug build and nowhere else.
+ *
+ * ### Why this is a flag and not a source set
+ *
+ * The host activity and the permission it needs are already in the debug source set, which is
+ * where the decision that matters is made: a release build cannot contain them, whatever this
+ * function does. What is left is one row on a screen, and a screen cannot be split across source
+ * sets — one of the two would have to be a second copy of this whole file, and two copies of a
+ * real screen is how two versions of it come to exist.
+ *
+ * The alternative considered was a hook declared here and filled in by the debug build. It keeps
+ * the row itself out of a release build, at the price of a settable global in production code,
+ * which is a worse thing to ship than an `if` that is never true.
+ *
+ * ### Why the activity is named as a string
+ *
+ * This file is compiled into both builds, and in a release build that class does not exist, so
+ * it cannot be referred to as a class. A test in the debug variant resolves the name, which is
+ * what keeps a rename from turning into a dead button nobody notices.
+ */
+@Composable
+private fun DebugWidgetHostAction() {
+    if (!BuildConfig.DEBUG) return
+    val context = LocalContext.current
+    Action(stringResource(R.string.settings_debug_widget_host)) {
+        val intent = Intent().setClassName(context.packageName, DEBUG_WIDGET_HOST_ACTIVITY)
+        runCatching { context.startActivity(intent) }
+    }
+}
+
+/** The host activity of the debug build. Resolved by a test in that variant. */
+internal const val DEBUG_WIDGET_HOST_ACTIVITY =
+    "io.github.jellyforgedev.widgora.devhost.WidgetHostActivity"
 
 /**
  * A label above a single-line text field.

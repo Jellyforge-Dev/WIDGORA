@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="debug_host_title">Widget-Host (Debug)</string>
+
+    <string name="debug_host_size">Größe: %1$d × %2$d dp</string>
+
+    <string name="debug_host_size_larger">Größer</string>
+    <string name="debug_host_size_smaller">Kleiner</string>
+
+    <string name="debug_host_bind_refused">Darf noch keine Widgets anzeigen. Führe das auf einem mit diesem Gerät verbundenen Rechner aus und öffne diesen Bildschirm erneut:\n\n%1$s</string>
+
+    <string name="debug_host_no_info">Das Widget konnte nicht vom System zurückgelesen werden.</string>
+
+</resources>

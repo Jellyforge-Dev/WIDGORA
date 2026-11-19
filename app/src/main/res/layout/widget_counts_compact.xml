@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget at the smallest size it is declared to accept.
+
+  Three rows rather than four: the state and the time share the bottom line. Nothing is dropped
+  to achieve that — the state still carries both its mark and its word, and the time is still
+  there — and no text size falls below the floor the design system sets for a screen three metres
+  away.
+
+  The full variant was cut off on a television at this size, which is what this layout exists to
+  fix: four lines of television-sized text need about 170dp and the declared default is 160dp. An
+  instrumented test measures both variants at their smallest size, because arithmetic in a
+  comment is not a measurement.
+
+  The identifiers match the full variant exactly, so one piece of code fills either.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:contentDescription="@string/widget_open_app"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:padding="@dimen/widget_padding_compact">
+
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/app_name"
+        android:textColor="@color/widget_on_surface"
+        android:textSize="@dimen/widget_text_compact_title" />
+
+    <TextView
+        android:id="@+id/widget_counts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/widget_on_surface"
+        android:textSize="@dimen/widget_text_compact_counts"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!--
+          The time keeps its own width; the state takes what is left and shortens itself if it
+          has to. That order is the one compromise this variant makes, and it is deliberate.
+
+          Some state wordings are long — "Not found: address or interface" does not fit beside a
+          time at television text sizes in 300dp. One of the two has to give, and a shortened
+          time is worthless ("at 1…") while a shortened state still carries its mark, which is
+          the channel that identifies the state unambiguously anyway. So the word is the part
+          that may shorten, never the time and never the mark.
+        -->
+        <TextView
+            android:id="@+id/widget_state"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/dashboard_state_loading"
+            android:textColor="@color/widget_on_surface_muted"
+            android:textSize="@dimen/widget_text_compact_line" />
+
+        <TextView
+            android:id="@+id/widget_footer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/widget_padding_compact"
+            android:ellipsize="end"
+            android:gravity="end"
+            android:maxLines="1"
+            android:text="@string/dashboard_no_data_yet"
+            android:textColor="@color/widget_on_surface_muted"
+            android:textSize="@dimen/widget_text_compact_line" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -33,6 +33,11 @@ android {
 
     buildFeatures {
         compose = true
+
+        // Needed for one decision: whether the settings screen offers the widget host. The host
+        // itself lives in the debug source set, so a release build contains neither it nor the
+        // permission it needs; this flag only decides whether an entry to it is drawn.
+        buildConfig = true
     }
 
     testOptions {

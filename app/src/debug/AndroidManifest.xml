@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What only the debug build contains.
+
+  Hosting widgets requires BIND_APPWIDGET. A dashboard application has no business holding that
+  permission, and WIDGORA does not: it is declared here, in the debug source set, so the manifest
+  merger adds it to debug builds and to nothing else. The same goes for the activity that uses
+  it. SECURITY.md states that the shipped application asks for INTERNET and ACCESS_NETWORK_STATE
+  and nothing further, and this file is what keeps that true while a host exists at all.
+
+  The merged release manifest is the proof rather than this comment; the build task that produces
+  it is named in the pull request.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Lint is right that this is never granted to an ordinary application, and the warning is
+      suppressed rather than heeded because the situation it describes is the situation here.
+
+      BIND_APPWIDGET is a signature-or-privileged permission, so WIDGORA will not hold it. What
+      actually lets this host bind a widget is a per-package allowance the shell sets, with
+      `appwidget grantbind`, and the screen names that command when binding is refused. The
+      declaration follows the platform's own instructions for building a host; it is the
+      allowance that does the work.
+    -->
+    <uses-permission
+        android:name="android.permission.BIND_APPWIDGET"
+        tools:ignore="ProtectedPermissions" />
+
+    <application>
+
+        <!--
+          Not exported. It is started from WIDGORA's own settings screen and from nowhere else,
+          and a widget host reachable by any application on the device would be a worse idea than
+          the permission above.
+        -->
+        <activity
+            android:name=".devhost.WidgetHostActivity"
+            android:exported="false"
+            android:label="@string/debug_host_title"
+            android:theme="@style/Theme.Widgora" />
+
+    </application>
+
+</manifest>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wording that exists only in the debug build, beside the host that uses it.
+
+  It is here rather than in the main source set so that a release build carries none of it. A
+  string is not a secret, but a shipped application explaining how to grant itself a permission
+  it does not have would be confusing at best.
+-->
+<resources>
+
+    <string name="debug_host_title">Widget host (debug)</string>
+
+    <!-- The size currently being shown, so a hand check can read it rather than estimate it. -->
+    <string name="debug_host_size">Size: %1$d × %2$d dp</string>
+
+    <string name="debug_host_size_larger">Larger</string>
+    <string name="debug_host_size_smaller">Smaller</string>
+
+    <!--
+      Binding is refused until the shell grants it. The command carries the package name so that
+      it can be typed off the screen without looking anything up.
+    -->
+    <string name="debug_host_bind_refused">Not allowed to host widgets yet. Run this on a computer connected to this device, then open this screen again:\n\n%1$s</string>
+
+    <string name="debug_host_no_info">The widget could not be read back from the system.</string>
+
+</resources>
