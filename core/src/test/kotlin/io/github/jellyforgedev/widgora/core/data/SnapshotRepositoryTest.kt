@@ -3,10 +3,10 @@ package io.github.jellyforgedev.widgora.core.data
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaMetricsClient
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSnapshotMapper
-import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSummaryTemplates
 import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState.Error.Reason
+import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -48,9 +48,80 @@ class SnapshotRepositoryTest {
 
         assertEquals(WidgetDisplayState.Ok, world.displayState())
         val snapshot = assertNotNull(world.view().snapshot)
-        assertEquals("1 up, 1 down", snapshot.primaryValue)
+        assertEquals(ONE_UP_ONE_DOWN, snapshot.primaryValue)
         assertEquals("Uptime Kuma", snapshot.title)
         assertEquals(NOW, snapshot.updatedAtEpochMs)
+    }
+
+    /**
+     * The counts and the individual monitors travel beside the snapshot, not inside it. The names
+     * are the reason: they often contain internal host names, and a snapshot is what the bridge
+     * hands to a foreign application.
+     */
+    @Test
+    fun aSuccessfulRetrievalAlsoCarriesTheMonitorsThemselves() = runBlocking {
+        val world = World()
+        world.configure()
+        world.transport.answerWith(TWO_MONITORS)
+
+        world.repository.refresh()
+
+        val overview = assertNotNull(world.view().overview)
+        assertEquals(2, overview.entries.size)
+        assertEquals(1, overview.counts.active)
+        assertEquals(1, overview.counts.failed)
+        assertEquals(listOf("Service 02"), overview.affected.map { it.name })
+        // Affected first, working last.
+        assertEquals(listOf("Service 02", "Service 01"), overview.inDetailOrder.map { it.name })
+    }
+
+    /** A failed retrieval must not empty the detail list: an empty list is a different claim. */
+    @Test
+    fun aFailedRetrievalKeepsTheMonitorsOfTheLastSuccess() = runBlocking {
+        val world = World()
+        world.configure()
+        world.transport.answerWith(TWO_MONITORS)
+        world.repository.refresh()
+
+        world.transport.failWith(TransportResult.Unreachable)
+        world.repository.refresh()
+
+        assertEquals(WidgetDisplayState.Offline, world.displayState())
+        val overview = assertNotNull(world.view().overview)
+        assertEquals(listOf("Service 02", "Service 01"), overview.inDetailOrder.map { it.name })
+    }
+
+    @Test
+    fun beforeTheFirstRetrievalThereAreNoMonitors() = runBlocking {
+        val world = World()
+        world.configure()
+
+        world.repository.recompute()
+
+        assertNull(world.view().overview)
+    }
+
+    /**
+     * A monitor name must never reach a snapshot, whatever else changes. The response here names
+     * a host, and the check is on the snapshot alone: the view is expected to carry the name,
+     * because the view never leaves the application.
+     */
+    @Test
+    fun noMonitorNameReachesTheSnapshot() = runBlocking {
+        val world = World()
+        world.configure()
+        world.transport.answerWith(
+            "monitor_status{monitor_id=\"1\",monitor_name=\"nas.internal.example\"} 1\n",
+        )
+
+        world.repository.refresh()
+
+        val snapshot = assertNotNull(world.view().snapshot)
+        assertFalse(snapshot.toString().contains("internal.example"), snapshot.toString())
+        assertEquals(
+            listOf("nas.internal.example"),
+            assertNotNull(world.view().overview).entries.map { it.name },
+        )
     }
 
     @Test
@@ -101,7 +172,7 @@ class SnapshotRepositoryTest {
 
         assertEquals(WidgetDisplayState.Offline, world.displayState())
         val snapshot = assertNotNull(world.view().snapshot)
-        assertEquals("1 up, 1 down", snapshot.primaryValue)
+        assertEquals(ONE_UP_ONE_DOWN, snapshot.primaryValue)
         // The timestamp is the one of the successful retrieval, not of the failed attempt.
         assertEquals(NOW, snapshot.updatedAtEpochMs)
     }
@@ -263,6 +334,72 @@ class SnapshotRepositoryTest {
         assertTrue(world.transport.sawTheKey, "the key never reached the transport")
     }
 
+    // --- A configuration that cannot be read --------------------------------------------------
+
+    /**
+     * An unreadable configuration is stated rather than shown as a bare dashboard.
+     *
+     * There is nothing to retrieve, so there are no tiles — but the flag is what lets the screen
+     * explain that, instead of looking like a device nobody has set up.
+     */
+    @Test
+    fun anUnreadableConfigurationIsReportedAndNothingIsRetrieved() = runBlocking {
+        val world = World()
+        world.configure()
+        world.preferences.failWith = IOException("file damaged")
+
+        world.repository.refresh()
+
+        assertTrue(world.repository.configurationUnreadable.value)
+        assertEquals(emptyList(), world.repository.views.value)
+        assertEquals(0, world.transport.reads, "nothing was asked of the server")
+    }
+
+    @Test
+    fun aReadableConfigurationLeavesTheFlagDown() = runBlocking {
+        val world = World()
+        world.configure()
+        world.transport.answerWith(TWO_MONITORS)
+
+        world.repository.refresh()
+
+        assertFalse(world.repository.configurationUnreadable.value)
+        assertEquals(1, world.repository.views.value.size)
+    }
+
+    /** An empty configuration is readable. The two must not collapse into one state. */
+    @Test
+    fun anEmptyConfigurationIsNotAnUnreadableOne() = runBlocking {
+        val world = World()
+
+        world.repository.refresh()
+
+        assertFalse(world.repository.configurationUnreadable.value)
+        assertEquals(emptyList(), world.repository.views.value)
+    }
+
+    /** The flag clears again once the file can be read, without restarting the application. */
+    @Test
+    fun theFlagClearsWhenTheFileBecomesReadableAgain() = runBlocking {
+        val world = World()
+        world.configure()
+        world.transport.answerWith(TWO_MONITORS)
+        world.preferences.failWith = IOException("file damaged")
+        world.repository.refresh()
+        assertTrue(world.repository.configurationUnreadable.value)
+
+        world.preferences.failWith = null
+        world.repository.refresh()
+
+        assertFalse(world.repository.configurationUnreadable.value)
+        assertEquals(1, world.repository.views.value.size)
+    }
+
+    @Test
+    fun beforeTheFirstRefreshTheConfigurationIsNotCalledUnreadable() {
+        assertFalse(World().repository.configurationUnreadable.value)
+    }
+
     /** The pieces one test needs, wired the way the application wires them. */
     private class World {
 
@@ -276,9 +413,6 @@ class SnapshotRepositoryTest {
             client = KumaMetricsClient(transport),
             clock = clock,
             staleAfterMs = STALE_AFTER_MS,
-            // The numeric templates keep the expectations in this file about counts rather
-            // than about wording; the wording is tested where it is assembled.
-            summaryTemplates = KumaSummaryTemplates.Numeric,
         )
 
         suspend fun configure(enabled: Boolean = true) {
@@ -345,6 +479,9 @@ class SnapshotRepositoryTest {
         const val API_KEY = "uk1_dashboard_secret"
         const val NOW = 1_700_000_000_000
         const val STALE_AFTER_MS = 180_000L
+
+        /** One working and one failed, in the language-neutral marks a snapshot carries. */
+        const val ONE_UP_ONE_DOWN = "▲1 ▼1"
         const val TWO_MONITORS =
             "monitor_status{monitor_id=\"1\",monitor_name=\"Service 01\"} 1\n" +
                 "monitor_status{monitor_id=\"2\",monitor_name=\"Service 02\"} 0\n"

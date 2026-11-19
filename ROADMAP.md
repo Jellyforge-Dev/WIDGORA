@@ -1,12 +1,15 @@
 # WIDGORA — Roadmap
 
-**Current state: the first integration retrieves real data and the application displays it.** An
-Uptime Kuma instance can be set up on the television — address and API key, the key encrypted by
-the device keystore — its metrics are retrieved over HTTPS, and the home screen shows the
-resulting summary together with the time it was obtained, in a design system whose brand colours
-were measured from the project's own logo and whose contrast is checked by tests. Anything below
-that is not described as implemented is not implemented: there is no widget per monitor, no
-detail view, no background refresh, no bridge to a host launcher, and no release has been made.
+**Current state: the first integration retrieves real data, and both a summary and a detail view
+display it.** An Uptime Kuma instance can be set up on the television — address and API key, the
+key encrypted by the device keystore — its metrics are retrieved over HTTPS, and the home screen
+shows one count per state as a mark and a number, with the names of whatever is not working
+beneath and the time the data was obtained. The tile is focusable and opens a screen listing every
+monitor with its state and, where one was measured, its response time. The design system's brand
+colours were measured from the project's own logo, and its contrast and line heights are checked
+by tests. Anything below that is not described as implemented is not implemented: there is no
+widget per monitor, no background refresh, no bridge to a host launcher, and no release has been
+made.
 
 This roadmap lists intentions, not promises. Items carry the evidence markers used throughout
 the project documentation:
@@ -92,8 +95,12 @@ The first milestone that produces something usable. It depends on nobody outside
   as unsupported for third-party use and requires a username and password, so it is not used
   `[V]`.
 - Displayed: overall status, number of monitors up, number down, individual monitor states, time
-  of last update.
-- One horizontal widget row plus a detail view, fully operable with a directional pad.
+  of last update. Done `[V]`, with one addition that was not foreseen: the counts are shown as
+  marks rather than words, because a summary long enough to name five states in a sentence
+  overflows a tile and does so differently in each language.
+- One horizontal widget row plus a detail view, fully operable with a directional pad. The row
+  and the detail view exist `[V]`; whether a real remote drives them as intended is unverified
+  `[U]`.
 - Multiple instances supported in the data model from the start.
 - Credentials entered on the television and stored encrypted.
 - Configuration, enabling and visibility as separate, explicit states.

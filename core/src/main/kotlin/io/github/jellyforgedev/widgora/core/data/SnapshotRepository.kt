@@ -1,9 +1,9 @@
 package io.github.jellyforgedev.widgora.core.data
 
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaMetricsClient
+import io.github.jellyforgedev.widgora.core.integration.kuma.KumaMonitorMapping
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaReadResult
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSnapshotMapper
-import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSummaryTemplates
 import io.github.jellyforgedev.widgora.model.DisplayStateRule
 import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.model.IntegrationInstanceState
@@ -23,6 +23,11 @@ import kotlinx.coroutines.sync.Mutex
  * It is the first implementation of [WidgetSnapshotSource], the read interface declared in the
  * domain module so that the bridge can consume snapshots without depending on this module.
  *
+ * Alongside each snapshot it holds a [MonitorOverview]: the counts and the individual items,
+ * including their names. That part is deliberately **not** in the snapshot, because a snapshot is
+ * what the bridge hands to a foreign application and a monitor name often contains an internal
+ * host name. Both are held here, and only one of them ever leaves the application.
+ *
  * Everything it holds lives in memory. A snapshot is a view of a service at a moment in time;
  * writing it to disk would mean deciding how long a stale value may be presented after a
  * restart, and that decision belongs to a later step, not to a cache.
@@ -35,13 +40,12 @@ class SnapshotRepository(
     private val client: KumaMetricsClient,
     private val clock: Clock,
     private val staleAfterMs: Long,
-    /** The wording of the summary. It comes from the application's resources. */
-    private val summaryTemplates: KumaSummaryTemplates,
 ) : WidgetSnapshotSource {
 
     /** What is known about one instance between retrievals. */
     private data class Held(
         val snapshot: WidgetSnapshot?,
+        val overview: MonitorOverview?,
         val outcome: Outcome,
         val lifecycle: IntegrationInstanceState,
     )
@@ -66,6 +70,18 @@ class SnapshotRepository(
 
     /** What the dashboard renders. It changes on a retrieval and on a recomputation. */
     val views: StateFlow<List<WidgetView>> get() = mutableViews
+
+    private val mutableConfigurationUnreadable = MutableStateFlow(false)
+
+    /**
+     * Whether a stored configuration exists that could not be read.
+     *
+     * It is published beside [views] rather than folded into them, because it is a statement about
+     * storage as a whole and not about one instance. With nothing to list there is no tile it could
+     * belong to, and inventing one would mean inventing an identifier for an instance whose
+     * identifier is exactly what could not be read.
+     */
+    val configurationUnreadable: StateFlow<Boolean> get() = mutableConfigurationUnreadable
 
     /**
      * Guards against two retrievals at once.
@@ -105,19 +121,32 @@ class SnapshotRepository(
     override fun byId(widgetId: WidgetId): WidgetSnapshot? =
         all().firstOrNull { snapshot -> snapshot.widgetId == widgetId }
 
-    private suspend fun plan(): List<Plan> = instances.instances.first().map { instance ->
-        when (instance) {
-            is StoredInstance.Invalid -> Plan.Hold(instance, InstanceNotice.ENTRY_INVALID)
+    /**
+     * Decides what to do with each stored instance, and records whether storage could be read.
+     *
+     * An unreadable configuration yields no plans: nothing is known, so there is nothing to
+     * retrieve and no tile to show. The flag is what tells the dashboard to say so instead of
+     * showing the screen of a device that has never been set up.
+     */
+    private suspend fun plan(): List<Plan> {
+        val stored = instances.instances.first()
+        mutableConfigurationUnreadable.value = stored is StoredInstances.Unreadable
+        if (stored !is StoredInstances.Readable) return emptyList()
 
-            is StoredInstance.Valid -> when {
-                !instance.config.enabled -> Plan.Hold(instance, InstanceNotice.DISABLED)
+        return stored.instances.map { instance ->
+            when (instance) {
+                is StoredInstance.Invalid -> Plan.Hold(instance, InstanceNotice.ENTRY_INVALID)
 
-                // The credential is only checked for existence here and read again inside the
-                // retrieval, so that it never travels in a plan object or lives in a field.
-                instances.secretOf(instance.instanceId) !is SecretState.Present ->
-                    Plan.Hold(instance, InstanceNotice.SECRET_UNUSABLE)
+                is StoredInstance.Valid -> when {
+                    !instance.config.enabled -> Plan.Hold(instance, InstanceNotice.DISABLED)
 
-                else -> Plan.Retrieve(instance.config)
+                    // The credential is only checked for existence here and read again inside the
+                    // retrieval, so that it never travels in a plan object or lives in a field.
+                    instances.secretOf(instance.instanceId) !is SecretState.Present ->
+                        Plan.Hold(instance, InstanceNotice.SECRET_UNUSABLE)
+
+                    else -> Plan.Retrieve(instance.config)
+                }
             }
         }
     }
@@ -142,22 +171,27 @@ class SnapshotRepository(
         put(
             instanceId,
             when (result) {
-                is KumaReadResult.Success -> Held(
-                    snapshot = KumaSnapshotMapper.summarySnapshot(
-                        instanceId = instanceId,
-                        title = config.displayName,
-                        monitors = result.monitors,
-                        retrievedAtEpochMs = now,
-                        templates = summaryTemplates,
-                    ),
-                    outcome = Outcome.Retrieved,
-                    lifecycle = lifecycle.transitionTo(IntegrationInstanceState.ENABLED),
-                )
+                is KumaReadResult.Success -> {
+                    val overview = KumaMonitorMapping.overviewOf(result.monitors)
+                    Held(
+                        snapshot = KumaSnapshotMapper.summarySnapshot(
+                            instanceId = instanceId,
+                            title = config.displayName,
+                            overview = overview,
+                            retrievedAtEpochMs = now,
+                        ),
+                        overview = overview,
+                        outcome = Outcome.Retrieved,
+                        lifecycle = lifecycle.transitionTo(IntegrationInstanceState.ENABLED),
+                    )
+                }
 
                 is KumaReadResult.Failure -> Held(
-                    // The last successful snapshot is kept. It is shown with its own timestamp
-                    // and marked as outdated, which is of more use than an empty tile.
+                    // The last successful snapshot is kept, and so is the list of items behind
+                    // it. Both are shown with the timestamp of that success and marked as
+                    // outdated, which is of more use than an empty tile and an empty list.
                     snapshot = before?.snapshot,
+                    overview = before?.overview,
                     outcome = if (result.reason == Reason.UNREACHABLE) {
                         Outcome.Unreachable
                     } else {
@@ -170,6 +204,7 @@ class SnapshotRepository(
                 // guard rather than an expected case, and there is no better cause to name.
                 KumaReadResult.AddressRejected -> Held(
                     snapshot = before?.snapshot,
+                    overview = before?.overview,
                     outcome = Outcome.Failed(Reason.UNKNOWN),
                     lifecycle = lifecycle.transitionTo(IntegrationInstanceState.FAILING),
                 )
@@ -187,13 +222,17 @@ class SnapshotRepository(
     }
 
     private fun view(plan: Plan, now: Long): WidgetView = when (plan) {
-        is Plan.Hold -> WidgetView(
-            instanceId = plan.instance.instanceId,
-            widgetId = KumaSnapshotMapper.summaryWidgetId(plan.instance.instanceId),
-            title = titleOf(plan.instance),
-            snapshot = held.value[plan.instance.instanceId]?.snapshot,
-            state = WidgetViewState.Notice(plan.notice),
-        )
+        is Plan.Hold -> {
+            val entry = held.value[plan.instance.instanceId]
+            WidgetView(
+                instanceId = plan.instance.instanceId,
+                widgetId = KumaSnapshotMapper.summaryWidgetId(plan.instance.instanceId),
+                title = titleOf(plan.instance),
+                snapshot = entry?.snapshot,
+                state = WidgetViewState.Notice(plan.notice),
+                overview = entry?.overview,
+            )
+        }
 
         is Plan.Retrieve -> {
             val entry = held.value[plan.config.instanceId]
@@ -203,6 +242,7 @@ class SnapshotRepository(
                 title = plan.config.displayName,
                 snapshot = entry?.snapshot,
                 state = WidgetViewState.Display(displayStateOf(entry, now)),
+                overview = entry?.overview,
             )
         }
     }

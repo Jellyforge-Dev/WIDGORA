@@ -76,13 +76,20 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
     ) {
         Text(
             text = stringResource(R.string.settings_title),
-            fontSize = WidgoraText.ScreenTitle,
+            fontSize = WidgoraText.ScreenTitle.size,
+            lineHeight = WidgoraText.ScreenTitle.lineHeight,
             color = WidgoraColors.OnSurface,
         )
         Hint(stringResource(R.string.settings_back_hint))
 
         if (state.storedEntryInvalid) {
             Message(stringResource(R.string.settings_invalid_entry), WidgoraColors.StateError)
+        }
+        if (state.configurationUnreadable) {
+            Message(stringResource(R.string.settings_config_unreadable), WidgoraColors.StateError)
+        }
+        if (state.resetJustNow) {
+            Message(stringResource(R.string.settings_reset_done), WidgoraColors.StateOk)
         }
 
         LabelledField(
@@ -147,10 +154,19 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
             if (state.existing) {
                 Action(stringResource(R.string.settings_delete), holder::requestDelete)
             }
+            // Only offered while storage cannot be read. With a readable file there is a named
+            // instance to delete instead, and throwing the whole file away would be a blunter
+            // instrument than the situation calls for.
+            if (state.configurationUnreadable) {
+                Action(stringResource(R.string.settings_reset), holder::requestReset)
+            }
         }
 
         if (state.savedJustNow) {
             Message(stringResource(R.string.settings_saved), WidgoraColors.StateOk)
+        }
+        state.failedWrite?.let { failure ->
+            Message(failedWriteText(failure), WidgoraColors.StateError)
         }
         if (state.testing) {
             Message(stringResource(R.string.settings_test_running), WidgoraColors.StateLoading)
@@ -166,6 +182,16 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
                     scope.launch { holder.confirmDelete() }
                 }
                 Action(stringResource(R.string.settings_delete_cancel), holder::cancelDelete)
+            }
+        }
+
+        if (state.confirmingReset) {
+            Message(stringResource(R.string.settings_reset_question), WidgoraColors.StateStale)
+            Row(horizontalArrangement = Arrangement.spacedBy(WidgoraSpacing.Medium)) {
+                Action(stringResource(R.string.settings_reset_confirm)) {
+                    scope.launch { holder.confirmReset() }
+                }
+                Action(stringResource(R.string.settings_reset_cancel), holder::cancelReset)
             }
         }
     }
@@ -191,18 +217,19 @@ private fun LabelledField(
     var focused by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(WidgoraSpacing.Tiny)) {
-        Text(text = label, fontSize = WidgoraText.Label, color = WidgoraColors.OnSurface)
+        Text(
+            text = label,
+            fontSize = WidgoraText.Label.size,
+            lineHeight = WidgoraText.Label.lineHeight,
+            color = WidgoraColors.OnSurface,
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(WidgoraColors.Surface, WidgoraShapes.Field)
                 .border(
-                    width = if (focused) {
-                        WidgoraFocus.BorderWidth
-                    } else {
-                        WidgoraFocus.RestingBorderWidth
-                    },
-                    color = if (focused) WidgoraColors.BrandViolet else WidgoraColors.Outline,
+                    width = WidgoraFocus.borderWidth(focused),
+                    color = WidgoraFocus.borderColor(focused),
                     shape = WidgoraShapes.Field,
                 )
                 .padding(WidgoraSpacing.Medium),
@@ -210,7 +237,8 @@ private fun LabelledField(
             if (value.isEmpty() && placeholder != null) {
                 Text(
                     text = placeholder,
-                    fontSize = WidgoraText.Label,
+                    fontSize = WidgoraText.Label.size,
+                    lineHeight = WidgoraText.Label.lineHeight,
                     color = WidgoraColors.OnSurfaceMuted,
                 )
             }
@@ -220,9 +248,12 @@ private fun LabelledField(
                 singleLine = true,
                 textStyle = TextStyle(
                     color = WidgoraColors.OnSurface,
-                    fontSize = WidgoraText.Label,
+                    fontSize = WidgoraText.Label.size,
+                    lineHeight = WidgoraText.Label.lineHeight,
                 ),
-                cursorBrush = SolidColor(WidgoraColors.BrandViolet),
+                // The cursor only exists while the field has the focus, so it is part of the focus
+                // mark and takes the same colour.
+                cursorBrush = SolidColor(WidgoraColors.Focus),
                 visualTransformation = if (masked) {
                     PasswordVisualTransformation()
                 } else {
@@ -250,18 +281,32 @@ private fun LabelledField(
 @Composable
 private fun Action(text: String, onClick: () -> Unit) {
     Button(onClick = onClick) {
-        Text(text = text, fontSize = WidgoraText.Label)
+        Text(
+            text = text,
+            fontSize = WidgoraText.Label.size,
+            lineHeight = WidgoraText.Label.lineHeight,
+        )
     }
 }
 
 @Composable
 private fun Message(text: String, color: Color) {
-    Text(text = text, fontSize = WidgoraText.Label, color = color)
+    Text(
+        text = text,
+        fontSize = WidgoraText.Label.size,
+        lineHeight = WidgoraText.Label.lineHeight,
+        color = color,
+    )
 }
 
 @Composable
 private fun Hint(text: String) {
-    Text(text = text, fontSize = WidgoraText.Caption, color = WidgoraColors.OnSurfaceMuted)
+    Text(
+        text = text,
+        fontSize = WidgoraText.Caption.size,
+        lineHeight = WidgoraText.Caption.lineHeight,
+        color = WidgoraColors.OnSurfaceMuted,
+    )
 }
 
 @Composable
@@ -280,6 +325,21 @@ private fun addressErrorText(rejection: InstanceAddress.Rejection): String = str
 
         InstanceAddress.Rejection.FRAGMENT_NOT_ALLOWED ->
             R.string.settings_address_error_fragment_not_allowed
+    },
+)
+
+/**
+ * Why nothing was written, in terms of what the user was trying to do.
+ *
+ * None of the three messages repeats a message from the platform. What the file system said is of
+ * no use to the person holding the remote, and it is also the kind of text that carries a path.
+ */
+@Composable
+private fun failedWriteText(failure: FailedWrite): String = stringResource(
+    when (failure) {
+        FailedWrite.SAVE -> R.string.settings_error_save_failed
+        FailedWrite.DELETE -> R.string.settings_error_delete_failed
+        FailedWrite.RESET -> R.string.settings_error_reset_failed
     },
 )
 

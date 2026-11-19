@@ -41,8 +41,15 @@ sealed interface WidgetViewState {
  * [snapshot] is the last one that was obtained successfully. It survives a failed retrieval on
  * purpose and is then shown together with its own timestamp, while [state] says that the data is
  * outdated or that the service is unreachable. A failure must never look like a current value.
+ * [overview] survives a failure the same way and for the same reason.
  *
  * There is no field for a credential, and none of these types carries one.
+ *
+ * **Why the monitor names are here and not in the snapshot.** This type is read by WIDGORA's own
+ * screens and by nothing else. A snapshot is read by a host launcher through the bridge, and a
+ * monitor name routinely contains an internal host name. Keeping the names in a type the bridge
+ * module cannot even reference — `:bridge` depends on `:model`, never on this module — makes that
+ * boundary structural instead of something to remember.
  */
 data class WidgetView(
     val instanceId: InstanceId,
@@ -50,4 +57,6 @@ data class WidgetView(
     val title: String,
     val snapshot: WidgetSnapshot?,
     val state: WidgetViewState,
+    /** The items behind the summary, or `null` while nothing has been retrieved yet. */
+    val overview: MonitorOverview? = null,
 )

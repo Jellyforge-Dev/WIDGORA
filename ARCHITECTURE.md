@@ -1,11 +1,11 @@
 # WIDGORA — Architecture
 
-**Project status: a project skeleton that builds, passes continuous integration and starts on an
-emulator. Four Gradle modules, a placeholder screen and a lean continuous integration workflow
-exist. None of the components described below is implemented, no integration retrieves data, and
-no artefact has been released.** This document describes the intended architecture so that it can
-be reviewed before implementation begins. Nothing described here is implemented unless this
-document says so explicitly.
+**Project status: the first integration retrieves real data, the dashboard and a detail screen
+display it, and no artefact has been released.** An Uptime Kuma instance can be set up on the
+television, its metrics are retrieved over HTTPS, and the home screen shows the counts per state
+together with the names of whatever is not working; a detail screen lists every monitor. There is
+no widget per monitor, no background refresh and no Provider Bridge. **Nothing described below is
+implemented unless this document says so explicitly**, and the markers say which is which.
 
 ---
 
@@ -80,6 +80,22 @@ widgora/
                          settings/  instance management, consent management
 ```
 
+### Two kinds of prepared data, deliberately separated
+
+This distinction runs through the whole codebase and is worth stating once, here.
+
+| | `WidgetSnapshot` (`:model`) | `MonitorOverview` (`core/data`) |
+|---|---|---|
+| Read by | WIDGORA's own screens **and** a host launcher through the bridge | WIDGORA's own screens only |
+| Holds | title, one short value, timestamp, two symbolic tokens | counts per state, and every item with its name, state and response time |
+| Field set | frozen by a test | free to grow |
+| Names of monitored things | structurally impossible | yes, that is its purpose |
+
+A monitor name routinely contains an internal host name, which is topology rather than status.
+Holding the names in a type that `:bridge` cannot reference — it depends on `:model`, never on
+`:core` — makes the boundary a property of the dependency graph instead of something to remember
+at each call site `[V]`. `SECURITY.md` describes the consequences.
+
 ### Dependency rules
 
 ```
@@ -99,6 +115,15 @@ Three rules that must hold:
    class rather than by depending on `:core` `[U]`.
 3. **Integrations never depend on each other and never on a concrete transport.** `:app` wires
    the transport, which keeps every integration testable against a fake transport.
+
+**One package dependency inside `:core` is currently the wrong way round, and is recorded here
+rather than hidden** `[V]`. An integration depends on `core/data`, which is the right direction:
+the adapter maps its own wire types onto the application's neutral ones. But the snapshot
+repository in `core/data` also names the first integration's client directly, because something
+has to wire the two and there is only one integration. That second edge is what has to go when
+`core/integration/kuma/` becomes its own module at the third integration — the wiring moves to
+`:app`, as it already has for the transport. Until then the two packages are mutually dependent,
+which a single Gradle module permits and a split would not.
 
 ### When packages become modules
 
@@ -148,6 +173,94 @@ loading | ok | empty | error | offline | stale
 A configured integration is not automatically visible. A visible widget can be `stale` while its
 integration is healthy. Every widget renders all six display states.
 
+### Monitored items, in neutral terms
+
+A third model sits beside the two above and is smaller: the state of one monitored thing, as
+`active`, `failed`, `pending`, `in maintenance` or `unknown` `[V]`. It lives in `core/data`, uses
+no vendor's vocabulary, and each integration maps its own wire states onto it with an exhaustive
+`when`, so that a wire state added later fails to compile rather than quietly becoming one of the
+five. `unknown` exists so that an unrecognised state can never be counted as working.
+
+Two orders are defined on it, and they differ on purpose. Counts are read `active, failed`, then
+whichever of the other three occur — the first two numbers answer "how is the installation
+doing", and they lead. A list of names is ordered `failed, unknown, pending, in maintenance` — it
+answers "what do I have to look at", which is a question about urgency, and an unrecognised state
+may well be a failure that is not understood yet.
+
+### One monitored item described twice
+
+Observed against a running Uptime Kuma installation `[V]`: after a monitor is edited, the row
+carrying its **previous** label values remains in the metrics response until the service is
+restarted, and it does so in every monitor family at once. Four edited monitors produced four
+duplicated identifiers across `monitor_status`, `monitor_response_time` and
+`monitor_uptime_ratio`. No monitor was without a status and no value was unusual; the response was
+simply no longer the shape the reader assumed.
+
+The reader of the time rejected any response describing one identifier twice, so the dashboard
+reported "answer not readable" for the whole installation — thirty-five monitors invisible because
+four of them had been renamed. That is the price of being strict about something which is not
+actually a structural fault, and it is why strictness is now scoped to structure alone.
+
+Repetition is reconciled per family, and the rule has the same shape everywhere: **what the rows
+agree on is used; what they disagree on is not guessed.**
+
+| Family | Rows agree | Rows disagree |
+|---|---|---|
+| Status | that status | `unknown` |
+| Response time | that value | no value |
+| Uptime ratio | that value, per window | no value, for that window only |
+| Certificate validity and days remaining | that value | no value |
+| Name, type | that value | the smallest candidate by code point |
+
+Three entries in that table are decisions rather than mechanics:
+
+- **A contradictory status becomes `unknown`, never one of the two candidates.** Taking the better
+  of the two would hide an outage, and `unknown` is already a state displayed in its own right
+  that never counts as working. The single failure mode that matters here is a monitor silently
+  reported as up.
+- **A contradictory name resolves to the smallest candidate by code point**, not to the last row.
+  The exposition format guarantees no ordering, so a positional rule could display a different
+  name after every retrieval with nothing having changed on the server, and a name that flickers
+  reads as a defect in WIDGORA. The cost is accepted and stated: after a rename, the older name
+  may be the one shown until the service restarts. The state beside it is unaffected either way.
+- **An absent label is not a contradiction.** The endpoint writes the string `null` where it has
+  no value, which says nothing about what another row claims, so it is simply not a candidate
+  rather than a competing one.
+
+What remains a malformed response `[V]`: a line that cannot be parsed, a response with no
+`monitor_status` family at all, a monitor the response describes without ever stating its status,
+and an uptime sample with no window. Those are faults in the shape of the answer, and a reader
+waving them through would let a half-transmitted response pass as a smaller, healthy installation.
+
+#### The row left behind keeps the old state, not only the old name
+
+Observed on the emulator against the same installation `[V]`: with the reconciliation above in
+place, the four edited monitors appeared as `unknown` while the service's own interface showed all
+four working, a refresh changed nothing, and restarting the service made them working again. Under
+the rule, `unknown` for exactly those four means their status rows carried **different** values —
+so the stale row keeps the state the monitor had at the moment it was edited. A contradiction is
+therefore the ordinary consequence of editing a monitor, not a rare accident.
+
+That makes the answer correct and the screen unhelpful. "Unknown" beside a monitor the user can see
+working elsewhere reads as a defect in WIDGORA rather than as a statement about the answer the
+service gave. The two roads to `unknown` are therefore kept apart:
+
+| Why the item is `unknown` | What the detail screen says |
+|---|---|
+| the source described it twice and disagreed | contradictory information from the source, plus what to do about it |
+| the source reported a state this version does not know | nothing beyond the state |
+
+The second case gets no explanation on purpose: there is nothing the user can act on, and an
+invented sentence would be worse than silence.
+
+The reason travels as a note on the application's own item type, in two halves. The condition is
+named in vendor-neutral terms, because any source could contradict itself; the remedy — restarting
+the service — is a statement about *this* service and is supplied by the integration that reported
+the item, as a resource of its own module. A second integration reporting the same condition can
+give different advice without inheriting this one's. The note is not a sixth state: a state change
+would move every count, every ordering and the summary the bridge carries, and nothing about the
+counts is wrong here. The tile is unchanged for the same reason — a count cannot carry a reason.
+
 ### Multiple instances
 
 `InstanceId` is part of the domain model from the first line of code. Two Jellyfin servers,
@@ -192,9 +305,58 @@ foreground and starts again when it returns, which is also what refreshes the da
 visit to the settings. Two retrievals of the same instance never run at once: a refresh that
 arrives while one is running is dropped rather than queued.
 
-A failed retrieval keeps the last successful snapshot and shows it with its own timestamp,
-marked as outdated or unreachable. A failure never looks like a current value. Snapshots live in
-memory only; nothing decides yet for how long a stale value may be shown after a restart.
+A failed retrieval keeps the last successful snapshot **and the list of items behind it**, and
+shows both with the timestamp of that success, marked as outdated or unreachable. A failure never
+looks like a current value, and an empty detail list would be a different claim altogether — that
+the installation has no monitors. Both live in memory only; nothing decides yet for how long a
+stale value may be shown after a restart.
+
+The detail screen is deliberately not a reason to stop retrieving: it shows the same data as the
+tile and should keep it current. Only leaving the foreground or opening the settings stops it.
+
+### A configuration that cannot be read is not an empty one
+
+Reading the stored configuration has three outcomes, not two `[V]`: a list, an empty list, and
+"there is a file and it could not be read". The third used to be folded into the second, which
+told the user they had never set anything up while their instance, their address and their
+encrypted credential were all still on disk. They would have retyped everything to repair
+something that was not broken, and nothing would have pointed at the actual fault.
+
+The distinction is cheap to make, because the storage layer already draws it: a missing file reads
+as empty preferences, while a damaged one raises an `IOException` — a corrupt preference file
+arrives as `CorruptionException`, which is one. Reading never throws into the flow a screen is
+collecting, and a credential behind an unreadable file is reported as *unreadable* rather than
+*missing*, for the same reason: absence is a claim, and it would be the wrong one.
+
+An unreadable configuration yields no instances to retrieve, so the dashboard has no tiles. What
+it has instead is one sentence saying that storage could not be read, which is a different
+sentence from "no instance set up yet" and asks for a different action.
+
+#### Writing to a file that cannot be read
+
+Decided and implemented `[V]`: **the failure is reported, and the file is only ever replaced
+because the user said so.**
+
+Saving no longer raises. A write that storage refuses — a damaged file, an unwritable medium, key
+material the platform will not use — comes back as a result, and the settings screen says which
+action did not happen. The route that reached the old crash was the obvious one: read the new
+"settings cannot be read" message, enter the instance again, press save. Deleting reports the same
+way, and destroys key material only once the entry is actually gone from the file; the other order
+would leave a configuration behind whose credential no longer exists.
+
+Replacing the file automatically was rejected. A corrupt file still holds the user's address and
+their encrypted credential, and silently discarding both to obtain a working screen decides on
+their behalf that their data is worth less than the absence of an error message. Instead the
+settings offer, **only while the configuration is unreadable**, a reset that removes the file and
+all key material, behind the same confirmation that deleting an instance uses. Every key has to go
+together, because the list of which keys exist is inside the file that cannot be read.
+
+Two honest limits. The reset removes the file from under an open store, which is otherwise
+something to avoid; it is defensible here precisely because a store whose every read has failed
+holds no value the removal could contradict, and the store is then cleared as well so that the open
+instance agrees with the file. And the behaviour on a genuinely damaged file on a device is
+unverified `[U]` — the unit tests drive the refusal through a double, and only a hand check on the
+emulator can show the real thing.
 
 Background refresh with WorkManager is **not** implemented `[U]`.
 
@@ -227,7 +389,7 @@ own to display WIDGORA data.
 | `widget_id` | text | opaque, stable identifier |
 | `state` | text | one of the six display states |
 | `title` | text | short label |
-| `primary_value` | text | short summary value |
+| `primary_value` | text | short summary value, assembled from marks and digits and carrying no word of any language, because a host shares neither WIDGORA's resources nor its colours. At most 59 characters by construction, which a test asserts against counts no server could report `[V]` |
 | `updated_at_epoch_ms` | integer | timestamp of the underlying data |
 | `icon_token` | text | symbolic icon name, resolved by the host |
 | `accent_token` | text | symbolic colour name, carries WIDGORA brand identity (variant B2) |
@@ -371,13 +533,87 @@ against a surface with the WCAG formula by a test, and no state is distinguished
 alone: each carries a word and a mark as well. Text sizes have a floor, also asserted by a test.
 The overscan margin follows Google's stated 5 % rule of 48 dp horizontally and 27 dp vertically.
 
-**Localisation.** No display text is assembled in the integration any more. The summary's
-wording arrives as whole phrases for a given count, which the application resolves from its
-resources — as Android plurals, so a language needing separate forms has them. The counts and
-the order of the parts stay in the integration and are tested there; the words do not.
+**Marks instead of words for the counts** `[V]`. A tile shows each count as one character and a
+number — a filled triangle up for working, a triangle down for failed, and a diamond, square or
+circle for the three states that appear only when they occur. All five are from the Unicode block
+Geometric Shapes, which the platform text font covers, so none can become a missing-glyph box on
+a television; none is an emoji, because an emoji is drawn from a separate font with its own
+coverage and carries a colour that would fight the state colour. The five outlines differ in shape
+alone, so the marks still separate the states for a viewer who cannot tell the colours apart, and
+every number additionally carries its phrase in words for a screen reader. There is no switch
+between words and marks: two presentations of the same number is two things to keep correct.
 
-Still open `[U]`: how all of this reads on real television hardware, and a second widget size or
-information density.
+Words were the previous presentation and were replaced because they did not fit. A summary long
+enough to name five states in a sentence either overflows a tile or has to shrink, and the length
+depends on the language, which makes it a defect that appears only in translation.
+
+**Affected items are named** `[V]`. Below the counts a tile lists up to three names of the things
+that are not working, then "+N more". Each name is shortened by code points, never by char index,
+so that a name ending in a character outside the basic plane cannot be cut in half. A tile with
+everything working shows no list at all: a line saying so would occupy the space that matters on
+the one day it is not true.
+
+**The tile is focusable and opens a detail screen** `[V]`. The detail screen lists every monitor
+with its mark, name, state in words and response time where one was measured, the ones needing
+attention first. Its rows are focusable without being actionable: a directional pad can only
+scroll a list by moving focus through it, so focusability is what makes the list reachable at all,
+and each row therefore carries a visible focus mark of its own.
+
+A row whose item carries a note shows it on a second line, in the colour of the state it explains.
+It is the only place in the application that explains a single item, and the only place that needs
+to: see "The row left behind keeps the old state" in section 3 for what is explained and why the
+tile is left alone.
+
+**What the centre key does depends on the tile** `[V]`, and so does whether the tile can be
+focused at all. Three cases, applied in this order:
+
+| Tile shows | Centre key | Focusable |
+|---|---|---|
+| a notice — switched off, credential unusable, stored entry invalid | opens the settings | yes |
+| a list of items, current or kept from the last success | opens the detail screen | yes |
+| neither — nothing retrieved yet, or an installation with no monitors | nothing | **no** |
+
+A notice is configuration the user has to change, and the settings screen is the only place to
+change it; offering a list that is absent or left over from before the problem would be the wrong
+destination. The third row is why this is a rule and not just "is there a notice": a tile with
+nothing behind it is skipped by the focus rather than being focusable-but-inert, because an
+element that accepts the focus and then does nothing reads as a fault in the application, and a
+screen saying "nothing retrieved yet" is a dead end the viewer has to back out of. The same rule
+also closes the detail screen by itself if the instance it is showing loses its list while open.
+
+**The focus mark is neutral, and it is one token** `[V]`. A thick white border, used identically
+on the tile, the detail rows and the text fields, together with a slight enlargement where there
+is room for one. It is deliberately not the brand colour, for three reasons in order of weight: a
+focus mark says where the remote is pointing, which is not a statement about the product, and
+spending the brand colour on it leaves nothing to mark the primary action; white is as far as this
+palette gets from the resting border, and the entire job of the mark is that focused and unfocused
+are told apart across a room — 20.19 : 1 against the backdrop where the brand violet reaches
+7.25 : 1, against a resting border at 3.81 : 1; and a neutral carries no hue, so it cannot be
+mistaken for one of the state colours. Both ratios are asserted by tests, as is the gap between
+the focused and the resting border.
+
+**The enlargement needs room, and gets it** `[V]`. A focused element grows about its centre, so an
+element of width *w* grows *w* × (scale − 1) / 2 past each edge. A lazy list clips its own bounds,
+which meant the mark was cut off exactly where the focus starts and ends up — the first and last
+position. The headroom is one token, applied as content padding by the row of tiles, and a test
+holds it against the widest focusable element, so a wider tile or a stronger enlargement cannot
+outgrow it unnoticed. Detail rows and text fields take the border alone and no enlargement: they
+already span the full width, so growing them would push their edges into the overscan margin, and
+no amount of padding buys room that is not there.
+
+**Line heights are part of the typography tokens** `[V]`. This was a defect, not a refinement.
+`Text` from `androidx.tv.material3` takes its line height from the ambient text style, so
+overriding only the size left a 44 sp value in a line box built for body text, and a text long
+enough to wrap drew its second line on top of the first. A size is no longer obtainable without
+its line height, and a test holds the ratio.
+
+**Localisation** `[V]`. A snapshot's value carries no language at all. The words a screen shows —
+the state of a monitor, the count phrases a screen reader announces, the overflow line — are
+resolved where they are drawn, from the resources of the device's language, as Android plurals so
+that a language needing separate forms has them.
+
+Still open `[U]`: how all of this reads on real television hardware; whether the directional pad
+scrolls the detail list as intended; and a second widget size or information density.
 
 ---
 
@@ -423,6 +659,14 @@ adds indirection without benefit.
 | Question | Marker |
 |---|---|
 | Metric names and labels of the first integration's endpoint, including the sliding window label, the varying tag labels, missing values written as text and the numeric meaning of its status gauge: settled against a captured response of a running instance and against the upstream source | `[V]` |
+| That an edited monitor leaves its previous row in the response until the service restarts, in every family at once | `[V]` |
+| That the row left behind carries the monitor's former **state** as well as its former labels, so an edit produces a contradiction rather than a harmless repetition | `[V]` |
+| Whether a directional pad scrolls the detail list as intended, and whether focus lands on its first row | `[U]` |
+| ~~Whether the neutral focus mark and the enlargement are visible and uncropped at the ends of the row on a television~~ — confirmed on the emulator; real hardware still open | `[V]` |
+| ~~What saving should do when the configuration file exists but cannot be read: replace it, or report the failure~~ — **decided**: report it, never replace automatically, and offer a reset the user confirms | `[V]` |
+| How a damaged preference file behaves on a device when written to and when reset, as opposed to through a test double | `[U]` |
+| Whether the explanation offered for contradictory data is understood, and whether a restart of the service is advice the user can act on | `[U]` |
+| ~~Whether the focus treatment the TV component library applies to its own buttons matches the project's neutral mark, since those buttons are not styled here~~ — checked on the emulator: they no longer light up in the brand colour | `[V]` |
 | Whether deferred consent is acceptable in practice, given the host shows nothing until approval | `[U]` |
 | Whether notifications are reliably visible on Android TV, as a possible consent prompt | `[U]` |
 | Whether a third-party application can publish to the Watch Next provider on the target device | `[U]` |

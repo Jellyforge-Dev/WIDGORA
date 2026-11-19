@@ -44,7 +44,10 @@ class InstanceRepositoryDeviceTest {
     fun anInstanceAndItsSecretSurviveARoundTripThroughRealStorage() = runBlocking {
         repository.save(config(), API_KEY)
 
-        assertEquals(listOf(StoredInstance.Valid(config())), repository.instances.first())
+        assertEquals(
+            StoredInstances.Readable(listOf(StoredInstance.Valid(config()))),
+            repository.instances.first(),
+        )
         val state = repository.secretOf(INSTANCE_ID)
         assertTrue(state.toString(), state is SecretState.Present)
         assertEquals(API_KEY, (state as SecretState.Present).apiKey)
@@ -71,10 +74,43 @@ class InstanceRepositoryDeviceTest {
 
         repository.delete(INSTANCE_ID)
 
-        assertEquals(emptyList<StoredInstance>(), repository.instances.first())
+        assertEquals(StoredInstances.Readable(emptyList()), repository.instances.first())
         assertEquals(SecretState.Missing, repository.secretOf(INSTANCE_ID))
         val raw = String(file.readBytes(), Charsets.ISO_8859_1)
         assertFalse(raw.contains("https://kuma.example.invalid"))
+    }
+
+    /**
+     * The reset against the real file and the real keystore, which is the only place it can be
+     * shown at all: removing a file and destroying key material are both platform behaviour.
+     *
+     * Its own file, because two DataStore instances must never share one path — and the file this
+     * class already holds belongs to the other tests.
+     */
+    @Test
+    fun resetLeavesNothingOfTheConfigurationOrTheKey() = runBlocking {
+        val resetFile = File(context.cacheDir, "reset-" + System.nanoTime() + ".preferences_pb")
+        val repository = InstanceRepository(
+            dataStore = PreferenceDataStoreFactory.create(produceFile = { resetFile }),
+            secretStore = secretStore,
+            removeStorage = { !resetFile.exists() || resetFile.delete() },
+        )
+        try {
+            repository.save(config(), API_KEY)
+            assertTrue(resetFile.exists())
+
+            assertEquals(StorageWriteResult.DONE, repository.reset())
+
+            assertEquals(StoredInstances.Readable(emptyList()), repository.instances.first())
+            assertEquals(SecretState.Missing, repository.secretOf(INSTANCE_ID))
+            // The store writes an empty file again afterwards, so what matters is not whether a
+            // file exists but whether anything of the configuration is still in it.
+            val raw = String(resetFile.readBytes(), Charsets.ISO_8859_1)
+            assertFalse(raw.contains("https://kuma.example.invalid"))
+            assertFalse(raw.contains("secret.ciphertext"))
+        } finally {
+            resetFile.delete()
+        }
     }
 
     private fun config(): InstanceConfig = InstanceConfig(

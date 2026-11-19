@@ -19,6 +19,27 @@
     <string name="dashboard_state_error_oversized">Antwort zu groß</string>
     <string name="dashboard_state_error_unknown">Abruf fehlgeschlagen</string>
 
+    <string name="dashboard_config_unreadable">Die gespeicherten Einstellungen sind nicht lesbar. Deine Instanz ist noch vorhanden, konnte aber nicht geladen werden. Öffne die Einstellungen und speichere sie erneut.</string>
+
+    <string name="dashboard_open_details">Die einzelnen Monitore anzeigen</string>
+    <string name="dashboard_open_settings">Einstellungen öffnen</string>
+    <plurals name="dashboard_affected_more">
+        <item quantity="one">+%1$d weiterer</item>
+        <item quantity="other">+%1$d weitere</item>
+    </plurals>
+
+    <string name="monitor_state_active">aktiv</string>
+    <string name="monitor_state_failed">ausgefallen</string>
+    <string name="monitor_state_pending">wartend</string>
+    <string name="monitor_state_maintenance">in Wartung</string>
+    <string name="monitor_state_unknown">unbekannt</string>
+
+    <string name="detail_back_hint">Mit der Zurück-Taste geht es zurück zur Übersicht.</string>
+    <string name="detail_no_monitors">Noch keine Monitore abgerufen.</string>
+    <string name="detail_response_time">%1$d ms</string>
+
+    <string name="monitor_note_contradictory">Widersprüchliche Angaben der Quelle.</string>
+
     <string name="dashboard_notice_disabled">Abgeschaltet.</string>
     <string name="dashboard_notice_secret_unusable">Der API-Schlüssel fehlt oder ist nicht mehr lesbar. Bitte in den Einstellungen neu eingeben.</string>
     <string name="dashboard_notice_entry_invalid">Diese Instanz ist ungültig gespeichert. Korrigiere sie in den Einstellungen oder lösche sie.</string>
@@ -66,7 +87,19 @@
     <string name="settings_delete_confirm">Ja, löschen</string>
     <string name="settings_delete_cancel">Behalten</string>
 
+    <string name="settings_config_unreadable">Die gespeicherten Einstellungen sind nicht lesbar. Du kannst die Instanz erneut eingeben und speichern oder die gespeicherten Einstellungen zurücksetzen.</string>
+
+    <string name="settings_reset">Gespeicherte Einstellungen zurücksetzen</string>
+    <string name="settings_reset_question">Die gespeicherten Einstellungen, den gespeicherten Schlüssel und sein Schlüsselmaterial entfernen? Das lässt sich nicht rückgängig machen.</string>
+    <string name="settings_reset_confirm">Ja, zurücksetzen</string>
+    <string name="settings_reset_cancel">Behalten</string>
+    <string name="settings_reset_done">Die gespeicherten Einstellungen wurden entfernt. Du kannst die Instanz neu einrichten.</string>
+
     <string name="settings_saved">Gespeichert.</string>
+
+    <string name="settings_error_save_failed">Konnte nicht gespeichert werden. Die Einstellungsdatei ist nicht beschreibbar.</string>
+    <string name="settings_error_delete_failed">Konnte nicht gelöscht werden. Die Einstellungsdatei ist nicht beschreibbar.</string>
+    <string name="settings_error_reset_failed">Die gespeicherten Einstellungen konnten nicht entfernt werden.</string>
 
     <string name="settings_error_display_name_required">Bitte einen Namen eingeben.</string>
     <string name="settings_error_api_key_required">Bitte den API-Schlüssel eingeben.</string>

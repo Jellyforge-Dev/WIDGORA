@@ -3,7 +3,9 @@ package io.github.jellyforgedev.widgora.settings
 import io.github.jellyforgedev.widgora.core.data.InstanceAddress
 import io.github.jellyforgedev.widgora.core.data.InstanceConfig
 import io.github.jellyforgedev.widgora.core.data.SecretState
+import io.github.jellyforgedev.widgora.core.data.StorageWriteResult
 import io.github.jellyforgedev.widgora.core.data.StoredInstance
+import io.github.jellyforgedev.widgora.core.data.StoredInstances
 import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState.Error.Reason
 import kotlin.test.Test
@@ -68,11 +70,13 @@ class SettingsStateHolderTest {
     @Test
     fun loadingReportsAStoredEntryThatIsNoLongerValid() = runBlocking {
         val store = FakeInstanceStore()
-        store.stored.value = listOf(
-            StoredInstance.Invalid(
-                instanceId = InstanceId("kuma"),
-                displayName = "Uptime Kuma",
-                baseUrl = "http://insecure.invalid",
+        store.stored.value = StoredInstances.Readable(
+            listOf(
+                StoredInstance.Invalid(
+                    instanceId = InstanceId("kuma"),
+                    displayName = "Uptime Kuma",
+                    baseUrl = "http://insecure.invalid",
+                ),
             ),
         )
         val holder = holder(store)
@@ -416,6 +420,186 @@ class SettingsStateHolderTest {
         assertEquals(StoredKey.NONE, state.storedKey)
     }
 
+    // --- A configuration that cannot be read --------------------------------------------------
+
+    /**
+     * An unreadable file is said out loud, with an empty form and the way out beside it.
+     *
+     * Not claimed to be an existing instance: nothing is known about what is stored, not even an
+     * identifier, so offering a delete would be offering to delete something unnamed. What is
+     * offered instead is the reset, which is the only honest action over storage nobody can read.
+     */
+    @Test
+    fun anUnreadableConfigurationIsReportedAndNothingIsInvented() = runBlocking {
+        val store = FakeInstanceStore()
+        store.stored.value = StoredInstances.Unreadable
+        val holder = holder(store)
+
+        holder.load()
+
+        val state = holder.state.value
+        assertTrue(state.configurationUnreadable)
+        assertFalse(state.existing)
+        assertFalse(state.storedEntryInvalid)
+        assertEquals("", state.displayName)
+        assertEquals("", state.address)
+        // Whether a key is stored is part of what could not be read, so nothing is claimed.
+        assertEquals(StoredKey.NONE, state.storedKey)
+    }
+
+    @Test
+    fun anEmptyConfigurationIsNotAnUnreadableOne() = runBlocking {
+        val holder = holder()
+
+        holder.load()
+
+        assertFalse(holder.state.value.configurationUnreadable)
+    }
+
+    /** Entering the instance again is the other way out, and it clears the notice. */
+    @Test
+    fun savingOverAnUnreadableConfigurationClearsTheNotice() = runBlocking {
+        val store = FakeInstanceStore()
+        store.stored.value = StoredInstances.Unreadable
+        val holder = holder(store)
+        holder.load()
+
+        holder.onDisplayNameChange("Uptime Kuma")
+        holder.onAddressChange("https://kuma.example.invalid")
+        holder.onApiKeyChange(ENTERED_KEY)
+
+        assertTrue(holder.save())
+        val state = holder.state.value
+        assertFalse(state.configurationUnreadable)
+        assertTrue(state.savedJustNow)
+    }
+
+    // --- Writes that do not happen ------------------------------------------------------------
+
+    /**
+     * The crash this replaces, seen from the screen.
+     *
+     * Saving over a damaged file used to raise out of a coroutine nobody was watching. Now it is
+     * a message, and nothing on the screen pretends the values were kept — in particular the key
+     * field keeps what was typed, because asking for it again would be the user's reward for a
+     * failure that was not theirs.
+     */
+    @Test
+    fun aFailedSaveIsReportedAndClaimsNothing() = runBlocking {
+        val store = FakeInstanceStore()
+        store.writesFail = true
+        val holder = holder(store)
+        holder.onDisplayNameChange("Uptime Kuma")
+        holder.onAddressChange("https://kuma.example.invalid")
+        holder.onApiKeyChange(ENTERED_KEY)
+
+        assertFalse(holder.save())
+
+        val state = holder.state.value
+        assertEquals(FailedWrite.SAVE, state.failedWrite)
+        assertFalse(state.savedJustNow)
+        assertEquals(ENTERED_KEY, state.apiKeyInput)
+        assertEquals(StoredKey.NONE, state.storedKey)
+        assertEquals(1, store.saveCalls)
+    }
+
+    @Test
+    fun aFailedDeleteLeavesTheInstanceOnTheScreen() = runBlocking {
+        val store = FakeInstanceStore()
+        store.put(config())
+        store.secret = SecretState.Present(STORED_KEY)
+        val holder = holder(store)
+        holder.load()
+        holder.requestDelete()
+        store.writesFail = true
+
+        holder.confirmDelete()
+
+        val state = holder.state.value
+        assertEquals(FailedWrite.DELETE, state.failedWrite)
+        assertFalse(state.confirmingDelete)
+        assertTrue(state.existing)
+        assertEquals("Uptime Kuma", state.displayName)
+        assertEquals(emptyList(), store.deleted)
+    }
+
+    /** A verdict about an earlier attempt must not sit beside values the user is changing. */
+    @Test
+    fun typingClearsTheReportOfAFailedWrite() = runBlocking {
+        val store = FakeInstanceStore()
+        store.writesFail = true
+        val holder = holder(store)
+        holder.onDisplayNameChange("Uptime Kuma")
+        holder.onAddressChange("https://kuma.example.invalid")
+        holder.onApiKeyChange(ENTERED_KEY)
+        holder.save()
+        assertEquals(FailedWrite.SAVE, holder.state.value.failedWrite)
+
+        holder.onDisplayNameChange("Uptime Kuma ")
+
+        assertNull(holder.state.value.failedWrite)
+    }
+
+    // --- The reset ----------------------------------------------------------------------------
+
+    /** Never automatic: it takes two deliberate actions, like deleting. */
+    @Test
+    fun resettingAsksForConfirmationFirst() = runBlocking {
+        val store = FakeInstanceStore()
+        store.stored.value = StoredInstances.Unreadable
+        val holder = holder(store)
+        holder.load()
+
+        holder.requestReset()
+        assertTrue(holder.state.value.confirmingReset)
+        assertEquals(0, store.resetCalls)
+
+        holder.cancelReset()
+        assertFalse(holder.state.value.confirmingReset)
+        assertEquals(0, store.resetCalls)
+    }
+
+    @Test
+    fun confirmingResetEmptiesEverythingAndSaysSo() = runBlocking {
+        val store = FakeInstanceStore()
+        store.stored.value = StoredInstances.Unreadable
+        val holder = holder(store)
+        holder.load()
+        holder.requestReset()
+
+        holder.confirmReset()
+
+        assertEquals(1, store.resetCalls)
+        val state = holder.state.value
+        assertTrue(state.resetJustNow)
+        assertFalse(state.confirmingReset)
+        // Nothing is stored any more, so nothing is unreadable any more either.
+        assertFalse(state.configurationUnreadable)
+        assertFalse(state.existing)
+        assertEquals("", state.address)
+        assertEquals(StoredKey.NONE, state.storedKey)
+        assertNull(state.failedWrite)
+    }
+
+    @Test
+    fun aFailedResetIsReportedAndNotMistakenForASuccess() = runBlocking {
+        val store = FakeInstanceStore()
+        store.stored.value = StoredInstances.Unreadable
+        store.resetFails = true
+        val holder = holder(store)
+        holder.load()
+        holder.requestReset()
+
+        holder.confirmReset()
+
+        val state = holder.state.value
+        assertEquals(FailedWrite.RESET, state.failedWrite)
+        assertFalse(state.resetJustNow)
+        assertFalse(state.confirmingReset)
+        // Still unreadable, because nothing was removed.
+        assertTrue(state.configurationUnreadable)
+    }
+
     private fun holder(
         store: InstanceStore = FakeInstanceStore(),
         tester: ConnectionTester = FakeTester(ConnectionTestResult.Reachable(0)),
@@ -430,33 +614,54 @@ class SettingsStateHolderTest {
 
     private class FakeInstanceStore : InstanceStore {
 
-        val stored = MutableStateFlow<List<StoredInstance>>(emptyList())
+        val stored = MutableStateFlow<StoredInstances>(StoredInstances.Readable(emptyList()))
         var secret: SecretState = SecretState.Missing
         var savedConfig: InstanceConfig? = null
         var savedKey: String? = null
         var saveCalls = 0
         val deleted = mutableListOf<InstanceId>()
+        var resetCalls = 0
+
+        /** Makes saving and deleting fail, the way an unwritable file does. */
+        var writesFail = false
+
+        /** Makes the reset itself fail, which is a different situation from a failed save. */
+        var resetFails = false
 
         fun put(config: InstanceConfig) {
-            stored.value = listOf(StoredInstance.Valid(config))
+            stored.value = StoredInstances.Readable(listOf(StoredInstance.Valid(config)))
         }
 
-        override val instances: Flow<List<StoredInstance>> get() = stored
+        override val instances: Flow<StoredInstances> get() = stored
 
         override suspend fun secretOf(instanceId: InstanceId): SecretState = secret
 
-        override suspend fun save(config: InstanceConfig, apiKey: String?) {
+        override suspend fun save(config: InstanceConfig, apiKey: String?): StorageWriteResult {
+            // Counted before the outcome is decided: a refused write is still an attempt that
+            // reached storage, and a test about validation has to be able to tell the two apart.
+            saveCalls++
+            if (writesFail) return StorageWriteResult.FAILED
             savedConfig = config
             savedKey = apiKey
-            saveCalls++
             put(config)
             if (apiKey != null) secret = SecretState.Present(apiKey)
+            return StorageWriteResult.DONE
         }
 
-        override suspend fun delete(instanceId: InstanceId) {
+        override suspend fun delete(instanceId: InstanceId): StorageWriteResult {
+            if (writesFail) return StorageWriteResult.FAILED
             deleted.add(instanceId)
-            stored.value = emptyList()
+            stored.value = StoredInstances.Readable(emptyList())
             secret = SecretState.Missing
+            return StorageWriteResult.DONE
+        }
+
+        override suspend fun reset(): StorageWriteResult {
+            resetCalls++
+            if (resetFails) return StorageWriteResult.FAILED
+            stored.value = StoredInstances.Readable(emptyList())
+            secret = SecretState.Missing
+            return StorageWriteResult.DONE
         }
     }
 
