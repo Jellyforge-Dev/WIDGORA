@@ -146,6 +146,17 @@ object WidgoraText {
 
     val ScreenTitle = WidgoraTextStyle(size = 34.sp, lineHeight = 42.sp)
     val TileValue = WidgoraTextStyle(size = 44.sp, lineHeight = 54.sp)
+
+    /**
+     * The counts on a widget, which is a smaller canvas than a dashboard tile.
+     *
+     * [TileValue] is sized for a tile 420dp wide on a full screen. A widget is declared at 300dp
+     * and loses about 24dp of that to the padding its host puts around it, and at 44sp a row of
+     * five marks with their numbers does not fit in what is left — it shortens, which throws away
+     * the one thing the widget exists to show. This is the same value at a size that suits the
+     * surface it is on, and still more than half again the floor.
+     */
+    val WidgetValue = WidgoraTextStyle(size = 28.sp, lineHeight = 34.sp)
     val TileTitle = WidgoraTextStyle(size = 26.sp, lineHeight = 32.sp)
     val Label = WidgoraTextStyle(size = 20.sp, lineHeight = 26.sp)
     val Caption = WidgoraTextStyle(size = 18.sp, lineHeight = 24.sp)
@@ -160,6 +171,7 @@ object WidgoraText {
     val All: List<Pair<String, WidgoraTextStyle>> = listOf(
         "ScreenTitle" to ScreenTitle,
         "TileValue" to TileValue,
+        "WidgetValue" to WidgetValue,
         "TileTitle" to TileTitle,
         "Label" to Label,
         "Caption" to Caption,

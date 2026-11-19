@@ -1,10 +1,12 @@
 package io.github.jellyforgedev.widgora.widget
 
 import android.content.Context
+import android.os.Build
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.format.DateFormat
 import android.text.style.ForegroundColorSpan
+import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import androidx.compose.ui.graphics.toArgb
@@ -36,13 +38,62 @@ import java.util.Date
 object WidgetViews {
 
     /**
+     * How much of the widget is drawn, which depends on how much room there is.
+     *
+     * The two differ in one line and nothing else. Both carry the state's mark and its word, and
+     * both carry the time the data was obtained; the compact one puts those two on a shared line
+     * instead of on two lines of their own, which is what makes it fit the smallest box the
+     * widget is declared for.
+     */
+    internal enum class Layout(val resource: Int) {
+        COMPACT(R.layout.widget_counts_compact),
+        FULL(R.layout.widget_counts),
+    }
+
+    /**
      * Builds the views for one widget.
+     *
+     * From Android 12 the host is handed both variants with the size each one is for, and picks
+     * per widget; the platform does the choosing, which is the only party that knows the box.
+     * Below that there is no such mechanism, so the compact variant is used at every size — it
+     * is correct everywhere, merely plainer than it needs to be in a large box.
      *
      * @param appWidgetId the widget this is for; it decides the pending intent, so two widgets
      *   never share one
      */
     fun build(context: Context, appWidgetId: Int, model: WidgetRenderModel): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_counts)
+        val compact = build(context, appWidgetId, model, Layout.COMPACT)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return compact
+
+        return RemoteViews(
+            mapOf(
+                SizeF(
+                    WidgetSizes.MIN_WIDTH_DP.toFloat(),
+                    WidgetSizes.MIN_HEIGHT_DP.toFloat(),
+                ) to compact,
+                SizeF(
+                    WidgetSizes.MIN_WIDTH_DP.toFloat(),
+                    WidgetSizes.FULL_HEIGHT_DP.toFloat(),
+                ) to build(context, appWidgetId, model, Layout.FULL),
+            ),
+        )
+    }
+
+    /**
+     * One variant on its own.
+     *
+     * Visible beyond this file so that a test can measure each variant at the smallest size it
+     * is declared for. Through the public entry point the platform picks, which is correct in a
+     * host and useless in a test: it would measure whichever variant the platform happened to
+     * choose and report that as both.
+     */
+    internal fun build(
+        context: Context,
+        appWidgetId: Int,
+        model: WidgetRenderModel,
+        layout: Layout,
+    ): RemoteViews {
+        val views = RemoteViews(context.packageName, layout.resource)
         views.setOnClickPendingIntent(
             R.id.widget_root,
             WidgetLaunch.pendingIntentFor(context, appWidgetId),
@@ -79,7 +130,7 @@ object WidgetViews {
                     mark = presentation.mark,
                     label = context.getString(presentation.label),
                     stateColor = presentation.color.toArgb(),
-                    footer = footerFor(context, model, presentation),
+                    footer = footerFor(context, model, presentation, layout),
                 )
             }
         }
@@ -98,10 +149,19 @@ object WidgetViews {
         context: Context,
         model: WidgetRenderModel.Instance,
         presentation: WidgetPresentation,
+        layout: Layout,
     ): String {
         val updatedAt = model.updatedAtEpochMs
             ?: return context.getString(R.string.dashboard_no_data_yet)
         val time = DateFormat.getTimeFormat(context).format(Date(updatedAt))
+
+        // On a shared line the long sentence would be cut off, and the one part of it that has
+        // to survive is the time. The state beside it already says whether the value is current,
+        // so the sentence was saying it twice.
+        if (layout == Layout.COMPACT) {
+            return context.getString(R.string.widget_updated_compact, time)
+        }
+
         val template = if (presentation.valueIsOutdated) {
             R.string.dashboard_last_updated_outdated
         } else {

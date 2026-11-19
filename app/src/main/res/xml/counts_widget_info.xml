@@ -6,10 +6,18 @@
   floor is thirty minutes and it wakes a sleeping device in order to run; on a television that
   means waking up to fetch data nobody is looking at. WIDGORA pushes its own updates instead.
 
-  One size, deliberately. The cell grid belongs to the host, and the host this is aimed at does
-  not exist yet, so a second size would be a guess dressed up as a choice. The dp figures are what
-  decides on a host without a grid, and the cell figures are what decides on one with a grid from
-  Android 12 onwards; both are given because a host that ignores one reads the other.
+  One declared size, deliberately. The cell grid belongs to the host, and the host this is aimed
+  at does not exist yet, so a second declared size would be a guess dressed up as a choice. The
+  dp figures are what decides on a host without a grid, and the cell figures are what decides on
+  one with a grid from Android 12 onwards; both are given because a host that ignores one reads
+  the other.
+
+  The smallest size a resize may reach is now the declared size itself, and that is a correction
+  rather than a preference. It used to be 240 × 120 dp, which this widget cannot draw: on a
+  television at that height the bottom line was cut in half and the line below it was missing
+  altogether. Declaring a size is a promise to every host that reads it, and the promise now
+  matches what the smallest layout actually needs. The figures live in WidgetSizes as well, and
+  a test holds the two against each other.
 
   There is no android:configure yet. Choosing which instance a widget shows, and whether it may
   name individual monitors, is a later step; until then a widget shows the first instance and
@@ -22,14 +30,14 @@
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
-    android:initialLayout="@layout/widget_counts"
+    android:initialLayout="@layout/widget_counts_compact"
     android:maxResizeHeight="320dp"
     android:maxResizeWidth="640dp"
-    android:minHeight="160dp"
-    android:minResizeHeight="120dp"
-    android:minResizeWidth="240dp"
+    android:minHeight="170dp"
+    android:minResizeHeight="170dp"
+    android:minResizeWidth="300dp"
     android:minWidth="300dp"
-    android:previewLayout="@layout/widget_counts"
+    android:previewLayout="@layout/widget_counts_compact"
     android:resizeMode="horizontal|vertical"
     android:targetCellHeight="2"
     android:targetCellWidth="3"

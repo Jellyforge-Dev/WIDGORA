@@ -187,9 +187,22 @@ class DesignSystemTest {
         }
     }
 
+    /**
+     * Every declared text style is in the list the checks above iterate over.
+     *
+     * The expectation is read from the tokens themselves rather than written down as a number.
+     * A hardcoded count made this a test that asked to be bumped: adding a style and forgetting
+     * to list it failed here, and the quickest way to green was to change the number — which is
+     * exactly the outcome the test existed to prevent. Reflection has no such shortcut.
+     */
     @Test
     fun everyTextStyleIsListedForTheseChecks() {
-        assertEquals(5, WidgoraText.All.size)
+        val declared = WidgoraText::class.java.declaredMethods
+            .filter { it.returnType == WidgoraTextStyle::class.java && it.parameterCount == 0 }
+            .map { it.name.removePrefix("get") }
+            .toSet()
+
+        assertEquals(declared, WidgoraText.All.map { it.first }.toSet())
         assertEquals(WidgoraText.All.size, WidgoraText.All.map { it.first }.distinct().size)
     }
 

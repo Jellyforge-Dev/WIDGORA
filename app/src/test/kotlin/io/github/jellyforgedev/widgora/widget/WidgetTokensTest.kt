@@ -62,6 +62,10 @@ class WidgetTokensTest {
             "widget_text_counts" to WidgoraText.TileValue.size.asDimension(),
             "widget_text_state" to WidgoraText.Label.size.asDimension(),
             "widget_text_footer" to WidgoraText.Caption.size.asDimension(),
+            "widget_padding_compact" to WidgoraSpacing.Small.asDimension(),
+            "widget_text_compact_title" to WidgoraText.Label.size.asDimension(),
+            "widget_text_compact_counts" to WidgoraText.WidgetValue.size.asDimension(),
+            "widget_text_compact_line" to WidgoraText.Caption.size.asDimension(),
         )
 
         assertEquals(expected.keys.sorted(), dimens.keys.sorted(), "the set of measurements differs")
@@ -153,11 +157,67 @@ class WidgetTokensTest {
         return Dimension(match.groupValues[1].toFloat(), match.groupValues[2])
     }
 
+    /**
+     * The sizes the provider declares are the sizes the layouts are built for.
+     *
+     * This is the mismatch that produced a cut-off widget on a television: the metadata offered
+     * a resize down to 240 × 120 dp while the smallest layout needed 300 × 160. A declared size
+     * is a promise to every host that reads it, and a promise nothing held is how it came to be
+     * made in the first place.
+     */
+    @Test
+    fun theDeclaredSizesMatchTheSizesTheLayoutsAreBuiltFor() {
+        val declared = providerAttributes()
+
+        for (attribute in listOf("minWidth", "minResizeWidth")) {
+            assertEquals(
+                WidgetSizes.MIN_WIDTH_DP,
+                dimension(declared.getValue(attribute), attribute).value.toInt(),
+                attribute,
+            )
+        }
+        for (attribute in listOf("minHeight", "minResizeHeight")) {
+            assertEquals(
+                WidgetSizes.MIN_HEIGHT_DP,
+                dimension(declared.getValue(attribute), attribute).value.toInt(),
+                attribute,
+            )
+        }
+
+        // The larger variant has to be reachable, or it would be built and never shown.
+        val maxHeight = dimension(declared.getValue("maxResizeHeight"), "maxResizeHeight")
+        assertTrue(
+            maxHeight.value >= WidgetSizes.FULL_HEIGHT_DP,
+            "the full variant needs ${WidgetSizes.FULL_HEIGHT_DP}dp and a resize stops at " +
+                "${maxHeight.value}dp",
+        )
+    }
+
+    /** The widget framework's own periodic update stays switched off. */
+    @Test
+    fun theWidgetFrameworkIsNotAskedForPeriodicUpdates() {
+        assertEquals("0", providerAttributes().getValue("updatePeriodMillis"))
+    }
+
+    private fun providerAttributes(): Map<String, String> {
+        val document = DocumentBuilderFactory.newInstance()
+            .apply { isNamespaceAware = false }
+            .newDocumentBuilder()
+            .parse(resourceFile(PROVIDER_PATH))
+        val element = document.getElementsByTagName("appwidget-provider").item(0)
+            ?: fail("the provider declaration has no appwidget-provider element")
+        val attributes = element.attributes
+        return (0 until attributes.length).associate { index ->
+            val attribute = attributes.item(index)
+            attribute.nodeName.removePrefix("android:") to attribute.nodeValue
+        }
+    }
+
     private fun parse(tag: String): Map<String, String> {
         val document = DocumentBuilderFactory.newInstance()
             .apply { isNamespaceAware = false }
             .newDocumentBuilder()
-            .parse(tokenFile())
+            .parse(resourceFile(TOKENS_PATH))
         val nodes = document.getElementsByTagName(tag)
         return (0 until nodes.length).associate { index ->
             val node = nodes.item(index)
@@ -173,22 +233,23 @@ class WidgetTokensTest {
      * A unit test's working directory is set by the build, and relying on it is exactly the kind
      * of assumption that makes a test pass on one machine and fail on another.
      */
-    private fun tokenFile(): File {
+    private fun resourceFile(relativePath: String): File {
         var directory: File? = File("").absoluteFile
         repeat(SEARCH_DEPTH) {
             val here = directory ?: return@repeat
-            for (candidate in listOf(RELATIVE_PATH, "app/$RELATIVE_PATH")) {
+            for (candidate in listOf(relativePath, "app/$relativePath")) {
                 val file = File(here, candidate)
                 if (file.isFile) return file
             }
             directory = here.parentFile
         }
-        fail("widget_tokens.xml was not found from ${File("").absolutePath}")
+        fail("$relativePath was not found from ${File("").absolutePath}")
     }
 
     private companion object {
 
-        const val RELATIVE_PATH = "src/main/res/values/widget_tokens.xml"
+        const val TOKENS_PATH = "src/main/res/values/widget_tokens.xml"
+        const val PROVIDER_PATH = "src/main/res/xml/counts_widget_info.xml"
         const val SEARCH_DEPTH = 5
         const val TOLERANCE = 0.001f
         const val MAX_WIDGET_CORNER_RADIUS_DP = 28f
