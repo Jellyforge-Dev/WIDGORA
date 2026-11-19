@@ -228,7 +228,26 @@ software is.
 
 ## 5. Bridge protection, in four layers
 
-The layers are listed in order of how much weight they carry. The strongest does not involve
+**Status: the bridge is deferred.** The route to a host launcher is a standard Android app
+widget instead, and the rules protecting that route are written down together with the code that
+implements it. The four layers below describe the deferred design. They are kept because a
+return to the bridge would need them, and they describe nothing that exists.
+
+Two consequences are worth stating here now, because they change what has to be protected rather
+than merely postponing it:
+
+- **Consent stops being WIDGORA's to manage.** Placing a widget is an act the user performs in
+  the host, in the foreground, through the system. The pre-authorisation and deferred-consent
+  mechanisms of layer 2 have no equivalent on that route and need none, and the background
+  activity-start restriction that shaped them does not arise.
+- **A host sees whatever a widget displays.** A `RemoteViews` hierarchy carries its text into
+  the host's process. Layer 1 — exposing very little — therefore becomes the only layer carrying
+  weight, and it has to hold **without** the module boundary described in section 3, which made
+  monitor names structurally unreachable from the bridge. A widget provider lives in the
+  application module and can reach them. What takes the place of that boundary is settled with
+  the implementation and is not claimed here.
+
+The layers are listed in order of how much weight they carried. The strongest does not involve
 identity at all.
 
 ### Layer 1 — Minimise what is behind the door

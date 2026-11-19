@@ -113,27 +113,41 @@ window label, the varying tag labels, missing values written as text and the num
 its status gauge, settled against a captured response of a running instance and against the
 upstream source rather than assumed.
 
-## M1 — Provider Bridge
+## M1 — App widgets
 
-- Read-only `ContentProvider` exposing prepared display values only.
-- Consent model: pre-authorisation in the foreground, deferred consent as fallback. No background
-  activity starts `[U]`.
-- Caller verification with documented limits.
-- Detail rows disabled by default, enabled per instance.
-- A small reference consumer application, written within this project, which proves the interface
-  works without waiting for anyone.
-- Versioned, documented contract.
+The route to a host launcher, and the replacement for the Provider Bridge that was planned here
+before. WIDGORA supplies a standard Android app widget, so the host side is a platform feature
+rather than an agreement with one project.
 
-## M2 — Host launcher integration `[D]`
+- An `AppWidgetProvider` handing the host a `RemoteViews` hierarchy, built directly rather than
+  through Jetpack Glance.
+- All six display states. A widget that has not been configured says so; it never shows sample
+  values.
+- Refresh through WorkManager every 30 minutes, with the widget framework's own periodic update
+  switched off. A widget counts as outdated after 45 minutes, and every successful foreground
+  fetch pushes an update as well.
+- One widget size to begin with.
+- A configuration step that chooses the instance and decides whether monitor names appear in
+  that widget. They do not by default.
+- Opening a widget opens WIDGORA and nothing else.
+- The device feature for app widgets is declared as not required, because the standalone
+  application does not depend on it.
+- A widget host included in debug builds only, so that a widget can be seen and operated without
+  waiting for a launcher that hosts one.
+
+**Completion criterion:** a widget showing real data inside a host, operated with a remote
+control.
+
+## M2 — Display in a host launcher `[D]`
 
 Runs in parallel with M1 and M3. Never blocks them.
 
-- Proposal to the maintainer of the intended host launcher: one additional home-screen section
-  that queries the bridge, adding no dependency to that project and causing it to contact no
-  additional network host.
-- On interest: a narrow upstream contribution.
-- If declined: the standalone application and the Watch Next surface carry the product. No work
-  from M0 or M1 is lost.
+- A signed test build for the maintainer of the intended host launcher, once a widget works.
+- Hosting is then that project's own work: a launcher that hosts widgets displays WIDGORA's
+  without WIDGORA contributing code to it, and without that project contacting any additional
+  network host.
+- If it does not happen: the standalone application carries the product, and any other launcher
+  able to host widgets can display the same widget. No work from M0 or M1 is lost.
 
 ## M3 — Further integrations
 
@@ -192,6 +206,7 @@ integrations.
 
 | Item | Reason |
 |---|---|
+| Provider Bridge — a read-only `ContentProvider` exposing prepared display values to a host | Deferred, not abandoned, and nothing of it was built. It carries values rather than a view, which only helps a host that wants to draw WIDGORA's data with its own components; no host asks for that today. A standard app widget reaches the same goal through a platform mechanism and with much less to secure. **It returns if a host launcher wants to render WIDGORA's data itself.** The design and its security reasoning are kept in `ARCHITECTURE.md` and `SECURITY.md` for that case |
 | Financial market data | No free data source found whose terms permit redistribution in client software. A licensing problem, not a technical one `[U]` |
 | YouTube subscription feeds | No official API exposes a user's subscription timeline without an interactive authorisation flow. Per-channel feeds are the only pragmatic route `[V]` |
 | Free drag-and-drop grid placement | Poor interaction design with a remote control. A discrete grid with a move mode is planned instead |

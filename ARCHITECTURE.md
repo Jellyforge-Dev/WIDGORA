@@ -37,13 +37,19 @@ The product promise:
 
 - **Scenario A — standalone application (the foundation).** WIDGORA ships its own full-screen
   dashboard with its own design system. It depends on no third-party component.
-- **Scenario B — native rendering inside a host launcher (the long-term goal).** A launcher
-  reads prepared display values from WIDGORA and renders them with its own components.
-  Variant **B2** applies: the host owns typography, focus behaviour and basic presentation,
-  while WIDGORA keeps its brand identity through accent colours, icons and widget variants.
+- **Scenario B — display inside a host launcher (the long-term goal).** WIDGORA supplies a
+  standard Android app widget, and any launcher able to host widgets can show it.
 
-Scenario B is never a precondition for the product to function. In the standalone application
-WIDGORA's design system is fully sovereign.
+**Variant B2 is given up.** It held that a host would own typography, focus behaviour and basic
+presentation while WIDGORA kept its identity through accent colours and icon tokens. That split
+requires a host willing to render WIDGORA's data with its own components, and it is not what an
+app widget does: a widget hands over a prepared view hierarchy, so WIDGORA owns everything
+inside the box while the host owns the frame around it, its size, and whether focus enters at
+all. The design system is therefore authoritative in both scenarios. That is simpler than the
+arrangement it replaces, and it gives up the one thing B2 promised — blending into a host's own
+look. Section 5a records what replaces it.
+
+Scenario B is never a precondition for the product to function.
 
 ### Vendor neutrality
 
@@ -377,13 +383,28 @@ Background refresh with WorkManager is **not** implemented `[U]`.
 
 ---
 
-## 5. Provider Bridge
+## 5. Provider Bridge — deferred
 
-The bridge is the interface a host launcher uses to display WIDGORA data. It is a read-only
+**Status: deferred, not abandoned. Nothing of it is implemented, and the route to a host
+launcher is now section 5a.** What follows is the design as it stood. It is kept whole, because
+it is the reasoning a return to it would need, and it is no longer planned work.
+
+**Why it is deferred.** The bridge carries values rather than a view, which is precisely what a
+host needs in order to draw WIDGORA's data with its own components. No host asks for that
+today. A standard app widget reaches the same product goal — WIDGORA's data on a host's home
+screen — through a mechanism the platform already provides, and with far less surface to
+secure: the consent model, the caller verification and the deep-link contract below all have no
+equivalent there, because placing a widget is itself the user's decision, taken in the host, in
+the foreground. Building both would mean maintaining two contracts for one purpose.
+
+**The condition for its return:** a host launcher that wants to render WIDGORA's data with its
+own components. Until then this section is reference material, and it is not maintained against
+the rest of the document.
+
+The bridge is the interface such a host launcher would use. It is a read-only
 `ContentProvider` exported by WIDGORA.
 
 **Authority:** `io.github.jellyforgedev.widgora.bridge`
-**Status:** draft. Not implemented. Several mechanisms still require device verification `[U]`.
 
 ### Design principle: display values only
 
@@ -486,6 +507,59 @@ target a different integration.
 
 ---
 
+## 5a. App widgets
+
+**Status: decided, not implemented.** This section records the decisions and nothing else. The
+mechanics follow with the code: sizes and layout, focus behaviour inside a host, what power
+management does to the refresh on a television, and how monitor names are kept out of a widget
+now that the module boundary which made them unreachable no longer applies.
+
+WIDGORA supplies a standard Android app widget — an `AppWidgetProvider` that hands the host a
+`RemoteViews` hierarchy. Any launcher able to host widgets can display it, which makes the host
+side a platform feature rather than an agreement with one project.
+
+| Decision | Choice |
+|---|---|
+| Implementation | `RemoteViews` directly, not Jetpack Glance |
+| Periodic update by the widget framework | off, `updatePeriodMillis="0"` |
+| Refresh | WorkManager, every 30 minutes |
+| Outdated after | 45 minutes |
+| Additional refresh | every successful foreground fetch also pushes an update to the widgets |
+| Monitor names in a widget | switchable per widget, off by default |
+| Device feature `android.software.app_widgets` | declared, `required="false"` |
+| Sizes | one size to begin with |
+| A widget that has not been configured | says so; it never shows sample values |
+
+**Why not Glance.** Glance is not directly interoperable with Jetpack Compose UI and uses its
+own set of composables `[V]`, so the design system that draws the dashboard cannot be carried
+across either way. The presentation is written a second time whichever is chosen, and
+`RemoteViews` is what the host actually receives, with nothing between the code and the result.
+It also adds no dependency.
+
+**Why periodic updates are switched off.** The widget framework's own mechanism has a floor of
+30 minutes and wakes a sleeping device in order to run `[V]`. On a television that means waking
+to fetch data nobody is looking at. WorkManager has a floor of 15 minutes and can be delayed
+further by power management `[V]`; 30 minutes sits above that floor, so a single deferred run is
+ordinary rather than visible. Outdated after 45 minutes — one and a half intervals — means one
+skipped run does not mark a widget stale. The time the data was obtained is shown either way.
+
+**Why the device feature is not required.** A device may support widgets or not, and the
+standalone application does not depend on them. Observed `[V]`: a television running Android 14
+declares `android.software.app_widgets`, while a Google TV system image at API level 36 does
+not. Declaring the feature as required would hide WIDGORA from the store on such a device for
+the sake of a surface that is an addition rather than the product.
+
+**The click target.** A widget opens WIDGORA and nothing else. The host is handed a
+`PendingIntent` built in WIDGORA's own process, carrying an explicit intent to a WIDGORA
+component together with that widget's own identifier, and marked immutable, so a host can send
+it but neither redirect it nor add anything to it `[V]`. This replaces the `launch_uri` field of
+the deferred bridge and is stricter than the rule it replaces: there is no scheme to register,
+so the substitution the old rule existed to contain cannot arise. The receiving side still
+validates the identifier it is given, for the same reason as before — neither side trusts the
+other with more than an identifier.
+
+---
+
 ## 6. Host launcher integration
 
 The intended first host is CleanMyTV Home. The following is based on reading its public
@@ -507,9 +581,13 @@ repository.
 **Consequences**
 
 - Native rendering inside that launcher requires a change in the launcher itself `[D]`.
-- The intended approach is a narrow upstream contribution: one additional section that queries
-  the bridge. This adds **no dependency** to the launcher and causes it to contact **no
-  additional network host**, since WIDGORA performs all networking.
+- **The intended approach is no longer an upstream contribution to that launcher.** Its
+  maintainer has stated that a standalone application is the right shape, that ordinary Android
+  app widgets would let any launcher display WIDGORA, that the launcher could host them once it
+  hosts widgets at all, and that a test build would be welcome once a widget works. No date is
+  attached to any of it `[D]`. WIDGORA therefore supplies a widget — section 5a — and hosting is
+  that project's own work. It still adds **no dependency** to the launcher and still causes it
+  to contact **no additional network host**, because WIDGORA performs all networking.
 - No fork is planned. A fork is technically permitted by the licence but would require continuous
   rebasing against a fast-moving codebase, which is not sustainable for a small team.
 - Publishing media items to the Watch Next provider is an additional, independent surface that
