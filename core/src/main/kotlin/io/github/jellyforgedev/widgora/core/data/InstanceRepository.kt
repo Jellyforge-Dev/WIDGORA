@@ -257,24 +257,38 @@ class InstanceRepository internal constructor(
      * failed. Replacing a damaged file silently would mean deciding on the user's behalf that
      * their address and their key are worth less than a working screen.
      *
-     * Both halves are attempted, in this order:
+     * Three steps, and **the order of the last two matters**:
      *
      * 1. The key material goes first. It cannot be addressed one instance at a time here — the
      *    identifiers are in the file that cannot be read — so [SecretStore.forgetAll] is the only
      *    way to leave nothing behind.
-     * 2. The file is removed, and the open store is then cleared as well. The second step is what
-     *    makes an in-memory store empty; against a real file it re-establishes an empty state in
-     *    the instance that is already open. Removing the file under a store is otherwise something
-     *    to avoid, and it is defensible exactly here: a store whose every read has failed holds no
-     *    value that the removal could contradict.
+     * 2. The stored values are cleared **through the store**, so that the instance that is already
+     *    open ends up agreeing with the disk.
+     * 3. Only then is the file itself removed.
      *
-     * @return [StorageWriteResult.DONE] when nothing is stored any more, by either step.
+     * The other way round looks equivalent and is not. Shown on an emulator `[V]`: with the file
+     * deleted first, the clear that followed reported success and wrote nothing at all. The store
+     * re-reads the file when it writes; it found no file, read an empty set of values, and a clear
+     * of nothing is not a change — so it skipped the write, and a store only republishes what it
+     * has actually written. The removal was real, the file was gone, and this repository went on
+     * handing out the instance it had read before it for as long as the process lived. A reset that
+     * reports success while the dashboard still shows the instance is worse than one that fails.
+     *
+     * Clearing first has no such hole. Against a readable file the clear is a real change, so it is
+     * written and published, and the removal that follows cannot contradict a value that is already
+     * empty. Against a damaged file the clear fails and the removal carries the reset on its own,
+     * which is sound because nothing was ever published from a file that could not be read: a read
+     * that failed is not kept, so the next one finds no file and reports an empty configuration.
+     *
+     * @return [StorageWriteResult.DONE] when nothing is stored any more, by either of the two.
      */
     suspend fun reset(): StorageWriteResult {
         secretStore.forgetAll()
-        val removed = removeStorage()
+        // Before the removal, never after it. See the note above: afterwards this is a write that
+        // changes nothing, and a store that writes nothing keeps publishing what it last read.
         val cleared = write { preferences -> preferences.clear() } == StorageWriteResult.DONE
-        return if (removed || cleared) StorageWriteResult.DONE else StorageWriteResult.FAILED
+        val removed = removeStorage()
+        return if (cleared || removed) StorageWriteResult.DONE else StorageWriteResult.FAILED
     }
 
     /** The stored preferences, or `null` when the file cannot be read. */

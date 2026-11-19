@@ -95,6 +95,12 @@ against the user's services themselves.
   write leads to it. Deleting a single instance still destroys that instance's key material only,
   and only once the entry is actually gone from the file. Enumerating aliases cannot reach another
   application's keys: the keystore an application sees holds only its own entries.
+- A reset reports success only when the stored values are really gone `[V]`. The first
+  implementation removed the file before clearing the values through the store, which on a device
+  left the application serving the configuration it had already read while reporting the reset as
+  done — a false assurance about data the user believed destroyed. The order is now the other way
+  round, and an instrumented test holds it. The key material is unaffected by the order: it is
+  destroyed first, and nothing of it survives either path.
 - A credential is read from the store only at the moment a retrieval needs it, and it is never
   held in a field, in a dashboard state or in anything the screen renders. An instance whose
   credential cannot be read is not retrieved at all; it reports that the credential has to be

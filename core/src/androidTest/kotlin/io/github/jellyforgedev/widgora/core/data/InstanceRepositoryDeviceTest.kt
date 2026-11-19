@@ -101,13 +101,14 @@ class InstanceRepositoryDeviceTest {
 
             assertEquals(StorageWriteResult.DONE, repository.reset())
 
+            // The assertion that caught the ordering defect: the repository must stop reporting
+            // the instance, not merely stop having a file to read it from.
             assertEquals(StoredInstances.Readable(emptyList()), repository.instances.first())
             assertEquals(SecretState.Missing, repository.secretOf(INSTANCE_ID))
-            // The store writes an empty file again afterwards, so what matters is not whether a
-            // file exists but whether anything of the configuration is still in it.
-            val raw = String(resetFile.readBytes(), Charsets.ISO_8859_1)
-            assertFalse(raw.contains("https://kuma.example.invalid"))
-            assertFalse(raw.contains("secret.ciphertext"))
+            // And the file is gone rather than present and empty. This expectation was wrong
+            // before rather than too weak: it assumed the store would rewrite the file after the
+            // removal, which is exactly the write that silently did not happen.
+            assertFalse(resetFile.exists())
         } finally {
             resetFile.delete()
         }
