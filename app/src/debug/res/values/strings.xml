@@ -10,11 +10,14 @@
 
     <string name="debug_host_title">Widget host (debug)</string>
 
-    <!-- The size currently being shown, so a hand check can read it rather than estimate it. -->
-    <string name="debug_host_size">Size: %1$d × %2$d dp</string>
+    <!--
+      The step currently being shown, so a hand check can read it rather than estimate it. It
+      names the step as well as the size, because there are more than two of them now and
+      "larger" stops being an instruction once the largest one is reached.
+    -->
+    <string name="debug_host_size">Size %1$d of %2$d: %3$d × %4$d dp</string>
 
-    <string name="debug_host_size_larger">Larger</string>
-    <string name="debug_host_size_smaller">Smaller</string>
+    <string name="debug_host_size_next">Next size</string>
 
     <!--
       Binding is refused until the shell grants it. The command carries the package name so that

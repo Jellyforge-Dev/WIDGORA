@@ -66,4 +66,31 @@
     <!-- WidgoraText.Caption.size -->
     <dimen name="widget_text_compact_line">18sp</dimen>
 
+    <!--
+      The range the counts line is scaled within.
+
+      A widget's box belongs to its host, so the counts are not given a size — they are given a
+      range and the room, and the platform picks the largest size that fits both. That is what
+      makes a large widget show large numbers, and a narrow one show all five marks instead of
+      shortening them. The two fixed sizes above stay as the fallback for a platform that ignores
+      the scaling; without them the text would fall back to a platform default well below the
+      floor this project sets.
+    -->
+    <!-- WidgoraText.Minimum -->
+    <dimen name="widget_counts_autosize_min">18sp</dimen>
+    <!-- WidgoraText.WidgetValueMaximum -->
+    <dimen name="widget_counts_autosize_max">96sp</dimen>
+    <!--
+      WidgoraText.TileValue.size — the ceiling for the compact variant alone.
+
+      Measured: left to grow to the full ceiling, the counts filled the smallest box so
+      completely that only 12 % of its height was free, and the safety margin this project asks
+      for is 15 %. "As large as possible while 15 % stays free" is the rule, and this is the
+      figure that keeps it: a dashboard tile's value size, which is as large as that line gets
+      anywhere else in the application.
+    -->
+    <dimen name="widget_counts_autosize_max_compact">44sp</dimen>
+    <!-- WidgoraText.AutoSizeStep -->
+    <dimen name="widget_counts_autosize_step">2sp</dimen>
+
 </resources>

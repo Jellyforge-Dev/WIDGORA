@@ -51,4 +51,19 @@ object WidgetSizes {
 
     /** The height from which the full layout is offered instead. */
     const val FULL_HEIGHT_DP = 250
+
+    /**
+     * The largest box the widget is declared for.
+     *
+     * Named here as well as in the provider's metadata, and held against it by a test, for the
+     * same reason the minimum is: both are promises, and a promise nothing checks is how the
+     * minimum came to be one the widget could not keep.
+     *
+     * The content scales to fill it. Before it did not, and a widget of this size showed the
+     * same small digits as the smallest one, with two thirds of its area left empty.
+     */
+    const val LARGE_WIDTH_DP = 640
+
+    /** The largest height the widget is declared for. */
+    const val LARGE_HEIGHT_DP = 320
 }

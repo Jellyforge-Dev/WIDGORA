@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.Context
 import android.content.res.Configuration
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -12,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.jellyforgedev.widgora.R
 import io.github.jellyforgedev.widgora.core.data.WidgetViewState
+import io.github.jellyforgedev.widgora.design.WidgoraText
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState.Error.Reason
 import org.junit.Assert.assertEquals
@@ -82,62 +84,87 @@ class WidgetLayoutDeviceTest {
     )
 
     @Test
-    fun theCompactVariantFitsItsSmallestSizeAtEveryFontScale() {
-        for (scale in FONT_SCALES) {
-            for ((name, model) in models) {
-                assertFits(
-                    description = "compact at font scale $scale, $name",
-                    layout = WidgetViews.Layout.COMPACT,
-                    model = model,
-                    heightDp = WidgetSizes.MIN_HEIGHT_DP,
-                    fontScale = scale,
-                )
-            }
-        }
-    }
-
-    @Test
-    fun theFullVariantFitsItsSmallestSizeAtEveryFontScale() {
-        for (scale in FONT_SCALES) {
-            for ((name, model) in models) {
-                assertFits(
-                    description = "full at font scale $scale, $name",
-                    layout = WidgetViews.Layout.FULL,
-                    model = model,
-                    heightDp = WidgetSizes.FULL_HEIGHT_DP,
-                    fontScale = scale,
-                )
+    fun everyStepFitsAtEveryFontScale() {
+        for (step in STEPS) {
+            for (scale in FONT_SCALES) {
+                for ((name, model) in models) {
+                    assertFits(
+                        description = "${step.description} at font scale $scale, $name",
+                        step = step,
+                        model = model,
+                        fontScale = scale,
+                    )
+                }
             }
         }
     }
 
     /**
-     * At the default font scale the widget keeps room to spare.
+     * Each step both fits and is used.
      *
-     * Fitting exactly is not fitting. The previous layout fitted exactly on one device and was
-     * cut off on another, and the difference was a padding nobody had counted.
+     * Two failures, opposite in direction, and the widget has had one of each. Fitting exactly is
+     * not fitting: the layout that fitted on an emulator was cut off on a television, and the
+     * difference was a padding nobody had counted — hence the floor. And a box two thirds empty
+     * is not a widget using its space: at 640 × 320 dp the content sat small in the top-left
+     * corner — hence the ceiling.
      */
     @Test
-    fun theCompactVariantKeepsRoomToSpareAtTheDefaultFontScale() {
-        for ((name, model) in models) {
-            assertKeepsSpareHeight(
-                description = "compact, $name",
-                layout = WidgetViews.Layout.COMPACT,
-                model = model,
-                heightDp = WidgetSizes.MIN_HEIGHT_DP,
-            )
+    fun everyStepUsesItsHeightWithoutRunningOutOfRoom() {
+        for (step in STEPS) {
+            for ((name, model) in models) {
+                assertSpareHeight("${step.description}, $name", step, model)
+            }
         }
     }
 
+    /**
+     * A larger box shows larger numbers.
+     *
+     * This is the question the whole change turns on, and the reason it is answered by a test
+     * rather than by reading documentation: the counts are scaled by the platform through layout
+     * attributes, and whether that works at all inside `RemoteViews` — inflated in another
+     * process from a parcelled description — is not something the attribute's own documentation
+     * says. If the scaling is ignored, both sizes come back equal and this fails.
+     */
     @Test
-    fun theFullVariantKeepsRoomToSpareAtTheDefaultFontScale() {
-        for ((name, model) in models) {
-            assertKeepsSpareHeight(
-                description = "full, $name",
-                layout = WidgetViews.Layout.FULL,
-                model = model,
-                heightDp = WidgetSizes.FULL_HEIGHT_DP,
-            )
+    fun theCountsGrowWithTheBox() {
+        val model = instance(
+            counts = "▲35 ▼2",
+            state = WidgetViewState.Display(WidgetDisplayState.Ok),
+        )
+
+        val smallest = countsTextSizePx(STEPS.first(), model)
+        val largest = countsTextSizePx(STEPS.last(), model)
+
+        assertTrue(
+            "the counts did not grow with the box: ${smallest}px at " +
+                "${STEPS.first().description}, ${largest}px at ${STEPS.last().description}",
+            largest >= smallest * MIN_GROWTH,
+        )
+    }
+
+    /** Scaling never takes the counts below the floor the design system sets. */
+    @Test
+    fun theCountsNeverFallBelowTheFloor() {
+        val crowded = instance(
+            counts = "▲12 ▼3 ◆2 ■1 ●4",
+            state = WidgetViewState.Display(WidgetDisplayState.Stale),
+        )
+
+        for (step in STEPS) {
+            for (scale in FONT_SCALES) {
+                val floor = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_SP,
+                    WidgoraText.Minimum.value,
+                    scaled(scale).resources.displayMetrics,
+                )
+                val actual = countsTextSizePx(step, crowded, scale)
+                assertTrue(
+                    "${step.description} at font scale $scale scaled the counts to " +
+                        "${actual}px, below the floor of ${floor}px",
+                    actual >= floor - TOLERANCE_PX,
+                )
+            }
         }
     }
 
@@ -153,8 +180,7 @@ class WidgetLayoutDeviceTest {
         for (scale in FONT_SCALES) {
             for ((name, model) in models) {
                 if (model !is WidgetRenderModel.Instance) continue
-                val hosted =
-                    hosted(WidgetViews.Layout.COMPACT, model, WidgetSizes.MIN_HEIGHT_DP, scale)
+                val hosted = hosted(STEPS.first(), model, scale)
                 val footer = hosted.findViewById<TextView>(R.id.widget_footer)
                 if (footer.visibility != View.VISIBLE) continue
 
@@ -175,12 +201,7 @@ class WidgetLayoutDeviceTest {
             counts = "▲35 ▼2",
             state = WidgetViewState.Display(WidgetDisplayState.Error(Reason.ENDPOINT_NOT_FOUND)),
         )
-        val hosted = hosted(
-            WidgetViews.Layout.COMPACT,
-            model,
-            WidgetSizes.MIN_HEIGHT_DP,
-            DEFAULT_FONT_SCALE,
-        )
+        val hosted = hosted(STEPS.first(), model, DEFAULT_FONT_SCALE)
         val state = hosted.findViewById<TextView>(R.id.widget_state)
 
         assertTrue("the state line lost its mark", state.text.startsWith("!!"))
@@ -191,12 +212,11 @@ class WidgetLayoutDeviceTest {
 
     private fun assertFits(
         description: String,
-        layout: WidgetViews.Layout,
+        step: Step,
         model: WidgetRenderModel,
-        heightDp: Int,
         fontScale: Float,
     ) {
-        val hosted = hosted(layout, model, heightDp, fontScale)
+        val hosted = hosted(step, model, fontScale)
         val root = widgetRoot(hosted)
         val lines = visibleTextViews(root)
         assertTrue("$description: nothing visible at all", lines.isNotEmpty())
@@ -220,23 +240,70 @@ class WidgetLayoutDeviceTest {
         }
     }
 
-    private fun assertKeepsSpareHeight(
-        description: String,
-        layout: WidgetViews.Layout,
-        model: WidgetRenderModel,
-        heightDp: Int,
-    ) {
-        val hosted = hosted(layout, model, heightDp, DEFAULT_FONT_SCALE)
+    /**
+     * How much of the height is not covered by text, which has to sit between two bounds.
+     *
+     * "Covered by text" is the height of the glyphs, row by row, not the height of the boxes
+     * holding them. That distinction is the whole point: once the counts take the leftover room
+     * as their box, a box-based measure reports every layout as full whether the text grew into
+     * it or not, and the waste this test exists to catch would be invisible to it.
+     */
+    private fun assertSpareHeight(description: String, step: Step, model: WidgetRenderModel) {
+        val hosted = hosted(step, model, DEFAULT_FONT_SCALE)
         val root = widgetRoot(hosted)
-        val used = visibleTextViews(root).maxOfOrNull { bottomWithin(root, it) } ?: 0
-        val free = (root.height - used).toFloat() / root.height
+        val ink = inkHeight(root)
+        val free = (root.height - ink).toFloat() / root.height
+        val percent = (free * 100).toInt()
 
         assertTrue(
-            "$description: only ${(free * 100).toInt()}% of the height is spare, " +
+            "$description: only $percent% of the height is spare, " +
                 "${(MIN_FREE_HEIGHT_FRACTION * 100).toInt()}% is the floor " +
-                "(${used}px used of ${root.height}px${hostPadding(hosted)})",
+                "(${ink}px of text in ${root.height}px${hostPadding(hosted)})",
             free >= MIN_FREE_HEIGHT_FRACTION,
         )
+        // The ceiling asks whether the content grew into its box, and only the counts can do
+        // that — they are the line that scales. A widget with nothing to count has nothing to
+        // fill the box with, and demanding that it fill one anyway would be demanding that it
+        // invent something to show. The test found this itself, by failing on "nothing retrieved
+        // yet" with 64 % of the height spare, which is the truth about that state.
+        val counts = root.findViewById<View>(R.id.widget_counts)
+        if (counts == null || counts.visibility != View.VISIBLE) return
+
+        assertTrue(
+            "$description: $percent% of the height is spare, " +
+                "${(MAX_FREE_HEIGHT_FRACTION * 100).toInt()}% is the ceiling — the content is " +
+                "not using the box (${ink}px of text in ${root.height}px${hostPadding(hosted)})",
+            free <= MAX_FREE_HEIGHT_FRACTION,
+        )
+    }
+
+    /** The size the platform settled on for the counts, in pixels. */
+    private fun countsTextSizePx(
+        step: Step,
+        model: WidgetRenderModel.Instance,
+        fontScale: Float = DEFAULT_FONT_SCALE,
+    ): Float = hosted(step, model, fontScale)
+        .findViewById<TextView>(R.id.widget_counts)
+        .textSize
+
+    /**
+     * The height the glyphs occupy, row by row.
+     *
+     * A row of the vertical stack contributes its own text height; a row that holds several
+     * views side by side contributes the tallest of them, because they share one line.
+     */
+    private fun inkHeight(root: View): Int {
+        if (root !is ViewGroup) return 0
+        return (0 until root.childCount)
+            .map { index -> root.getChildAt(index) }
+            .filter { row -> row.visibility == View.VISIBLE }
+            .sumOf { row -> rowInk(row) }
+    }
+
+    private fun rowInk(row: View): Int = when (row) {
+        is TextView -> row.layout?.height ?: 0
+        is ViewGroup -> visibleTextViews(row).maxOfOrNull { it.layout?.height ?: 0 } ?: 0
+        else -> 0
     }
 
     /**
@@ -247,20 +314,19 @@ class WidgetLayoutDeviceTest {
      * its whole life ignoring.
      */
     private fun hosted(
-        layout: WidgetViews.Layout,
+        step: Step,
         model: WidgetRenderModel,
-        heightDp: Int,
         fontScale: Float,
     ): AppWidgetHostView {
         val context = scaled(fontScale)
-        val widthPx = px(context, WidgetSizes.MIN_WIDTH_DP)
-        val heightPx = px(context, heightDp)
+        val widthPx = px(context, step.widthDp)
+        val heightPx = px(context, step.heightDp)
 
         var hosted: AppWidgetHostView? = null
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             val view = AppWidgetHostView(context)
             view.setAppWidget(APP_WIDGET_ID, providerInfo)
-            view.updateAppWidget(WidgetViews.build(context, APP_WIDGET_ID, model, layout))
+            view.updateAppWidget(WidgetViews.build(context, APP_WIDGET_ID, model, step.layout))
             view.measure(exactly(widthPx), exactly(heightPx))
             view.layout(0, 0, widthPx, heightPx)
             hosted = view
@@ -321,6 +387,14 @@ class WidgetLayoutDeviceTest {
         updatedAtEpochMs = UPDATED_AT,
     )
 
+    /** One box the widget is declared for, and the layout the platform shows in it. */
+    private data class Step(
+        val description: String,
+        val layout: WidgetViews.Layout,
+        val widthDp: Int,
+        val heightDp: Int,
+    )
+
     private companion object {
 
         const val PROVIDER = "io.github.jellyforgedev.widgora.widget.CountsWidgetProvider"
@@ -334,5 +408,51 @@ class WidgetLayoutDeviceTest {
 
         /** How much of the height has to be left over at the default font scale. */
         const val MIN_FREE_HEIGHT_FRACTION = 0.15f
+
+        /**
+         * How much of the height may be left over.
+         *
+         * Above this the widget is not using the box it was given, which was the state of the
+         * largest size before the counts were made to scale.
+         */
+        const val MAX_FREE_HEIGHT_FRACTION = 0.40f
+
+        /** How much larger the counts have to be in the largest box than in the smallest. */
+        const val MIN_GROWTH = 1.5f
+
+        /** One rounding step; a size snapped to whole pixels may land just under its floor. */
+        const val TOLERANCE_PX = 0.5f
+
+        /**
+         * Every box the widget is declared for, smallest first, each with the layout the
+         * platform picks for it.
+         *
+         * The three are the declared minimum, the height at which the layout changes, and the
+         * declared maximum — the same three the debug host offers, so what a test measures and
+         * what somebody looks at on a television are the same sizes.
+         */
+        val STEPS = listOf(
+            Step(
+                description = "compact at ${WidgetSizes.MIN_WIDTH_DP}×" +
+                    "${WidgetSizes.MIN_HEIGHT_DP}dp",
+                layout = WidgetViews.Layout.COMPACT,
+                widthDp = WidgetSizes.MIN_WIDTH_DP,
+                heightDp = WidgetSizes.MIN_HEIGHT_DP,
+            ),
+            Step(
+                description = "full at ${WidgetSizes.MIN_WIDTH_DP}×" +
+                    "${WidgetSizes.FULL_HEIGHT_DP}dp",
+                layout = WidgetViews.Layout.FULL,
+                widthDp = WidgetSizes.MIN_WIDTH_DP,
+                heightDp = WidgetSizes.FULL_HEIGHT_DP,
+            ),
+            Step(
+                description = "full at ${WidgetSizes.LARGE_WIDTH_DP}×" +
+                    "${WidgetSizes.LARGE_HEIGHT_DP}dp",
+                layout = WidgetViews.Layout.FULL,
+                widthDp = WidgetSizes.LARGE_WIDTH_DP,
+                heightDp = WidgetSizes.LARGE_HEIGHT_DP,
+            ),
+        )
     }
 }

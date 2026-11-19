@@ -21,6 +21,7 @@
     android:background="@drawable/widget_background"
     android:contentDescription="@string/widget_open_app"
     android:focusable="true"
+    android:gravity="center_vertical"
     android:orientation="vertical"
     android:padding="@dimen/widget_padding_compact">
 
@@ -34,11 +35,25 @@
         android:textColor="@color/widget_on_surface"
         android:textSize="@dimen/widget_text_compact_title" />
 
+    <!--
+      The counts take the height the other two lines leave and are scaled to fill it.
+
+      At the declared minimum that spare height was a third of the widget, sitting empty under
+      text that was too small to read across a room. It belongs to the counts, which are the
+      reason anybody looks at this. The same scaling keeps all five marks on the line in a narrow
+      box by shrinking rather than shortening — never below the floor the range names.
+    -->
     <TextView
         android:id="@+id/widget_counts"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:autoSizeMaxTextSize="@dimen/widget_counts_autosize_max_compact"
+        android:autoSizeMinTextSize="@dimen/widget_counts_autosize_min"
+        android:autoSizeStepGranularity="@dimen/widget_counts_autosize_step"
+        android:autoSizeTextType="uniform"
         android:ellipsize="end"
+        android:gravity="center_vertical|start"
         android:maxLines="1"
         android:textColor="@color/widget_on_surface"
         android:textSize="@dimen/widget_text_compact_counts"

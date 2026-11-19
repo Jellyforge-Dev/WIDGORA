@@ -164,6 +164,27 @@ object WidgoraText {
     /** Nothing in the application may be smaller than this. Asserted by a test. */
     val Minimum = 18.sp
 
+    /**
+     * The largest the counts on a widget may grow to when they are given the room.
+     *
+     * A widget's box belongs to its host and runs from the declared minimum up to a sizeable
+     * piece of a television screen, so the counts are scaled by the platform to fill whatever
+     * they get — between [Minimum] and this. The ceiling is not a preference: without one, a very
+     * large box would produce digits several times the height of the title above them, which
+     * reads as a mistake rather than as emphasis.
+     *
+     * It is a size without a line height on purpose. A line that scales computes its own.
+     */
+    val WidgetValueMaximum = 96.sp
+
+    /**
+     * The step the scaling moves in.
+     *
+     * Fine enough that the result looks chosen rather than snapped to, coarse enough that the
+     * platform does not have to try eighty sizes in order to lay out one line.
+     */
+    val AutoSizeStep = 2.sp
+
     /** The smallest ratio of line height to size that still separates two wrapped lines. */
     const val MIN_LINE_HEIGHT_FACTOR = 1.2f
 
