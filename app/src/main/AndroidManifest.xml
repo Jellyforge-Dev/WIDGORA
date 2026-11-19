@@ -9,6 +9,16 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
+    <!--
+      App widgets are an addition, never the product. A device either hosts widgets or it does
+      not, and WIDGORA works the same either way, so requiring the feature would hide the
+      application from a store on a device perfectly able to run it. Observed: a television
+      running Android 14 declares this feature, a Google TV system image at API level 36 does not.
+    -->
+    <uses-feature
+        android:name="android.software.app_widgets"
+        android:required="false" />
+
     <!-- The only two permissions the first milestone asks for, as stated in SECURITY.md. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -31,6 +41,26 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+          The widget. It is not exported: the only thing that talks to it is the system's own
+          widget service, and nothing else has any business sending it a broadcast.
+
+          The intent filter carries exactly one action. A provider that wants to hear about
+          deletion or about being enabled declares more; this one renders and nothing else, so it
+          asks for nothing else.
+        -->
+        <receiver
+            android:name=".widget.CountsWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/counts_widget_info" />
+        </receiver>
 
     </application>
 

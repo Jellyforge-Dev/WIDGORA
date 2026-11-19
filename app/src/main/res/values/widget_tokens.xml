@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The design tokens the widget needs as resources.
+
+  A widget is drawn from an XML layout in another process, so the values a layout fixes cannot be
+  read from the Kotlin tokens the rest of the application uses. They have to exist a second time,
+  here. Two copies of a number is exactly how two surfaces of one product drift apart, so every
+  value below is checked against its Kotlin original by a test, and a change made on one side and
+  not the other fails the build.
+
+  Only the values a layout fixes are here. A colour that depends on the state is not: it is read
+  from WidgetPresentation at the moment the views are built, which is the same value the dashboard
+  tile reads, so there is nothing to keep in step.
+-->
+<resources>
+
+    <!-- WidgoraColors.Surface -->
+    <color name="widget_surface">#FF12121C</color>
+    <!-- WidgoraColors.OnSurface -->
+    <color name="widget_on_surface">#FFF2F2F7</color>
+    <!-- WidgoraColors.OnSurfaceMuted -->
+    <color name="widget_on_surface_muted">#FFC3C5D4</color>
+    <!-- WidgoraColors.Outline -->
+    <color name="widget_outline">#FF666A85</color>
+    <!-- WidgoraColors.Focus -->
+    <color name="widget_focus">#FFFFFFFF</color>
+
+    <!--
+      WidgoraShapes.TileCornerRadius. The platform states that a widget background's radius is
+      never larger than 28dp, and this is well inside that.
+    -->
+    <dimen name="widget_corner_radius">12dp</dimen>
+    <!-- WidgoraSpacing.Medium -->
+    <dimen name="widget_padding">16dp</dimen>
+    <!-- WidgoraFocus.BorderWidth -->
+    <dimen name="widget_focus_border">4dp</dimen>
+    <!-- WidgoraFocus.RestingBorderWidth -->
+    <dimen name="widget_resting_border">1dp</dimen>
+
+    <!-- WidgoraText.TileTitle.size -->
+    <dimen name="widget_text_title">26sp</dimen>
+    <!-- WidgoraText.TileValue.size -->
+    <dimen name="widget_text_counts">44sp</dimen>
+    <!-- WidgoraText.Label.size -->
+    <dimen name="widget_text_state">20sp</dimen>
+    <!-- WidgoraText.Caption.size -->
+    <dimen name="widget_text_footer">18sp</dimen>
+
+</resources>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget, in the only views RemoteViews supports without a fallback.
+
+  Four lines of text on one surface, and no image anywhere. Everything is set from code except the
+  sizes and the two fixed colours, which come from widget_tokens.xml and are held against the
+  design system's Kotlin tokens by a test.
+
+  Every line is a single line that ellipsizes. That is not only about width: the defect that put
+  one line of text on top of another elsewhere in this application came from a size set without
+  the line height that belongs to it, and a line box that can never hold a second line cannot
+  reproduce it.
+
+  The default texts are what a host shows before the first update arrives, because this layout is
+  also the provider's initialLayout. They say that nothing has been loaded, which is true at that
+  moment, rather than showing a specimen value.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:contentDescription="@string/widget_open_app"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:padding="@dimen/widget_padding">
+
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/app_name"
+        android:textColor="@color/widget_on_surface"
+        android:textSize="@dimen/widget_text_title" />
+
+    <TextView
+        android:id="@+id/widget_counts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/widget_on_surface"
+        android:textSize="@dimen/widget_text_counts"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/dashboard_state_loading"
+        android:textColor="@color/widget_on_surface_muted"
+        android:textSize="@dimen/widget_text_state" />
+
+    <TextView
+        android:id="@+id/widget_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/dashboard_no_data_yet"
+        android:textColor="@color/widget_on_surface_muted"
+        android:textSize="@dimen/widget_text_footer" />
+
+</LinearLayout>

@@ -66,6 +66,12 @@
     </plurals>
     <string name="summary_separator">", "</string>
 
+    <string name="widget_label">Statusübersicht</string>
+    <string name="widget_description">Anzahl je Zustand für eine Instanz.</string>
+    <string name="widget_open_app">WIDGORA öffnen</string>
+    <string name="widget_not_set_up">Noch nicht eingerichtet. Öffne WIDGORA, um eine Instanz anzulegen.</string>
+    <string name="widget_config_unreadable">Die gespeicherten Einstellungen sind nicht lesbar.</string>
+
     <string name="settings_title">Uptime-Kuma-Instanz</string>
     <string name="settings_back_hint">Mit der Zurück-Taste verlässt du diesen Bildschirm.</string>
 

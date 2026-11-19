@@ -15,6 +15,11 @@ android {
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "0.0.1"
+
+        // The widget's pending intent can only be examined where there is a real package manager
+        // behind it. That test is started by hand against a device and is deliberately not part
+        // of the continuous integration run, exactly as the ones in :core are.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -77,4 +82,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.kotlin.test.junit5)
+
+    // The same two artefacts :core already uses for its instrumented tests. Nothing new enters
+    // the project; they only become available to this module as well.
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }

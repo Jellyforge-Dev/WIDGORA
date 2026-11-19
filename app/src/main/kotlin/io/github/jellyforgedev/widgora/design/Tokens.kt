@@ -205,7 +205,17 @@ object WidgoraOverscan {
 /** Corner shapes. Modest, because a television sits far away and sharp edges read better. */
 object WidgoraShapes {
 
-    val Tile = RoundedCornerShape(12.dp)
+    /**
+     * The radius a tile's corners are rounded by.
+     *
+     * Named separately from [Tile] because a second surface needs the number itself rather than
+     * the shape: a widget is drawn from an XML layout in another process and states its radius as
+     * a dimension resource. A test compares the two, which it can only do if the figure is
+     * readable here rather than buried inside a shape.
+     */
+    val TileCornerRadius = 12.dp
+
+    val Tile = RoundedCornerShape(TileCornerRadius)
     val Field = RoundedCornerShape(8.dp)
 }
 

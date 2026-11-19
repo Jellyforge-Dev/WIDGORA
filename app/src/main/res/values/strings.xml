@@ -95,6 +95,21 @@
     </plurals>
     <string name="summary_separator">", "</string>
 
+    <!--
+      The widget. Its label and description are read by a host's widget picker, so both are short
+      and say what the widget shows rather than what the product is.
+    -->
+    <string name="widget_label">Status overview</string>
+    <string name="widget_description">Counts per state for one instance.</string>
+    <!-- Spoken for the widget as a whole; pressing it opens the application and nothing else. -->
+    <string name="widget_open_app">Open WIDGORA</string>
+    <string name="widget_not_set_up">Not set up yet. Open WIDGORA to add an instance.</string>
+    <!--
+      Deliberately shorter than the message the dashboard shows for the same situation: a widget
+      has four lines, and the sentence explaining what to do belongs on the screen that offers it.
+    -->
+    <string name="widget_config_unreadable">The saved settings cannot be read.</string>
+
     <string name="settings_title">Uptime Kuma instance</string>
     <string name="settings_back_hint">Press back to leave this screen.</string>
 
