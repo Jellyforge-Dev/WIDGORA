@@ -3,7 +3,8 @@ package io.github.jellyforgedev.widgora.settings
 import io.github.jellyforgedev.widgora.core.data.InstanceConfig
 import io.github.jellyforgedev.widgora.core.data.InstanceRepository
 import io.github.jellyforgedev.widgora.core.data.SecretState
-import io.github.jellyforgedev.widgora.core.data.StoredInstance
+import io.github.jellyforgedev.widgora.core.data.StorageWriteResult
+import io.github.jellyforgedev.widgora.core.data.StoredInstances
 import io.github.jellyforgedev.widgora.model.InstanceId
 import kotlinx.coroutines.flow.Flow
 
@@ -17,25 +18,38 @@ import kotlinx.coroutines.flow.Flow
  */
 interface InstanceStore {
 
-    val instances: Flow<List<StoredInstance>>
+    /**
+     * What is stored, or the statement that it cannot be read.
+     *
+     * The distinction reaches this screen rather than stopping at the dashboard, because this is
+     * the screen that can act on it: an unreadable file is the one situation in which the settings
+     * offer to throw storage away.
+     */
+    val instances: Flow<StoredInstances>
 
     suspend fun secretOf(instanceId: InstanceId): SecretState
 
-    suspend fun save(config: InstanceConfig, apiKey: String?)
+    suspend fun save(config: InstanceConfig, apiKey: String?): StorageWriteResult
 
-    suspend fun delete(instanceId: InstanceId)
+    suspend fun delete(instanceId: InstanceId): StorageWriteResult
+
+    /** Removes the stored configuration and all key material. Only a user action calls it. */
+    suspend fun reset(): StorageWriteResult
 }
 
 /** Passes everything through to the repository; it adds no behaviour of its own. */
 class RepositoryInstanceStore(private val repository: InstanceRepository) : InstanceStore {
 
-    override val instances: Flow<List<StoredInstance>> get() = repository.instances
+    override val instances: Flow<StoredInstances> get() = repository.instances
 
     override suspend fun secretOf(instanceId: InstanceId): SecretState =
         repository.secretOf(instanceId)
 
-    override suspend fun save(config: InstanceConfig, apiKey: String?) =
+    override suspend fun save(config: InstanceConfig, apiKey: String?): StorageWriteResult =
         repository.save(config, apiKey)
 
-    override suspend fun delete(instanceId: InstanceId) = repository.delete(instanceId)
+    override suspend fun delete(instanceId: InstanceId): StorageWriteResult =
+        repository.delete(instanceId)
+
+    override suspend fun reset(): StorageWriteResult = repository.reset()
 }

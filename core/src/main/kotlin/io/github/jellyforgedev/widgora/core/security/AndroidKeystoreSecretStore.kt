@@ -73,6 +73,28 @@ class AndroidKeystoreSecretStore(
         }
     }
 
+    /**
+     * Removes every alias this store could have created.
+     *
+     * The keystore an application sees holds only its own entries, so enumerating it cannot reach
+     * another application's keys. The prefix is still applied, because the instrumented tests run
+     * a store with a prefix of their own and one must not destroy the other's material.
+     *
+     * The aliases are collected before anything is deleted: deleting out of the enumeration that
+     * is being walked is not behaviour the keystore interface promises to tolerate.
+     */
+    override fun forgetAll() {
+        try {
+            val keyStore = loadKeyStore()
+            val mine = keyStore.aliases().toList().filter { it.startsWith(aliasPrefix) }
+            for (alias in mine) {
+                keyStore.deleteEntry(alias)
+            }
+        } catch (alreadyGone: GeneralSecurityException) {
+        } catch (keystoreUnavailable: IOException) {
+        }
+    }
+
     private fun keyFor(instanceId: InstanceId): SecretKey {
         val alias = aliasOf(instanceId)
         return existingKey(alias) ?: generateKey(alias)

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The only wording in this module, and the only wording in the project that names a particular
+      service while explaining a monitored item.
+
+      It lives here because it belongs to the Uptime Kuma integration. The condition it answers is
+      described in neutral terms by MonitorNote.Kind, and the neutral half of the sentence comes
+      from the application's own resources; what to do about the condition is a statement about
+      this one service, and a second integration reporting the same condition must be able to give
+      different advice without this sentence following it around.
+
+      Referenced from KumaMonitorMapping and resolved on the screen that draws the item.
+    -->
+    <string name="kuma_note_contradicting_rows">A restart of Uptime Kuma usually resolves this.</string>
+</resources>

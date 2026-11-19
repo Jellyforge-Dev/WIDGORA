@@ -1,8 +1,11 @@
 # WIDGORA — Security
 
-**Project status: planning. No source code exists yet, and therefore no released artefact has a
-security posture that can be audited.** This document records the security design before
-implementation, so that the reasoning can be reviewed and later checked against the code.
+**Project status: the first integration is implemented and no artefact has been released.**
+Credential storage, transport security and the handling of untrusted responses exist in code and
+are described below as implemented where that is the case. The Provider Bridge does **not** exist
+yet; everything stated about it is design. This document records the security reasoning so that it
+can be reviewed and checked against the code, and every claim carries a marker saying which of
+the two it is.
 
 Markers used below:
 
@@ -46,7 +49,7 @@ against the user's services themselves.
 
 ---
 
-## 3. Credential handling
+## 3. Credential and topology handling
 
 - Credentials are **never** placed in source code, resources, build files, logs or commits.
 - Credentials are encrypted with an AES-GCM key held in the Android Keystore. The key is
@@ -70,6 +73,28 @@ against the user's services themselves.
   the same as absent. The screen then says so and asks for the credential again, rather than
   looking as though nothing had ever been configured. It is never an empty credential and never
   a crash.
+- The same reasoning applies one level up, to the stored configuration itself `[V]`. A
+  configuration file that exists and cannot be read is reported as **unreadable**, never as an
+  empty configuration, and a credential behind such a file is reported as unreadable rather than
+  missing. Reporting absence would be a false statement about the user's own data: it would say
+  nothing had ever been set up while their instance, their address and their encrypted credential
+  were all still on disk, and it would invite them to retype a credential to repair something that
+  was not broken. Reading never throws into the screen either.
+- Writing over a file that cannot be read is now settled `[V]`: **the failure is reported and the
+  file is never replaced on the application's own initiative.** Saving and deleting return an
+  outcome instead of raising, and the screen names the action that did not happen. Replacing a
+  damaged file automatically was rejected on exactly these grounds — such a file still holds the
+  user's address and their encrypted credential, and discarding both to obtain a working screen
+  would decide for them that their data matters less than the absence of an error message.
+- The one operation that destroys credentials the user did not name individually is a **reset they
+  ask for** `[V]`. It is offered only while the configuration is unreadable, behind the same
+  confirmation as deleting an instance, and it removes the configuration file together with **all**
+  key material belonging to the application. All of it has to go, because the list of which aliases
+  exist is inside the file that cannot be read; leaving them behind would leave key material
+  nothing could ever name again. Nothing calls this automatically, and no failed read or failed
+  write leads to it. Deleting a single instance still destroys that instance's key material only,
+  and only once the entry is actually gone from the file. Enumerating aliases cannot reach another
+  application's keys: the keystore an application sees holds only its own entries.
 - A credential is read from the store only at the moment a retrieval needs it, and it is never
   held in a field, in a dashboard state or in anything the screen renders. An instance whose
   credential cannot be read is not retrieved at all; it reports that the credential has to be
@@ -92,6 +117,30 @@ against the user's services themselves.
   which is what this project does.
 - WIDGORA requests only `INTERNET` and `ACCESS_NETWORK_STATE` for the first milestone. No
   accessibility service, no overlay permission, no system settings permission.
+
+### Where monitor names live
+
+A monitor name is topology, the second of the three assets. "nas.kitchen.lan" names a machine and
+says where it stands. The application has to show such names — a list of monitors with their
+states is the point of the detail screen — and must still never hand them to anybody else. The
+separation is therefore made structural rather than left to care at each call site `[V]`:
+
+- The names, the counts and the individual items live in an application-internal type in
+  `core/data`. The dashboard and the detail screen read it.
+- A `WidgetSnapshot` — the type the bridge carries — has **no field that can hold a name**. Its
+  field set is frozen by a test, so adding one has to be a deliberate decision made in review.
+- `:bridge` depends on `:model` and never on `:core`. It therefore cannot reference the type that
+  holds the names, even by mistake. The boundary is enforced by the dependency graph, not by a
+  convention.
+- The summary value a snapshot does carry is assembled from marks and digits — one character per
+  state, followed by a count. It contains no name, no word of any language and nothing a server
+  wrote. Tests assert this against a response that names real hosts: the mapping's own test
+  checks a synthetic name, and the test that reads an anonymised recording of a running
+  installation checks every one of its 35 names against the resulting snapshot.
+- Monitor names are not logged.
+
+When the bridge is implemented, its optional detail rows remain a separate, per-instance decision
+by the user, for the reason given in section 5.
 
 ### Transport security
 
@@ -265,6 +314,17 @@ Every response from every service is untrusted input, including from services th
 - no text from a response is passed into an intent, a URI or the bridge without validation
 - numeric values range-checked before display
 - failures classified into user-meaningful states rather than surfaced as raw messages
+- a response that describes the same item twice is reconciled rather than trusted or discarded
+  `[V]`: values the rows agree on are used, and a contradiction is resolved towards the safe
+  answer, never the convenient one. A contradictory status becomes `unknown`, which is displayed
+  as its own state and never counted as working, because the one outcome that must not be possible
+  is an outage silently presented as healthy. Contradictory numbers are dropped rather than
+  averaged or picked from. What a response says about itself does not decide this; the reader
+  does.
+- the explanation shown for such a contradiction carries nothing the service wrote `[V]`. It is
+  assembled from the application's own resources — a neutral sentence chosen by a condition, plus
+  one sentence belonging to the integration — so no response text, no monitor name and no host name
+  can reach the screen through it.
 
 ---
 
@@ -299,9 +359,10 @@ presentation, user actions, credentials, and permissions.
 
 ## 9. Reporting a vulnerability
 
-The project is in planning and has no released artefact. Once a repository is published, security
-reports should be made privately through its advisory mechanism rather than in a public issue.
-This section will be updated with a concrete contact path at that time `[O]`.
+The repository is private and no artefact has been released, so there is nothing deployed to
+report against yet. Once a repository is published, security reports should be made privately
+through its advisory mechanism rather than in a public issue. This section will be updated with a
+concrete contact path at that time `[O]`.
 
 ---
 

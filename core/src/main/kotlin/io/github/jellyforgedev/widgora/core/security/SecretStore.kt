@@ -23,6 +23,18 @@ interface SecretStore {
 
     /** Destroys the key material of [instanceId]. Afterwards nothing it encrypted is readable. */
     fun forget(instanceId: InstanceId)
+
+    /**
+     * Destroys the key material of **every** instance this store owns.
+     *
+     * It exists for one situation: the stored configuration cannot be read, so the identifiers
+     * needed to call [forget] one by one are exactly what is unavailable. Without it, a damaged
+     * file would leave keys behind that nothing could ever name again.
+     *
+     * Only an action the user asked for calls this. Nothing in the application recovers by
+     * destroying key material on its own.
+     */
+    fun forgetAll()
 }
 
 /**

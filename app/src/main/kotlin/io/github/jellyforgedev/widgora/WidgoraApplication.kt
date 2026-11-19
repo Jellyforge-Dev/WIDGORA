@@ -5,7 +5,6 @@ import io.github.jellyforgedev.widgora.core.data.Clock
 import io.github.jellyforgedev.widgora.core.data.InstanceRepository
 import io.github.jellyforgedev.widgora.core.data.SnapshotRepository
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaMetricsClient
-import io.github.jellyforgedev.widgora.core.integration.kuma.KumaSummaryTemplates
 import io.github.jellyforgedev.widgora.core.transport.http.OkHttpTransport
 import io.github.jellyforgedev.widgora.dashboard.DashboardTiming
 import io.github.jellyforgedev.widgora.settings.ConnectionTester
@@ -35,6 +34,10 @@ class WidgoraApplication : Application() {
     /**
      * Holds what the dashboard shows. The transport is wired to the integration here, which is
      * this module's job, and the real clock is handed in rather than read inside.
+     *
+     * No wording is handed in any more. A snapshot's value is assembled from marks and digits and
+     * carries no language at all, and the words a screen shows are resolved where they are drawn,
+     * from the resources of the device's language.
      */
     val snapshots: SnapshotRepository by lazy {
         SnapshotRepository(
@@ -42,29 +45,6 @@ class WidgoraApplication : Application() {
             client = KumaMetricsClient(OkHttpTransport()),
             clock = Clock.System,
             staleAfterMs = DashboardTiming.STALE_AFTER_MS,
-            summaryTemplates = summaryTemplates(),
         )
     }
-
-    /**
-     * The wording of the summary, taken from the resources of the device's language.
-     *
-     * Resolved here rather than in a composable, because the summary is assembled when data
-     * arrives and not when something is drawn. `getQuantityString` is the plural-aware form, so
-     * a language that distinguishes one from many gets its own phrase.
-     */
-    private fun summaryTemplates(): KumaSummaryTemplates = KumaSummaryTemplates(
-        up = { count -> resources.getQuantityString(R.plurals.summary_up, count, count) },
-        down = { count -> resources.getQuantityString(R.plurals.summary_down, count, count) },
-        pending = { count ->
-            resources.getQuantityString(R.plurals.summary_pending, count, count)
-        },
-        maintenance = { count ->
-            resources.getQuantityString(R.plurals.summary_maintenance, count, count)
-        },
-        unknown = { count ->
-            resources.getQuantityString(R.plurals.summary_unknown, count, count)
-        },
-        separator = getString(R.string.summary_separator),
-    )
 }

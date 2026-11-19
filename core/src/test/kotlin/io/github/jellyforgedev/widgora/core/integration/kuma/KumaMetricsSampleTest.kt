@@ -80,15 +80,40 @@ class KumaMetricsSampleTest {
 
     @Test
     fun theSummaryOfTheSampleCountsAllMonitors() {
+        val overview = KumaMonitorMapping.overviewOf(monitors())
         val snapshot = KumaSnapshotMapper.summarySnapshot(
             instanceId = InstanceId("home-kuma"),
             title = "Uptime Kuma",
-            monitors = monitors(),
+            overview = overview,
             retrievedAtEpochMs = 1_700_000_000_000,
-            templates = KumaSummaryTemplates.Numeric,
         )
-        assertEquals("35 up, 0 down", snapshot.primaryValue)
+
+        assertEquals("▲35 ▼0", snapshot.primaryValue)
         assertEquals("kuma-home-kuma-summary", snapshot.widgetId.value)
+        assertEquals(35, overview.counts.active)
+        // Every monitor of this recording was working, so the tile names none of them.
+        assertEquals(emptyList(), overview.affected)
+    }
+
+    /**
+     * The recording describes a real installation, so its monitor names are real names. Checking
+     * the snapshot against them is the sharpest available form of the rule that names must not
+     * leave the application.
+     */
+    @Test
+    fun noNameFromTheSampleReachesTheSnapshot() {
+        val monitors = monitors()
+        val snapshot = KumaSnapshotMapper.summarySnapshot(
+            instanceId = InstanceId("home-kuma"),
+            title = "Uptime Kuma",
+            overview = KumaMonitorMapping.overviewOf(monitors),
+            retrievedAtEpochMs = 1_700_000_000_000,
+        )
+
+        val rendered = snapshot.toString()
+        for (name in monitors.mapNotNull { it.name }) {
+            assertTrue(!rendered.contains(name), name)
+        }
     }
 
     private fun monitors(): List<KumaMonitor> {

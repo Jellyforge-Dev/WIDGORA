@@ -3,7 +3,9 @@ package io.github.jellyforgedev.widgora.settings
 import io.github.jellyforgedev.widgora.core.data.InstanceAddress
 import io.github.jellyforgedev.widgora.core.data.InstanceConfig
 import io.github.jellyforgedev.widgora.core.data.SecretState
+import io.github.jellyforgedev.widgora.core.data.StorageWriteResult
 import io.github.jellyforgedev.widgora.core.data.StoredInstance
+import io.github.jellyforgedev.widgora.core.data.StoredInstances
 import io.github.jellyforgedev.widgora.model.InstanceId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +29,14 @@ enum class MissingField {
 }
 
 /**
+ * A write that did not happen, named so that the screen can say which one.
+ *
+ * One flag would have done for the message "something went wrong", which is the message that tells
+ * the user nothing. Saving, deleting and resetting fail in the same way and mean different things.
+ */
+enum class FailedWrite { SAVE, DELETE, RESET }
+
+/**
  * Everything the settings screen renders.
  *
  * **There is no field for a stored key.** A key that was saved earlier is never read into this
@@ -41,12 +51,24 @@ data class SettingsUiState(
     val storedKey: StoredKey = StoredKey.NONE,
     val existing: Boolean = false,
     val storedEntryInvalid: Boolean = false,
+    /**
+     * A configuration file exists and could not be read.
+     *
+     * The form is empty in this case and [existing] is false, because nothing is known about what
+     * is stored — not even an identifier. It is not the same as nothing being stored, and it is
+     * the only state in which the screen offers to throw storage away.
+     */
+    val configurationUnreadable: Boolean = false,
     val addressRejection: InstanceAddress.Rejection? = null,
     val missingField: MissingField? = null,
     val savedJustNow: Boolean = false,
     val testing: Boolean = false,
     val testOutcome: ConnectionTestResult? = null,
     val confirmingDelete: Boolean = false,
+    val confirmingReset: Boolean = false,
+    val resetJustNow: Boolean = false,
+    /** The last write that failed, or `null`. Cleared as soon as the user changes anything. */
+    val failedWrite: FailedWrite? = null,
 )
 
 /**
@@ -81,11 +103,18 @@ class SettingsStateHolder(
 
     /** Reads what is stored. The secret itself is never part of what this produces. */
     suspend fun load() {
-        val stored = store.instances.first().firstOrNull()
+        val storage = store.instances.first()
+        val stored = (storage as? StoredInstances.Readable)?.instances?.firstOrNull()
         if (stored == null) {
             instanceId = SINGLE_INSTANCE_ID
             addressOfStoredKey = null
-            mutableState.value = SettingsUiState(loading = false)
+            // An unreadable file leaves the form empty, and deliberately says nothing about a
+            // stored key either: whether one exists is part of what could not be read, and
+            // guessing would produce either a false reassurance or a false alarm.
+            mutableState.value = SettingsUiState(
+                loading = false,
+                configurationUnreadable = storage is StoredInstances.Unreadable,
+            )
             return
         }
 
@@ -119,6 +148,9 @@ class SettingsStateHolder(
             displayName = value,
             missingField = null,
             savedJustNow = false,
+            // A verdict about an earlier attempt, kept beside values the user is still editing,
+            // reads as a verdict about the values now on screen.
+            failedWrite = null,
         )
     }
 
@@ -130,6 +162,7 @@ class SettingsStateHolder(
             testOutcome = null,
             missingField = null,
             savedJustNow = false,
+            failedWrite = null,
         )
     }
 
@@ -139,6 +172,7 @@ class SettingsStateHolder(
             missingField = null,
             testOutcome = null,
             savedJustNow = false,
+            failedWrite = null,
         )
     }
 
@@ -147,6 +181,10 @@ class SettingsStateHolder(
      *
      * An empty key field is not an empty key: for an instance that already has one, it means
      * "keep what is stored".
+     *
+     * A refusal by storage is reported like a refused field rather than raised. It is the one
+     * outcome the user cannot correct by typing, which is exactly why it has to be said: the
+     * previous version let the attempt fail unnoticed and left the screen looking saved.
      */
     suspend fun save(): Boolean {
         val current = mutableState.value
@@ -168,7 +206,7 @@ class SettingsStateHolder(
             mutableState.value = current.copy(missingField = missingKeyFieldFor(normalised, current))
             return false
         }
-        store.save(
+        val written = store.save(
             InstanceConfig(
                 instanceId = instanceId,
                 displayName = displayName,
@@ -179,6 +217,12 @@ class SettingsStateHolder(
             ),
             apiKey = enteredKey,
         )
+        if (written == StorageWriteResult.FAILED) {
+            // Nothing was stored, so nothing about the stored state may be claimed: the key field
+            // keeps what was typed, and whether a key is stored is left as it was.
+            mutableState.value = current.copy(failedWrite = FailedWrite.SAVE, savedJustNow = false)
+            return false
+        }
         addressOfStoredKey = normalised
 
         mutableState.value = current.copy(
@@ -188,10 +232,13 @@ class SettingsStateHolder(
             storedKey = StoredKey.STORED,
             existing = true,
             storedEntryInvalid = false,
+            // What was unreadable has just been overwritten by something readable.
+            configurationUnreadable = false,
             addressRejection = null,
             missingField = null,
             savedJustNow = true,
             testOutcome = null,
+            failedWrite = null,
         )
         return true
     }
@@ -233,7 +280,11 @@ class SettingsStateHolder(
     }
 
     fun requestDelete() {
-        mutableState.value = mutableState.value.copy(confirmingDelete = true, savedJustNow = false)
+        mutableState.value = mutableState.value.copy(
+            confirmingDelete = true,
+            savedJustNow = false,
+            failedWrite = null,
+        )
     }
 
     fun cancelDelete() {
@@ -242,10 +293,55 @@ class SettingsStateHolder(
 
     /** Removes configuration, ciphertext and key material through the repository. */
     suspend fun confirmDelete() {
-        store.delete(instanceId)
+        if (store.delete(instanceId) == StorageWriteResult.FAILED) {
+            // The instance is still there, so the form must keep showing it.
+            mutableState.value = mutableState.value.copy(
+                confirmingDelete = false,
+                failedWrite = FailedWrite.DELETE,
+            )
+            return
+        }
         instanceId = SINGLE_INSTANCE_ID
         addressOfStoredKey = null
         mutableState.value = SettingsUiState(loading = false)
+    }
+
+    /**
+     * Offers to throw the stored configuration away.
+     *
+     * Deliberately only reachable while the configuration is unreadable, and deliberately not
+     * automatic: this is the one action that destroys something the user did not name — a key they
+     * may still have a copy of nowhere else. The confirmation is the same shape as the one for
+     * deleting, because the consequence is of the same kind.
+     */
+    fun requestReset() {
+        mutableState.value = mutableState.value.copy(
+            confirmingReset = true,
+            savedJustNow = false,
+            resetJustNow = false,
+            failedWrite = null,
+        )
+    }
+
+    fun cancelReset() {
+        mutableState.value = mutableState.value.copy(confirmingReset = false)
+    }
+
+    /** Removes the stored file and all key material, then presents an empty form. */
+    suspend fun confirmReset() {
+        if (store.reset() == StorageWriteResult.FAILED) {
+            mutableState.value = mutableState.value.copy(
+                confirmingReset = false,
+                failedWrite = FailedWrite.RESET,
+            )
+            return
+        }
+        instanceId = SINGLE_INSTANCE_ID
+        addressOfStoredKey = null
+        // Nothing is stored any more, so nothing is unreadable any more either. The form says so
+        // rather than going quiet, because the user has just been told their settings were lost
+        // and is owed the confirmation that it was this action that did it.
+        mutableState.value = SettingsUiState(loading = false, resetJustNow = true)
     }
 
     /**

@@ -9,13 +9,26 @@ import io.github.jellyforgedev.widgora.model.InstanceId
 import java.util.Base64
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 
 /** A preference store that behaves like the real one without touching a file. */
 internal class InMemoryPreferences : DataStore<Preferences> {
 
+    /**
+     * Set to make every read fail the way a damaged file does.
+     *
+     * A field rather than a separate double, so that a test can configure an instance first and
+     * then break the file — which is the order the real situation arises in.
+     */
+    var failWith: Throwable? = null
+
     private val state = MutableStateFlow(emptyPreferences())
 
-    override val data: Flow<Preferences> get() = state
+    override val data: Flow<Preferences> get() = flow {
+        failWith?.let { throw it }
+        emitAll(state)
+    }
 
     override suspend fun updateData(
         transform: suspend (t: Preferences) -> Preferences,
@@ -35,6 +48,10 @@ internal class InMemoryPreferences : DataStore<Preferences> {
 internal class ReversibleSecretStore : SecretStore {
 
     var decryptionFails = false
+
+    /** Whether every key was destroyed at once, which only a reset is allowed to do. */
+    var forgotEverything = false
+        private set
 
     private val byInstance = mutableMapOf<String, String>()
     private var vectorCounter = 0
@@ -56,6 +73,11 @@ internal class ReversibleSecretStore : SecretStore {
 
     override fun forget(instanceId: InstanceId) {
         byInstance.remove(instanceId.value)
+    }
+
+    override fun forgetAll() {
+        forgotEverything = true
+        byInstance.clear()
     }
 
     private fun encode(value: String): String =

@@ -21,6 +21,47 @@
     <string name="dashboard_state_error_oversized">Answer too large</string>
     <string name="dashboard_state_error_unknown">Retrieval failed</string>
 
+    <!--
+      Storage exists and could not be read. Deliberately not the wording of
+      dashboard_no_instance: what is true differs, and so does what the user has to do.
+    -->
+    <string name="dashboard_config_unreadable">The saved settings cannot be read. Your instance is still there but could not be loaded. Open the settings and save it again.</string>
+
+    <!--
+      The actions a tile offers. Neither is drawn on the tile: they are the labels a screen reader
+      announces for the directional pad's centre key, so the tile stays uncluttered. Which one
+      applies, or neither, is decided by TileAction.
+    -->
+    <string name="dashboard_open_details">Show the individual monitors</string>
+    <string name="dashboard_open_settings">Open the settings</string>
+    <!--
+      How many affected monitors did not fit on the tile. A plural because a language that
+      inflects the word after the number needs both forms; English does not distinguish them.
+    -->
+    <plurals name="dashboard_affected_more">
+        <item quantity="one">+%1$d more</item>
+        <item quantity="other">+%1$d more</item>
+    </plurals>
+
+    <!-- One monitor's state in a word. Shown in the detail list, read out on the tile. -->
+    <string name="monitor_state_active">up</string>
+    <string name="monitor_state_failed">down</string>
+    <string name="monitor_state_pending">pending</string>
+    <string name="monitor_state_maintenance">in maintenance</string>
+    <string name="monitor_state_unknown">unknown</string>
+
+    <!--
+      The neutral half of a monitor note: what is the matter, in words that name no service. The
+      other half, what to do about it, comes from the integration that reported the item and is
+      appended after this sentence; see MonitorNote.
+    -->
+    <string name="monitor_note_contradictory">Contradictory information from the source.</string>
+
+    <string name="detail_back_hint">Press back to return to the dashboard.</string>
+    <string name="detail_no_monitors">No monitors retrieved yet.</string>
+    <!-- A measured response time. The unit is not translated. -->
+    <string name="detail_response_time">%1$d ms</string>
+
     <string name="dashboard_notice_disabled">Switched off.</string>
     <string name="dashboard_notice_secret_unusable">The API key is missing or can no longer be read. Please enter it again in the settings.</string>
     <string name="dashboard_notice_entry_invalid">This instance is stored invalidly. Correct it in the settings or delete it.</string>
@@ -75,7 +116,33 @@
     <string name="settings_delete_confirm">Yes, delete</string>
     <string name="settings_delete_cancel">Keep</string>
 
+    <!--
+      Storage that exists and cannot be read, said on the screen that can do something about it.
+      It names both ways out, in the order they should be tried: entering the instance again keeps
+      nothing of the old file, resetting throws it away deliberately.
+    -->
+    <string name="settings_config_unreadable">The saved settings cannot be read. You can enter the instance again and save it, or reset the saved settings.</string>
+
+    <!--
+      Only shown while the configuration is unreadable. The question repeats what is lost, because
+      this is the one action in the application that cannot be undone and that removes key material
+      as well as settings.
+    -->
+    <string name="settings_reset">Reset saved settings</string>
+    <string name="settings_reset_question">Remove the saved settings, the saved key and its key material? This cannot be undone.</string>
+    <string name="settings_reset_confirm">Yes, reset</string>
+    <string name="settings_reset_cancel">Keep</string>
+    <string name="settings_reset_done">The saved settings have been removed. You can set the instance up again.</string>
+
     <string name="settings_saved">Saved.</string>
+
+    <!--
+      A write that did not happen. Saying so is the whole point: the previous version let the
+      attempt fail silently, and the user was left looking at values that were never stored.
+    -->
+    <string name="settings_error_save_failed">Could not be saved. The settings file cannot be written.</string>
+    <string name="settings_error_delete_failed">Could not be deleted. The settings file cannot be written.</string>
+    <string name="settings_error_reset_failed">The saved settings could not be removed.</string>
 
     <string name="settings_error_display_name_required">Please enter a name.</string>
     <string name="settings_error_api_key_required">Please enter the API key.</string>

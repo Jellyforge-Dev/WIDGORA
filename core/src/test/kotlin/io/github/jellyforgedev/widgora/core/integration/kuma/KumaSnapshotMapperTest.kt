@@ -1,9 +1,11 @@
 package io.github.jellyforgedev.widgora.core.integration.kuma
 
+import io.github.jellyforgedev.widgora.core.data.MonitorOverview
 import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.model.WidgetSnapshot
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class KumaSnapshotMapperTest {
@@ -21,32 +23,44 @@ class KumaSnapshotMapperTest {
         assertTrue(id.value.length <= 64, id.value.length.toString())
     }
 
+    /**
+     * The value carries marks and digits, never words. A snapshot can be handed to a host
+     * launcher through the bridge, which shares neither this application's resources nor its
+     * colours, so a localised phrase would be unreadable there and a distinction made by colour
+     * alone would not arrive at all.
+     */
     @Test
-    fun countsUpAndDown() {
+    fun theValueIsLanguageNeutral() {
         val snapshot = snapshotOf(
             monitor("1", KumaMonitorStatus.UP),
             monitor("2", KumaMonitorStatus.UP),
             monitor("3", KumaMonitorStatus.DOWN),
         )
-        assertEquals("2 up, 1 down", snapshot.primaryValue)
+        assertEquals("▲2 ▼1", snapshot.primaryValue)
     }
 
     @Test
     fun namesPendingMaintenanceAndUnknownOnlyWhenPresent() {
-        val snapshot = snapshotOf(
+        val all = snapshotOf(
             monitor("1", KumaMonitorStatus.UP),
             monitor("2", KumaMonitorStatus.PENDING),
             monitor("3", KumaMonitorStatus.MAINTENANCE),
             monitor("4", KumaMonitorStatus.UNKNOWN),
         )
-        assertEquals("1 up, 0 down, 1 pending, 1 in maintenance, 1 unknown", snapshot.primaryValue)
+        assertEquals("▲1 ▼0 ◆1 ■1 ●1", all.primaryValue)
+
+        val onlyPending = snapshotOf(
+            monitor("1", KumaMonitorStatus.UP),
+            monitor("2", KumaMonitorStatus.PENDING),
+        )
+        assertEquals("▲1 ▼0 ◆1", onlyPending.primaryValue)
     }
 
-    /** An unrecognised state is not absorbed into the up count. */
+    /** An unrecognised state is not absorbed into the working count. */
     @Test
     fun anUnknownStateIsNotCountedAsUp() {
         val snapshot = snapshotOf(monitor("1", KumaMonitorStatus.UNKNOWN))
-        assertEquals("0 up, 0 down, 1 unknown", snapshot.primaryValue)
+        assertEquals("▲0 ▼0 ●1", snapshot.primaryValue)
     }
 
     @Test
@@ -54,16 +68,37 @@ class KumaSnapshotMapperTest {
         assertEquals("", snapshotOf().primaryValue)
     }
 
+    /**
+     * The largest response the reader accepts, spread over all five states, still produces a
+     * value the snapshot does not have to cap. Checked against the mapping's own output as well
+     * as against the limit, so that a silent truncation fails this test rather than passing it.
+     */
     @Test
-    fun theTimeOfRetrievalIsTheAgeOfTheData() {
+    fun theValueIsNeverCappedEvenForTheLargestAcceptedResponse() {
+        val states = KumaMonitorStatus.entries
+        val monitors = (1..KumaMetricsReader.MAX_MONITORS).map { index ->
+            monitor(index.toString(), states[index % states.size])
+        }
+        val overview = KumaMonitorMapping.overviewOf(monitors)
+
         val snapshot = KumaSnapshotMapper.summarySnapshot(
             instanceId = InstanceId("home-kuma"),
             title = "Uptime Kuma",
-            monitors = listOf(monitor("1", KumaMonitorStatus.UP)),
-            retrievedAtEpochMs = 1_700_000_000_000,
-            templates = KumaSummaryTemplates.Numeric,
+            overview = overview,
+            retrievedAtEpochMs = RETRIEVED_AT,
         )
-        assertEquals(1_700_000_000_000, snapshot.updatedAtEpochMs)
+
+        assertEquals(overview.counts.neutralSummary(), snapshot.primaryValue)
+        assertTrue(
+            snapshot.primaryValue.length <= WidgetSnapshot.MAX_DISPLAY_TEXT_LENGTH,
+            snapshot.primaryValue,
+        )
+    }
+
+    @Test
+    fun theTimeOfRetrievalIsTheAgeOfTheData() {
+        val snapshot = snapshotOf(monitor("1", KumaMonitorStatus.UP))
+        assertEquals(RETRIEVED_AT, snapshot.updatedAtEpochMs)
     }
 
     @Test
@@ -71,60 +106,32 @@ class KumaSnapshotMapperTest {
         val snapshot = KumaSnapshotMapper.summarySnapshot(
             instanceId = InstanceId("home-kuma"),
             title = "t".repeat(200),
-            monitors = listOf(monitor("1", KumaMonitorStatus.UP)),
-            retrievedAtEpochMs = 1_700_000_000_000,
-            templates = KumaSummaryTemplates.Numeric,
+            overview = KumaMonitorMapping.overviewOf(listOf(monitor("1", KumaMonitorStatus.UP))),
+            retrievedAtEpochMs = RETRIEVED_AT,
         )
         assertEquals(WidgetSnapshot.MAX_DISPLAY_TEXT_LENGTH, snapshot.title.length)
     }
 
     /**
-     * The wording comes from outside; what this module decides is which parts appear, in which
-     * order, and with which count. A language is free to put the number anywhere in its phrase,
-     * which is why the templates are checked with a different word order than English uses.
+     * No monitor name may enter a snapshot. The names here are distinctive, so that a mapping
+     * which ever started putting one into the title or the value would fail this test.
      */
     @Test
-    fun theSummaryUsesTheSuppliedPhrasesInTheModulesOwnOrder() {
-        // Short phrases on purpose: five parts with long words exceed the 64 code points a
-        // snapshot value may hold and would be capped, which is a property of the snapshot
-        // rather than of this mapping.
-        val german = KumaSummaryTemplates(
-            up = { count -> "auf: $count" },
-            down = { count -> "ab: $count" },
-            pending = { count -> "warte: $count" },
-            maintenance = { count -> "wartung: $count" },
-            unknown = { count -> "unbek.: $count" },
-            separator = " | ",
-        )
-
+    fun noMonitorNameEntersTheSnapshot() {
         val snapshot = KumaSnapshotMapper.summarySnapshot(
             instanceId = InstanceId("home-kuma"),
             title = "Uptime Kuma",
-            monitors = listOf(
-                monitor("1", KumaMonitorStatus.UP),
-                monitor("2", KumaMonitorStatus.DOWN),
-                monitor("3", KumaMonitorStatus.PENDING),
-                monitor("4", KumaMonitorStatus.MAINTENANCE),
-                monitor("5", KumaMonitorStatus.UNKNOWN),
+            overview = KumaMonitorMapping.overviewOf(
+                listOf(
+                    monitor("1", KumaMonitorStatus.DOWN, name = "nas.internal.example"),
+                    monitor("2", KumaMonitorStatus.UP, name = "router.internal.example"),
+                ),
             ),
-            retrievedAtEpochMs = 1_700_000_000_000,
-            templates = german,
+            retrievedAtEpochMs = RETRIEVED_AT,
         )
 
-        assertEquals(
-            "auf: 1 | ab: 1 | warte: 1 | wartung: 1 | unbek.: 1",
-            snapshot.primaryValue,
-        )
-    }
-
-    @Test
-    fun theThreeOptionalPartsAppearOnlyWhenTheyOccur() {
-        val snapshot = snapshotOf(
-            monitor("1", KumaMonitorStatus.UP),
-            monitor("2", KumaMonitorStatus.PENDING),
-        )
-
-        assertEquals("1 up, 0 down, 1 pending", snapshot.primaryValue)
+        val rendered = snapshot.toString()
+        assertFalse(rendered.contains("internal.example"), rendered)
     }
 
     @Test
@@ -138,14 +145,21 @@ class KumaSnapshotMapperTest {
         KumaSnapshotMapper.summarySnapshot(
             instanceId = InstanceId("home-kuma"),
             title = "Uptime Kuma",
-            monitors = monitors.toList(),
-            retrievedAtEpochMs = 1_700_000_000_000,
-            templates = KumaSummaryTemplates.Numeric,
+            overview = if (monitors.isEmpty()) {
+                MonitorOverview.Empty
+            } else {
+                KumaMonitorMapping.overviewOf(monitors.toList())
+            },
+            retrievedAtEpochMs = RETRIEVED_AT,
         )
 
-    private fun monitor(id: String, status: KumaMonitorStatus): KumaMonitor = KumaMonitor(
+    private fun monitor(
+        id: String,
+        status: KumaMonitorStatus,
+        name: String? = "Service " + id,
+    ): KumaMonitor = KumaMonitor(
         monitorId = id,
-        name = "Service " + id,
+        name = name,
         type = "http",
         status = status,
         responseTimeMs = null,
@@ -153,4 +167,8 @@ class KumaSnapshotMapperTest {
         certificateValid = null,
         certificateDaysRemaining = null,
     )
+
+    private companion object {
+        const val RETRIEVED_AT = 1_700_000_000_000
+    }
 }
