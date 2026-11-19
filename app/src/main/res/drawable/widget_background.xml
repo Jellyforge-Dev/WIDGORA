@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget's own surface, and its focus mark.
+
+  A widget sits on a background WIDGORA does not control and cannot see, so it draws an opaque
+  surface of its own rather than trusting whatever is behind it to make the text readable.
+
+  The focused state is the same neutral white used everywhere else in the application, at the same
+  width. There is no enlargement: a widget's box belongs to the host, and growing past it would be
+  clipped rather than seen. The border is the whole mark here.
+
+  Both states are shapes, not images. Nothing in a widget is a bitmap, so the per-widget image
+  memory the platform accounts for stays at zero.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_surface" />
+            <corners android:radius="@dimen/widget_corner_radius" />
+            <stroke
+                android:width="@dimen/widget_focus_border"
+                android:color="@color/widget_focus" />
+        </shape>
+    </item>
+
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_surface" />
+            <corners android:radius="@dimen/widget_corner_radius" />
+            <stroke
+                android:width="@dimen/widget_resting_border"
+                android:color="@color/widget_outline" />
+        </shape>
+    </item>
+
+</selector>

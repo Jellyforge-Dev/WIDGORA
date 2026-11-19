@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.tv.material3.Surface
 import io.github.jellyforgedev.widgora.core.data.SnapshotRepository
 import io.github.jellyforgedev.widgora.dashboard.DashboardTiming
@@ -27,6 +28,8 @@ import io.github.jellyforgedev.widgora.settings.SettingsScreen
 import io.github.jellyforgedev.widgora.settings.SettingsStateHolder
 import io.github.jellyforgedev.widgora.ui.HomeScreen
 import io.github.jellyforgedev.widgora.ui.MonitorDetailScreen
+import io.github.jellyforgedev.widgora.widget.WidgetLaunch
+import io.github.jellyforgedev.widgora.widget.WidgetUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,6 +50,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val widgora = application as WidgoraApplication
+
+        /**
+         * Whether this launch came from one of WIDGORA's own widgets.
+         *
+         * The identifier is validated rather than believed: an intent may carry any number, and
+         * one that names no widget of this application is simply not a widget launch. Nothing is
+         * reported about a bad value, because nothing went wrong — the activity opens as it
+         * otherwise would.
+         */
+        val openedFromWidget = WidgetLaunch.validAppWidgetIdFrom(this, intent) != null
+
         setContent {
             WidgoraTheme {
                 WidgoraApp(
@@ -54,6 +68,7 @@ class MainActivity : ComponentActivity() {
                     connectionTester = widgora.connectionTester,
                     snapshots = widgora.snapshots,
                     foreground = foreground.collectAsState().value,
+                    openedFromWidget = openedFromWidget,
                 )
             }
         }
@@ -84,12 +99,28 @@ private fun WidgoraApp(
     connectionTester: ConnectionTester,
     snapshots: SnapshotRepository,
     foreground: Boolean,
+    openedFromWidget: Boolean,
 ) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var detailInstanceId by rememberSaveable { mutableStateOf<String?>(null) }
     val views by snapshots.views.collectAsState()
     val configurationUnreadable by snapshots.configurationUnreadable.collectAsState()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    /**
+     * A widget shows the dashboard's summary, so pressing one arrives at the dashboard.
+     *
+     * It matters only where saved state survives the launch — the activity being restored rather
+     * than created fresh — because then the application could otherwise reopen on the settings
+     * screen, which is not what the widget was showing.
+     */
+    LaunchedEffect(openedFromWidget) {
+        if (openedFromWidget) {
+            showSettings = false
+            detailInstanceId = null
+        }
+    }
 
     /**
      * The instance whose detail screen is open, if it still has a list to show.
@@ -128,6 +159,10 @@ private fun WidgoraApp(
         if (!foreground || showSettings) return@LaunchedEffect
         while (true) {
             withContext(Dispatchers.IO) { snapshots.refresh() }
+            // Widgets are pushed after every retrieval, including one that failed. A widget left
+            // showing the last good value while the dashboard beside it says the service is down
+            // would be the one outcome worth avoiding, and the push itself costs no network.
+            WidgetUpdater.pushFromMemory(context)
             delay(DashboardTiming.REFRESH_INTERVAL_MS)
         }
     }
@@ -150,7 +185,10 @@ private fun WidgoraApp(
             else -> HomeScreen(
                 views = views,
                 onRefresh = {
-                    scope.launch { withContext(Dispatchers.IO) { snapshots.refresh() } }
+                    scope.launch {
+                        withContext(Dispatchers.IO) { snapshots.refresh() }
+                        WidgetUpdater.pushFromMemory(context)
+                    }
                 },
                 onOpenSettings = { showSettings = true },
                 onOpenDetails = { instanceId -> detailInstanceId = instanceId.value },
