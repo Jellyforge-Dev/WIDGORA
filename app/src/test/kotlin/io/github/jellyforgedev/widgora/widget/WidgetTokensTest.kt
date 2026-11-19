@@ -66,6 +66,10 @@ class WidgetTokensTest {
             "widget_text_compact_title" to WidgoraText.Label.size.asDimension(),
             "widget_text_compact_counts" to WidgoraText.WidgetValue.size.asDimension(),
             "widget_text_compact_line" to WidgoraText.Caption.size.asDimension(),
+            "widget_counts_autosize_min" to WidgoraText.Minimum.asDimension(),
+            "widget_counts_autosize_max" to WidgoraText.WidgetValueMaximum.asDimension(),
+            "widget_counts_autosize_max_compact" to WidgoraText.TileValue.size.asDimension(),
+            "widget_counts_autosize_step" to WidgoraText.AutoSizeStep.asDimension(),
         )
 
         assertEquals(expected.keys.sorted(), dimens.keys.sorted(), "the set of measurements differs")
@@ -184,12 +188,47 @@ class WidgetTokensTest {
             )
         }
 
+        // The largest box is a promise too, and the measurement test holds the content against
+        // it. If the two drifted, the test would be measuring a size no host would ever give.
+        assertEquals(
+            WidgetSizes.LARGE_WIDTH_DP,
+            dimension(declared.getValue("maxResizeWidth"), "maxResizeWidth").value.toInt(),
+            "maxResizeWidth",
+        )
+        assertEquals(
+            WidgetSizes.LARGE_HEIGHT_DP,
+            dimension(declared.getValue("maxResizeHeight"), "maxResizeHeight").value.toInt(),
+            "maxResizeHeight",
+        )
+
         // The larger variant has to be reachable, or it would be built and never shown.
-        val maxHeight = dimension(declared.getValue("maxResizeHeight"), "maxResizeHeight")
         assertTrue(
-            maxHeight.value >= WidgetSizes.FULL_HEIGHT_DP,
+            WidgetSizes.LARGE_HEIGHT_DP >= WidgetSizes.FULL_HEIGHT_DP,
             "the full variant needs ${WidgetSizes.FULL_HEIGHT_DP}dp and a resize stops at " +
-                "${maxHeight.value}dp",
+                "${WidgetSizes.LARGE_HEIGHT_DP}dp",
+        )
+    }
+
+    /**
+     * The range the counts are scaled within is a range, and it starts at the floor.
+     *
+     * Scaling can only ever be as safe as its lower bound: a minimum below the floor would let
+     * the platform shrink the one line that matters until nobody across a room could read it.
+     */
+    @Test
+    fun theScalingRangeStartsAtTheFloorAndGoesUp() {
+        val dimens = parse("dimen")
+        val min = dimension(dimens.getValue("widget_counts_autosize_min"), "min")
+        val max = dimension(dimens.getValue("widget_counts_autosize_max"), "max")
+        val step = dimension(dimens.getValue("widget_counts_autosize_step"), "step")
+
+        assertEquals("sp", min.unit)
+        assertEquals(WidgoraText.Minimum.value, min.value)
+        assertTrue(max.value > min.value, "the range does not go up: ${min.value}..${max.value}")
+        assertTrue(step.value > 0f, "the step is ${step.value}")
+        assertTrue(
+            step.value <= max.value - min.value,
+            "a step of ${step.value} cannot move within ${min.value}..${max.value}",
         )
     }
 

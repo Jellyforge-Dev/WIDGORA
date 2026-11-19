@@ -22,6 +22,7 @@
     android:background="@drawable/widget_background"
     android:contentDescription="@string/widget_open_app"
     android:focusable="true"
+    android:gravity="center_vertical"
     android:orientation="vertical"
     android:padding="@dimen/widget_padding">
 
@@ -35,12 +36,31 @@
         android:textColor="@color/widget_on_surface"
         android:textSize="@dimen/widget_text_title" />
 
+    <!--
+      The counts take whatever height is left and are scaled to fill it.
+
+      Two things follow from that, and both were defects before. A large widget showed the same
+      small digits as a small one, leaving two thirds of its area empty; and in a narrow box five
+      marks with their numbers were shortened, throwing away the one thing the widget exists to
+      show. Scaling answers both: the platform picks the largest size that fits the box in width
+      and in height, within the declared range.
+
+      The fixed textSize stays as the fallback. If the scaling is ever ignored the text falls
+      back to it, rather than to a platform default of around 14sp — below this project's floor
+      and unreadable from a sofa.
+    -->
     <TextView
         android:id="@+id/widget_counts"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:autoSizeMaxTextSize="@dimen/widget_counts_autosize_max"
+        android:autoSizeMinTextSize="@dimen/widget_counts_autosize_min"
+        android:autoSizeStepGranularity="@dimen/widget_counts_autosize_step"
+        android:autoSizeTextType="uniform"
         android:ellipsize="end"
-        android:maxLines="1"
+        android:gravity="center_vertical|start"
+        android:maxLines="2"
         android:textColor="@color/widget_on_surface"
         android:textSize="@dimen/widget_text_counts"
         android:visibility="gone" />

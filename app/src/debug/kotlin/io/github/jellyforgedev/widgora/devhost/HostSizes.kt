@@ -27,16 +27,33 @@ data class HostSize(val widthDp: Int, val heightDp: Int)
 object HostSizes {
 
     /**
+     * The steps, smallest first.
+     *
+     * Three candidates are considered: the size the provider asks for by default, the size at
+     * which it changes its layout, and the largest it says it can be resized to. Each is clamped
+     * to the screen and to the step before it, and a candidate that lands on the step before it
+     * is dropped — a switch between two sizes that look identical is a switch that appears
+     * broken.
+     *
+     * The middle step exists because the two layouts are the thing there is to look at. Without
+     * it, the smallest and the largest box would both be reachable and the boundary between the
+     * two layouts would not be.
+     *
      * @param declaredWidthDp the provider's default width
      * @param declaredHeightDp the provider's default height
+     * @param breakpointWidthDp the width at which the provider changes layout
+     * @param breakpointHeightDp the height at which the provider changes layout
      * @param maxWidthDp the provider's maximum resize width, or zero when it declares none
      * @param maxHeightDp the provider's maximum resize height, or zero when it declares none
      * @param availableWidthDp the usable width of the screen, overscan already subtracted
      * @param availableHeightDp the usable height of the screen
      */
+    @Suppress("LongParameterList")
     fun offered(
         declaredWidthDp: Int,
         declaredHeightDp: Int,
+        breakpointWidthDp: Int,
+        breakpointHeightDp: Int,
         maxWidthDp: Int,
         maxHeightDp: Int,
         availableWidthDp: Int,
@@ -46,19 +63,28 @@ object HostSizes {
             "the available area must have a size"
         }
 
-        val small = HostSize(
-            widthDp = declaredWidthDp.coerceIn(1, availableWidthDp),
-            heightDp = declaredHeightDp.coerceIn(1, availableHeightDp),
+        val candidates = listOf(
+            declaredWidthDp to declaredHeightDp,
+            breakpointWidthDp to breakpointHeightDp,
+            // A provider need not declare a maximum. A zero never grows past the step before it
+            // and is dropped, which is the truth about such a provider rather than a size
+            // invented on its behalf.
+            maxWidthDp to maxHeightDp,
         )
 
-        // A provider need not declare a maximum. Falling back to the declared size means the
-        // larger option simply does not appear, which is the truth about such a provider rather
-        // than a size invented on its behalf.
-        val large = HostSize(
-            widthDp = maxWidthDp.coerceAtLeast(small.widthDp).coerceAtMost(availableWidthDp),
-            heightDp = maxHeightDp.coerceAtLeast(small.heightDp).coerceAtMost(availableHeightDp),
-        )
-
-        return if (large == small) listOf(small) else listOf(small, large)
+        val steps = mutableListOf<HostSize>()
+        for ((width, height) in candidates) {
+            val previous = steps.lastOrNull()
+            val step = HostSize(
+                widthDp = width
+                    .coerceAtLeast(previous?.widthDp ?: 1)
+                    .coerceIn(1, availableWidthDp),
+                heightDp = height
+                    .coerceAtLeast(previous?.heightDp ?: 1)
+                    .coerceIn(1, availableHeightDp),
+            )
+            if (step != previous) steps += step
+        }
+        return steps
     }
 }

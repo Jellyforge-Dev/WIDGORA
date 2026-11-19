@@ -33,6 +33,7 @@ import io.github.jellyforgedev.widgora.design.WidgoraShapes
 import io.github.jellyforgedev.widgora.design.WidgoraSpacing
 import io.github.jellyforgedev.widgora.design.WidgoraText
 import io.github.jellyforgedev.widgora.widget.CountsWidgetProvider
+import io.github.jellyforgedev.widgora.widget.WidgetSizes
 
 /**
  * A widget host, for looking at WIDGORA's widget on a television that has none.
@@ -401,6 +402,11 @@ class WidgetHostActivity : Activity() {
         return HostSizes.offered(
             declaredWidthDp = info.minWidth.toDp(),
             declaredHeightDp = info.minHeight.toDp(),
+            // The one figure that cannot be read from the metadata: where the widget changes
+            // from one layout to the other. This host exists to look at WIDGORA's own widget, so
+            // it reads that from WIDGORA's own constants rather than guessing at a midpoint.
+            breakpointWidthDp = WidgetSizes.MIN_WIDTH_DP,
+            breakpointHeightDp = WidgetSizes.FULL_HEIGHT_DP,
             maxWidthDp = maxWidth.toDp(),
             maxHeightDp = maxHeight.toDp(),
             availableWidthDp = (metrics.widthPixels.toDp() - 2 * horizontalMargin)
@@ -439,14 +445,14 @@ class WidgetHostActivity : Activity() {
             )
         }
 
-        status.text = getString(R.string.debug_host_size, size.widthDp, size.heightDp)
-        sizeButton.text = getString(
-            if (sizeIndex == 0) {
-                R.string.debug_host_size_larger
-            } else {
-                R.string.debug_host_size_smaller
-            },
+        status.text = getString(
+            R.string.debug_host_size,
+            sizeIndex + 1,
+            sizes.size,
+            size.widthDp,
+            size.heightDp,
         )
+        sizeButton.text = getString(R.string.debug_host_size_next)
     }
 
     private fun toggleSize() {
