@@ -351,12 +351,27 @@ settings offer, **only while the configuration is unreadable**, a reset that rem
 all key material, behind the same confirmation that deleting an instance uses. Every key has to go
 together, because the list of which keys exist is inside the file that cannot be read.
 
-Two honest limits. The reset removes the file from under an open store, which is otherwise
-something to avoid; it is defensible here precisely because a store whose every read has failed
-holds no value the removal could contradict, and the store is then cleared as well so that the open
-instance agrees with the file. And the behaviour on a genuinely damaged file on a device is
-unverified `[U]` — the unit tests drive the refusal through a double, and only a hand check on the
-emulator can show the real thing.
+**The reset clears the stored values through the store first, and removes the file second.** The
+order is not a matter of taste, and the first attempt had it the wrong way round. Shown by the
+instrumented test on an emulator `[V]`: with the file deleted first, the clear that followed
+reported success and wrote nothing at all. The store re-reads the file when it writes; it found no
+file, read an empty set of values, and clearing nothing is not a change — so it skipped the write,
+and a store republishes only what it has actually written. The file was genuinely gone, the reset
+genuinely reported success, and the repository went on handing out the instance it had read before
+the removal for as long as the process lived.
+
+The reasoning behind that order was that removing a file from under an open store is defensible
+when the store has never read anything successfully. That is true as far as it goes, and it was the
+wrong thing to rely on: `reset` is a repository operation and cannot assume which screen called it
+or what the store happens to be holding. Clearing first has no such hole — against a readable file
+the clear is a real change, so it is written and published, and the removal that follows cannot
+contradict a value that is already empty; against a damaged file the clear fails and the removal
+carries the reset alone, which is sound because a failed read is not kept, so the next read finds
+no file and reports an empty configuration.
+
+One honest limit remains `[U]`: the behaviour against a *genuinely damaged* file on a device. The
+instrumented test resets a readable file, and the unit tests drive the refusal through a double.
+Only a hand check with a corrupted file can show the rest.
 
 Background refresh with WorkManager is **not** implemented `[U]`.
 
@@ -664,7 +679,8 @@ adds indirection without benefit.
 | Whether a directional pad scrolls the detail list as intended, and whether focus lands on its first row | `[U]` |
 | ~~Whether the neutral focus mark and the enlargement are visible and uncropped at the ends of the row on a television~~ — confirmed on the emulator; real hardware still open | `[V]` |
 | ~~What saving should do when the configuration file exists but cannot be read: replace it, or report the failure~~ — **decided**: report it, never replace automatically, and offer a reset the user confirms | `[V]` |
-| How a damaged preference file behaves on a device when written to and when reset, as opposed to through a test double | `[U]` |
+| That a reset of a readable configuration leaves nothing behind on a device — and that the removal must follow the clear, not precede it, because a store republishes only what it has actually written | `[V]` |
+| How a *damaged* preference file behaves on a device when written to and when reset, as opposed to through a test double | `[U]` |
 | Whether the explanation offered for contradictory data is understood, and whether a restart of the service is advice the user can act on | `[U]` |
 | ~~Whether the focus treatment the TV component library applies to its own buttons matches the project's neutral mark, since those buttons are not styled here~~ — checked on the emulator: they no longer light up in the brand colour | `[V]` |
 | Whether deferred consent is acceptable in practice, given the host shows nothing until approval | `[U]` |

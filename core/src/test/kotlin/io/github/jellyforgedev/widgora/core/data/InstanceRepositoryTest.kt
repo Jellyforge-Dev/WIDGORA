@@ -448,6 +448,41 @@ class InstanceRepositoryTest {
         assertEquals(StorageWriteResult.FAILED, repository.reset())
     }
 
+    /**
+     * The stored values are cleared **before** the file is removed, and the order is not a matter
+     * of taste.
+     *
+     * An instrumented run on an emulator showed what the other order does `[V]`: with the file
+     * already gone, the clear that followed was a write that changed nothing, the store therefore
+     * skipped it, and a store republishes only what it has actually written — so the repository
+     * kept handing out the instance it had read before the removal for the rest of the process's
+     * life, while reporting the reset as done.
+     *
+     * A double cannot reproduce that; the store this test uses has no file behind it. What this
+     * test holds is the requirement the finding produced, so that tidying the two lines back into
+     * the other order fails here instead of on a device.
+     */
+    @Test
+    fun theStoredValuesAreClearedBeforeTheFileIsRemoved() = runBlocking {
+        val store = InMemoryPreferencesDataStore()
+        // Both steps record into the same list as they happen, so what is asserted is the actual
+        // sequence and not a list assembled afterwards.
+        val repository = InstanceRepository(
+            dataStore = store,
+            secretStore = FakeSecretStore(),
+            removeStorage = {
+                store.operations += REMOVE_THE_FILE
+                true
+            },
+        )
+        repository.save(config(), API_KEY)
+        store.operations.clear()
+
+        repository.reset()
+
+        assertEquals(listOf(WRITE_TO_THE_STORE, REMOVE_THE_FILE), store.operations)
+    }
+
     /** Nothing destroys every key on its own. Only [InstanceRepository.reset] does. */
     @Test
     fun noOrdinaryOperationForgetsEveryKey() = runBlocking {
@@ -524,9 +559,18 @@ class InstanceRepositoryTest {
             emitAll(state)
         }
 
+        /**
+         * What happened to this store, in the order it happened.
+         *
+         * A test that cares about the order of two storage steps records the other one in here as
+         * well, so that one list holds the whole sequence.
+         */
+        val operations = mutableListOf<String>()
+
         override suspend fun updateData(
             transform: suspend (t: Preferences) -> Preferences,
         ): Preferences {
+            operations += WRITE_TO_THE_STORE
             failWriteWith?.let { throw it }
             val updated = transform(state.value)
             state.value = updated
@@ -583,5 +627,9 @@ class InstanceRepositoryTest {
 
     private companion object {
         const val API_KEY = "uk1_plain_secret_value"
+
+        /** The two storage steps of a reset, as they are recorded in order. */
+        const val WRITE_TO_THE_STORE = "write to the store"
+        const val REMOVE_THE_FILE = "remove the file"
     }
 }
