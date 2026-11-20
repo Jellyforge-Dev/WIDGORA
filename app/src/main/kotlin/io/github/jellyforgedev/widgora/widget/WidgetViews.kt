@@ -103,7 +103,7 @@ object WidgetViews {
             WidgetRenderModel.NotSetUp -> views.fill(
                 title = context.getString(R.string.app_name),
                 counts = null,
-                mark = MARK_NOT_SET_UP,
+                mark = WidgetPresentation.MARK_NOT_SET_UP,
                 label = context.getString(R.string.widget_not_set_up),
                 stateColor = WidgoraColors.StateEmpty.toArgb(),
                 footer = null,
@@ -112,7 +112,7 @@ object WidgetViews {
             WidgetRenderModel.ConfigurationUnreadable -> views.fill(
                 title = context.getString(R.string.app_name),
                 counts = null,
-                mark = MARK_UNREADABLE,
+                mark = WidgetPresentation.MARK_UNREADABLE,
                 label = context.getString(R.string.widget_config_unreadable),
                 stateColor = WidgoraColors.StateError.toArgb(),
                 footer = null,
@@ -222,12 +222,6 @@ object WidgetViews {
         setViewVisibility(R.id.widget_footer, if (footer == null) View.GONE else View.VISIBLE)
         setTextViewText(R.id.widget_footer, footer.orEmpty())
     }
-
-    /** Nothing is configured: the mark says "add one", which is the only thing to do about it. */
-    private const val MARK_NOT_SET_UP = "+"
-
-    /** The same mark the dashboard uses for a fault the user has to act on. */
-    private const val MARK_UNREADABLE = "!!"
 
     /** A thin space: it separates the mark from the word without reading as punctuation. */
     private const val MARK_SEPARATOR = " "

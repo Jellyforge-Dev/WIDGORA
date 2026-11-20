@@ -8,11 +8,11 @@
     <string name="dashboard_last_updated">Zuletzt aktualisiert: %1$s</string>
     <string name="dashboard_last_updated_outdated">Nicht mehr aktuell. Letzte erfolgreiche Aktualisierung: %1$s</string>
 
-    <string name="dashboard_state_loading">Wird geladen …</string>
-    <string name="dashboard_state_ok">Aktuell</string>
-    <string name="dashboard_state_empty">Nichts zu melden</string>
-    <string name="dashboard_state_stale">Veraltet</string>
-    <string name="dashboard_state_offline">Nicht erreichbar</string>
+    <string name="dashboard_state_loading">Daten werden geladen …</string>
+    <string name="dashboard_state_ok">Daten aktuell</string>
+    <string name="dashboard_state_empty">Keine Monitore in der Instanz</string>
+    <string name="dashboard_state_stale">Daten veraltet</string>
+    <string name="dashboard_state_offline">Instanz nicht erreichbar</string>
     <string name="dashboard_state_error_unauthorized">Schlüssel abgelehnt</string>
     <string name="dashboard_state_error_endpoint_not_found">Nicht gefunden: Adresse oder Schnittstelle</string>
     <string name="dashboard_state_error_malformed">Antwort nicht lesbar</string>
@@ -40,7 +40,7 @@
 
     <string name="monitor_note_contradictory">Widersprüchliche Angaben der Quelle.</string>
 
-    <string name="dashboard_notice_disabled">Abgeschaltet.</string>
+    <string name="dashboard_notice_disabled">Instanz abgeschaltet.</string>
     <string name="dashboard_notice_secret_unusable">Der API-Schlüssel fehlt oder ist nicht mehr lesbar. Bitte in den Einstellungen neu eingeben.</string>
     <string name="dashboard_notice_entry_invalid">Diese Instanz ist ungültig gespeichert. Korrigiere sie in den Einstellungen oder lösche sie.</string>
 

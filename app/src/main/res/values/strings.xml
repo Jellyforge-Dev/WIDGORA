@@ -10,11 +10,27 @@
     <string name="dashboard_last_updated">Last updated: %1$s</string>
     <string name="dashboard_last_updated_outdated">No longer current. Last successful update: %1$s</string>
 
-    <string name="dashboard_state_loading">Loading…</string>
-    <string name="dashboard_state_ok">Current</string>
-    <string name="dashboard_state_empty">Nothing to report</string>
-    <string name="dashboard_state_stale">Outdated</string>
-    <string name="dashboard_state_offline">Not reachable</string>
+    <!--
+      The state line, which says something about the retrieved data and never about the monitors.
+
+      Every one of these names its own subject, and that is a rule rather than a style preference.
+      "Current" standing beside a count of two failed monitors was read as a verdict on those
+      monitors, which is the opposite of what the line means. Three of them say "Data", because
+      they are statements about what is shown and how old it is; the rest name what the matter is
+      with it — this instance, the key, the answer, the retrieval — so none of them can be
+      mistaken for an answer about the monitored services.
+    -->
+    <string name="dashboard_state_loading">Loading data…</string>
+    <string name="dashboard_state_ok">Data current</string>
+    <!--
+      The retrieval succeeded and the answer held nothing, which for this endpoint means the
+      instance has no monitors. It names that rather than describing the data as "empty": an empty
+      answer is the mechanism, and the installation having nothing to check is what it means.
+    -->
+    <string name="dashboard_state_empty">No monitors in this instance</string>
+    <string name="dashboard_state_stale">Data outdated</string>
+    <!-- The instance WIDGORA retrieves from, not a monitored host that is down. -->
+    <string name="dashboard_state_offline">Instance not reachable</string>
     <string name="dashboard_state_error_unauthorized">Key rejected</string>
     <string name="dashboard_state_error_endpoint_not_found">Not found: address or interface</string>
     <string name="dashboard_state_error_malformed">Answer not readable</string>
@@ -62,7 +78,8 @@
     <!-- A measured response time. The unit is not translated. -->
     <string name="detail_response_time">%1$d ms</string>
 
-    <string name="dashboard_notice_disabled">Switched off.</string>
+    <!-- "Switched off" alone was a sentence about something; this names which something. -->
+    <string name="dashboard_notice_disabled">Instance switched off.</string>
     <string name="dashboard_notice_secret_unusable">The API key is missing or can no longer be read. Please enter it again in the settings.</string>
     <string name="dashboard_notice_entry_invalid">This instance is stored invalidly. Correct it in the settings or delete it.</string>
 
