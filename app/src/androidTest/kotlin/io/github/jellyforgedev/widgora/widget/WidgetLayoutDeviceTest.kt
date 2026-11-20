@@ -13,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.jellyforgedev.widgora.R
 import io.github.jellyforgedev.widgora.core.data.WidgetViewState
+import io.github.jellyforgedev.widgora.design.WidgetPresentation
 import io.github.jellyforgedev.widgora.design.WidgoraText
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState.Error.Reason
@@ -72,6 +73,15 @@ class WidgetLayoutDeviceTest {
         "longest error wording" to instance(
             counts = "▲35 ▼2",
             state = WidgetViewState.Display(WidgetDisplayState.Error(Reason.ENDPOINT_NOT_FOUND)),
+        ),
+        // An installation with nothing to check. Its wording is the second longest the line has,
+        // and until the words of this line were made to name their subject it was short enough
+        // not to be worth measuring. It is measured now.
+        "no monitors at all" to WidgetRenderModel.Instance(
+            title = "Uptime Kuma",
+            state = WidgetViewState.Display(WidgetDisplayState.Empty),
+            counts = "",
+            updatedAtEpochMs = UPDATED_AT,
         ),
         "nothing retrieved yet" to WidgetRenderModel.Instance(
             title = "Uptime Kuma",
@@ -194,18 +204,38 @@ class WidgetLayoutDeviceTest {
         }
     }
 
-    /** The state keeps its mark even where the wording has to give way. */
+    /**
+     * The state keeps its mark even where the wording has to give way.
+     *
+     * Every model at every font scale, not only the longest wording. The words of this line were
+     * lengthened to name their subject — "Data current" rather than "Current" — and that is
+     * exactly the change that pushes a shared line past its end. The mark must not be the
+     * casualty: it is what identifies the state for a viewer who cannot tell the colours apart.
+     * The word may shorten. The mark and the time may not.
+     */
     @Test
     fun theStateKeepsItsMarkOnTheCompactVariant() {
-        val model = instance(
-            counts = "▲35 ▼2",
-            state = WidgetViewState.Display(WidgetDisplayState.Error(Reason.ENDPOINT_NOT_FOUND)),
-        )
-        val hosted = hosted(STEPS.first(), model, DEFAULT_FONT_SCALE)
-        val state = hosted.findViewById<TextView>(R.id.widget_state)
+        for (scale in FONT_SCALES) {
+            for ((name, model) in models) {
+                val hosted = hosted(STEPS.first(), model, scale)
+                val state = hosted.findViewById<TextView>(R.id.widget_state)
+                val expected = markOf(model)
 
-        assertTrue("the state line lost its mark", state.text.startsWith("!!"))
-        assertTrue("the state line has no width", state.width > 0)
+                assertTrue(
+                    "the state line lost its mark at font scale $scale ($name): " +
+                        "expected '$expected'",
+                    state.text.startsWith(expected),
+                )
+                assertTrue("the state line has no width ($name)", state.width > 0)
+            }
+        }
+    }
+
+    /** The mark a model is expected to carry, from the source the views are built from. */
+    private fun markOf(model: WidgetRenderModel): String = when (model) {
+        WidgetRenderModel.NotSetUp -> WidgetPresentation.MARK_NOT_SET_UP
+        WidgetRenderModel.ConfigurationUnreadable -> WidgetPresentation.MARK_UNREADABLE
+        is WidgetRenderModel.Instance -> WidgetPresentation.of(model.state).mark
     }
 
     // --- The measurement -----------------------------------------------------------------------

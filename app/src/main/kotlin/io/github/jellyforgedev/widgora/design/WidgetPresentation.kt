@@ -16,6 +16,19 @@ import io.github.jellyforgedev.widgora.model.WidgetDisplayState.Error.Reason
  * this is a value object rather than a colour lookup — it can be checked by a test, and no
  * screen can forget the label.
  *
+ * ### What this line is about, and what it is not
+ *
+ * Every value here describes the **retrieved data** — its age, or the reason there is none. It
+ * never describes the monitored services; that is what the counts and the detail list are for.
+ * The distinction used to be invisible: a successful, fresh retrieval showed a green "OK Current"
+ * directly beside `▼2`, and a line reading "OK" in the colour of a working monitor is read as a
+ * verdict on those monitors. Three things follow, and a test holds each of them:
+ *
+ * - every label names its subject — "Data current", not "Current"; see `strings.xml`;
+ * - no mark is a tick or anything else meaning "all good", and no mark of this line is one of the
+ *   five monitor marks `▲ ▼ ◆ ■ ●`;
+ * - no state of this line uses [WidgoraColors.StateOk]. Green belongs to a working monitor.
+ *
  * @param label the localised word for the state
  * @param color the colour of the mark, already checked for contrast; see [WidgoraColors]
  * @param mark one or two characters shown next to the label, distinct per state
@@ -31,6 +44,19 @@ data class WidgetPresentation(
 ) {
 
     companion object {
+
+        /**
+         * Nothing is configured: the mark says "add one", which is the only thing to do about it.
+         *
+         * This and [MARK_UNREADABLE] belong to render models that only a widget has, and they
+         * live here rather than in the widget because the state line's set of marks has to be
+         * checkable in one place — a mark colliding with a monitor mark is the kind of thing that
+         * is obvious in a list and invisible in two files.
+         */
+        const val MARK_NOT_SET_UP = "+"
+
+        /** The same mark the dashboard uses for a fault the user has to act on. */
+        const val MARK_UNREADABLE = "!!"
 
         /**
          * The marks are deliberately plain characters rather than icons: the project adds no
@@ -50,10 +76,21 @@ data class WidgetPresentation(
                 valueIsOutdated = false,
             )
 
+            // "=" is the one mark of this set that had to be argued for rather than picked.
+            // It carries no verdict — it says the shown figures are what the source last
+            // reported — and it is structurally unlike all five monitor marks, which are closed
+            // outlines from Geometric Shapes. It is plain ASCII, so no television font can turn
+            // it into a missing-glyph box, and it is not a tick. The one near pair left is "="
+            // against the empty state's "–"; the two never appear together, because they are
+            // states of the same single line, and the word beside the mark says which one it is.
+            //
+            // The colour is the muted foreground, the same one the timestamp underneath uses.
+            // A successful, fresh retrieval is a quiet fact, not an achievement, and green here
+            // claimed something about the monitors that this line does not know.
             WidgetDisplayState.Ok -> WidgetPresentation(
                 label = R.string.dashboard_state_ok,
-                color = WidgoraColors.StateOk,
-                mark = "OK",
+                color = WidgoraColors.OnSurfaceMuted,
+                mark = "=",
                 showsData = true,
                 valueIsOutdated = false,
             )

@@ -807,6 +807,32 @@ Words were the previous presentation and were replaced because they did not fit.
 enough to name five states in a sentence either overflows a tile or has to shrink, and the length
 depends on the language, which makes it a defect that appears only in translation.
 
+**The state line names its subject** `[V]`. Every surface shows one line about the retrieved
+**data** — how old it is, or why there is none. It says nothing about the monitored services, and
+it used to look as though it did: a successful, fresh retrieval read "OK Current" in the green of
+a working monitor, directly beside a count of two that were not working. Three rules now hold the
+line apart from the counts, each asserted by a test:
+
+- **Every word names its subject.** "Loading data", "Data current" and "Data outdated" for the
+  statements about what is shown and how old it is; "No monitors in this instance" where the
+  answer held nothing, which names what that means rather than describing the answer; and
+  "Instance not reachable", "Key rejected", "Answer not readable", "Retrieval failed" for the
+  failures, each naming the thing that failed. Only the wordings that left their subject unstated
+  were changed; the ones already naming the key, the answer or the retrieval were not touched.
+- **No mark claims that anything is well.** The mark for current data is `=` — the figures are
+  what the source last reported, and nothing beyond that. It is not a tick. No mark of this line
+  comes from the Unicode block the five monitor marks are drawn from, and the test rules out the
+  whole block rather than the five characters currently in use.
+- **No state of this line is green.** Current data is drawn in the muted foreground, the colour
+  the timestamp below it already uses: a quiet fact rather than an achievement, at 11.79 : 1
+  against the backdrop and 10.86 : 1 against a surface. Green stays the colour of a monitor that
+  is up.
+
+Word and mark remain mandatory on every surface, and colour is never the only channel. On the
+widget's compact variant, where this line shares its row with the time, the longer wordings mean
+the word is the part that may shorten — never the mark and never the time, which an instrumented
+measurement holds at three font scales.
+
 **Affected items are named** `[V]`. Below the counts a tile lists up to three names of the things
 that are not working, then "+N more". Each name is shortened by code points, never by char index,
 so that a name ending in a character outside the basic plane cannot be cut in half. A tile with
@@ -926,6 +952,8 @@ adds indirection without benefit.
 | How long a television in a low-power state defers a periodic refresh, and what a widget therefore shows when the device wakes | `[U]` |
 | The minimum sizes of the second and third widget type, measured inside a real host view at several font scales rather than estimated | `[U]` |
 | Whether a directional pad scrolls the detail list as intended, and whether focus lands on its first row | `[U]` |
+| ~~Whether the state line's `=` for current data and `–` for empty data are told apart from three metres, given that both are horizontal strokes~~ — confirmed on a television: `=` is clearly legible from three metres. The two never appear together in any case, being states of one line, and the word beside the mark names which it is | `[V]` |
+| ~~Whether the lengthened wordings of the state line still fit the widget's compact row on a television without the word shortening in the common cases~~ — confirmed on a television: "= Data current" is not shortened at any widget size | `[V]` |
 | ~~Whether the neutral focus mark and the enlargement are visible and uncropped at the ends of the row on a television~~ — confirmed on the emulator; real hardware still open | `[V]` |
 | ~~What saving should do when the configuration file exists but cannot be read: replace it, or report the failure~~ — **decided**: report it, never replace automatically, and offer a reset the user confirms | `[V]` |
 | That a reset of a readable configuration leaves nothing behind on a device — and that the removal must follow the clear, not precede it, because a store republishes only what it has actually written | `[V]` |
