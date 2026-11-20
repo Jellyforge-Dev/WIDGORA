@@ -193,6 +193,35 @@ doing", and they lead. A list of names is ordered `failed, unknown, pending, in 
 answers "what do I have to look at", which is a question about urgency, and an unrecognised state
 may well be a failure that is not understood yet.
 
+### Certificate data of a monitored item
+
+A monitored item may carry two further values: how many days its certificate has left, and
+whether the source considers that certificate valid. They belong to the same application-internal
+item type as the name and the state, and to nothing that leaves the application.
+
+What the first integration's endpoint actually provides, read from the upstream source `[V]`:
+
+- Two gauges, `monitor_cert_days_remaining` and `monitor_cert_is_valid`. The unit of the first is
+  **days**, as a whole number, stated in the metric's own help text.
+- They are written **only when the source has certificate information for that monitor at all**.
+  An item without one — a ping check, a plain connection test — produces no row rather than a
+  placeholder. Confirmed against a captured response of a running instance: twenty of its
+  thirty-five monitors carry the two families and the other fifteen carry neither `[V]`.
+- The validity gauge is written as `0` for everything that is not an explicit yes, a missing
+  statement included. It therefore means **"not valid as far as the source says"** and is never
+  rendered as "expired": those are different claims, and only one of them is supported.
+- **The source never clears these two values.** They are removed when the monitor is deleted and
+  not otherwise, so a value can outlive the check that produced it and stay until the service
+  restarts. A certificate figure is therefore only ever shown together with the time the data was
+  obtained, and an item whose own state is not active is marked as such beside its figure — a
+  reassuring number nobody has re-checked for weeks is the failure mode worth designing against.
+
+The upstream reading was taken from the project's development branch, so the behaviour of the
+version running on any particular installation remains unverified `[U]`. The captured response
+settles the shape of the data for one real installation; a deliberate check — switching a
+certificate monitor off and seeing whether its row disappears — settles the rest, and belongs
+before the feature that depends on it is built.
+
 ### One monitored item described twice
 
 Observed against a running Uptime Kuma installation `[V]`: after a monitor is edited, the row
@@ -509,25 +538,30 @@ target a different integration.
 
 ## 5a. App widgets
 
-**Status: decided, not implemented.** This section records the decisions and nothing else. The
-mechanics follow with the code: sizes and layout, focus behaviour inside a host, what power
-management does to the refresh on a television, and how monitor names are kept out of a widget
-now that the module boundary which made them unreachable no longer applies.
+**Status: partly implemented.** One widget exists and works on a television `[V]`: it shows an
+instance's counts, in two layouts that are chosen by the box it is given, with the figures scaled
+to fill that box. A debug-only host exists so that a widget can be placed and operated without
+waiting for a launcher. What is decided and **not** implemented is everything below the first
+table: three widget types instead of one, a configuration step per placed widget, the rule that
+replaces the module boundary for monitor names, and the periodic refresh.
 
-WIDGORA supplies a standard Android app widget — an `AppWidgetProvider` that hands the host a
-`RemoteViews` hierarchy. Any launcher able to host widgets can display it, which makes the host
-side a platform feature rather than an agreement with one project.
+WIDGORA supplies standard Android app widgets — an `AppWidgetProvider` per type, each handing the
+host a `RemoteViews` hierarchy. Any launcher able to host widgets can display them, which makes
+the host side a platform feature rather than an agreement with one project.
 
 | Decision | Choice |
 |---|---|
 | Implementation | `RemoteViews` directly, not Jetpack Glance |
+| Widget types | three, each a provider of its own and its own entry in a host's picker |
+| Credentials per widget | **none, ever** — a widget points at an instance set up once in the application |
+| Configuration | one step per placed widget, one screen serving all three types |
 | Periodic update by the widget framework | off, `updatePeriodMillis="0"` |
 | Refresh | WorkManager, every 30 minutes |
 | Outdated after | 45 minutes |
-| Additional refresh | every successful foreground fetch also pushes an update to the widgets |
-| Monitor names in a widget | switchable per widget, off by default |
+| Additional refresh | every foreground fetch also pushes an update to the widgets |
+| Monitor names in a widget | types 1 and 2: a switch, off by default. Type 3: the selection is the consent |
 | Device feature `android.software.app_widgets` | declared, `required="false"` |
-| Sizes | one size to begin with |
+| Sizes | declared per type, and measured rather than estimated |
 | A widget that has not been configured | says so; it never shows sample values |
 
 **Why not Glance.** Glance is not directly interoperable with Jetpack Compose UI and uses its
@@ -557,6 +591,139 @@ the deferred bridge and is stricter than the rule it replaces: there is no schem
 so the substitution the old rule existed to contain cannot arise. The receiving side still
 validates the identifier it is given, for the same reason as before — neither side trusts the
 other with more than an identifier.
+
+### Three types, three providers
+
+| Type | What it shows | Monitor names |
+|---|---|---|
+| **Status** | the counts per state, as marks and digits, for one instance | a switch, off by default; when on, the affected items are named |
+| **Certificates** | items whose certificate expires within the horizon, soonest first | a switch, off by default; without it, only how many and how soon |
+| **Selection** | items the user picked, with their state, under the counts for the whole instance | inherent: the selection is what grants them |
+
+Three providers rather than one provider with a setting, because a host's picker lists providers.
+A user who wants a certificate widget should find one in that list and not place a generic widget
+and then convert it. The cost is three sets of metadata and three layout pairs, which is also
+three sets of measured minimum sizes — a type showing six rows cannot promise the box that suits
+a type showing one line.
+
+The horizon for the certificate type is **30 days**, with emphasis below 7 and anything already
+expired sorted first. The figure is a decision and not a derived one: certificates renewed
+automatically are usually renewed with 30 days left, so what is still inside that window has
+failed to renew and is worth saying. A longer horizon would fill the widget with entries nobody
+has to act on — a captured response of a real installation has one monitor at 651 days and one at
+4139 `[V]`.
+
+### One configuration step, one screen
+
+Placing a widget runs a configuration step declared as `android:configure`. It asks for:
+
+- **the instance** — pre-selected when only one exists, which today is always. It is asked even
+  so, because the question is what makes a widget point at *an* instance rather than at whichever
+  one happens to be first, and that is the part the second instance will depend on.
+- **whether monitor names may appear** — for the status and certificate types, off by default.
+- **which items** — for the selection type only. The list is read from the instance, and what is
+  stored is the item's identifier, never its name.
+
+One screen serves all three types and reads the type from the provider that launched it. Three
+screens would be three places for the same focus handling, the same instance list and the same
+confirmation to drift apart. It is operated with a remote control, which is the same constraint
+the settings screen is built to; the rules there apply here unchanged.
+
+**A widget never holds a credential.** There is no field for one in a widget's settings and no
+path from a widget to the secret store other than the instance the application has already set
+up. That is the whole point of configuring instances once, in the application.
+
+### Where a widget's settings live
+
+A second key-value store, in a file of its own beside the instance store. Separate deliberately,
+because the two obey **opposite** rules: an instance file holds an address and an encrypted
+credential and may never be replaced on the application's own initiative, while a widget file
+holds nothing that cannot be asked again and may be discarded if it is damaged. Two opposite
+rules in one file would mean the stricter one losing.
+
+Keys are flat and per `appWidgetId`: the type, the instance, whether names are allowed and — for
+the selection type — the chosen identifiers in the order the user put them in. Everything read
+back is validated: an unknown type, a missing instance, too many identifiers or one with an
+unexpected shape makes the entry unusable, and the widget says it is not configured instead of
+guessing.
+
+Removal happens twice over, because once is not reliable. The provider's own deletion callback
+removes the entry, and every update additionally sweeps stored identifiers that no longer belong
+to a placed widget. The callback can be missed; the sweep cannot.
+
+Two situations are decided rather than left to the code:
+
+- **The instance is gone.** The widget says so and asks for the settings. It is never silently
+  re-pointed at another instance: a widget that quietly starts showing a different server is
+  worse than one that says something is missing.
+- **Selected items are gone.** The remaining ones are shown and the number of missing ones is
+  named — without names, which are gone anyway. Their identifiers are **not** removed from
+  storage, because an item can come back: this endpoint is already known to drop and restore rows
+  across a service restart. Clearing them is offered in the configuration step, where the user
+  can see what they are agreeing to.
+
+### Keeping monitor names out of a widget without the module boundary
+
+Until now one boundary did this work on its own: the bridge module depends on the domain module
+and never on the data module, so it could not reference the type holding the names even by
+mistake. A widget provider lives in the application module and can reach everything, so that
+boundary does not apply, and two of the three types need names on purpose. The replacement is
+**two render models and a token**:
+
+- A nameless render model, as today, with no field that can hold a name — a fact a test holds, so
+  adding one has to be a decision made in review.
+- A separate named render model, constructible only through a factory that requires a consent
+  token. The token has a private constructor and is produced in one place: the reader of a
+  widget's settings, when that widget is allowed names.
+- Two build functions, one per model, with no overload accepting both. There is no path on which
+  a nameless model reaches the naming renderer or the reverse.
+
+This is weaker than a module boundary and is written down as weaker. What carries the remaining
+weight is a set of tests described in SECURITY.md, including one that walks the inflated view
+tree of a built widget — the actual hierarchy a host receives — and asserts that none of the
+thirty-five names in a captured response of a real installation appears in it.
+
+### What a widget shows at each size
+
+The existing size steps are kept: a compact layout, a full one, and scaling into a large box. The
+line budgets below are a starting point to be corrected by the first measurement, not a result.
+
+| | compact | full | large |
+|---|---|---|---|
+| Status | title, counts, state and time | the same, figures scaled up | plus up to 3 affected items named |
+| Certificates | how many within the horizon, and the smallest figure | up to 3 rows | up to 6 rows |
+| Selection | the instance's counts plus 2 rows | plus 4 rows | plus 8 rows |
+
+More entries than rows produces the first *n* in the type's own order followed by a count of the
+rest. A widget draws at most twelve rows whatever its size, so that an installation with a
+thousand monitors cannot build a hierarchy that has to cross a process boundary.
+
+Every empty case is a sentence rather than blank space: nothing expiring within the horizon,
+no monitor checking a certificate at all, no item selected. The minimum sizes of each type are
+measured inside a real host view at several font scales, because a host does not hand a widget
+the box it declared — that is how the first type's declared minimum turned out to be one it could
+not keep.
+
+### Refresh, in practice
+
+A `CoroutineWorker` does exactly what the foreground loop does — retrieve, then push to the
+widgets — on a periodic request of 30 minutes with a network constraint, kept rather than
+replaced when it already exists. It is enqueued when the first widget appears and cancelled when
+the last one goes.
+
+No extra rule guards against overlapping with the foreground fetch, because one already exists:
+two retrievals of the same instance never run at once, and the later one is dropped.
+
+A failed retrieval is **pushed, not hidden**: an unreachable instance is news, and the widget says
+so rather than keeping a comfortable older picture. The run itself then ends successfully, since
+the next periodic run is the retry; only a technical abort before the push asks to be retried.
+
+What power management does to this on a television is the open part `[U]`. Periodic work is
+deferred in low-power states and does not run at all while a device is off, so a widget can carry
+an old timestamp until the first run after waking. One more thing is worth stating plainly: a
+widget's state is decided when an update is pushed, so a widget pushed as current keeps reading
+as current until something pushes again. The 30-minute run is what bounds that, and the 45-minute
+staleness threshold is one and a half runs for exactly this reason.
 
 ---
 
@@ -754,6 +921,10 @@ adds indirection without benefit.
 | Metric names and labels of the first integration's endpoint, including the sliding window label, the varying tag labels, missing values written as text and the numeric meaning of its status gauge: settled against a captured response of a running instance and against the upstream source | `[V]` |
 | That an edited monitor leaves its previous row in the response until the service restarts, in every family at once | `[V]` |
 | That the row left behind carries the monitor's former **state** as well as its former labels, so an edit produces a contradiction rather than a harmless repetition | `[V]` |
+| That the endpoint's two certificate gauges are written only where certificate information exists, that its validity gauge means "not valid as far as the source says" rather than "expired", and that neither is ever cleared when a check stops producing one | `[V]` against the upstream source and a captured response |
+| Whether the version of that service running on a given installation behaves as its development branch does, in particular whether a disabled certificate check leaves its last figure standing | `[U]` |
+| How long a television in a low-power state defers a periodic refresh, and what a widget therefore shows when the device wakes | `[U]` |
+| The minimum sizes of the second and third widget type, measured inside a real host view at several font scales rather than estimated | `[U]` |
 | Whether a directional pad scrolls the detail list as intended, and whether focus lands on its first row | `[U]` |
 | ~~Whether the neutral focus mark and the enlargement are visible and uncropped at the ends of the row on a television~~ — confirmed on the emulator; real hardware still open | `[V]` |
 | ~~What saving should do when the configuration file exists but cannot be read: replace it, or report the failure~~ — **decided**: report it, never replace automatically, and offer a reset the user confirms | `[V]` |
