@@ -111,7 +111,33 @@ against the user's services themselves.
 - A stored credential is **never read back into a screen**. The settings screen's state has no
   field that could hold it, not even a masked one, so it cannot be rendered, logged or caught in
   a screenshot. The screen knows only whether a credential exists, and an empty input field
-  means "keep the stored one". Entry itself is masked.
+  means "keep the stored one".
+- Entry is **masked, and can be revealed on request** `[V]`. A switch beside the field shows what
+  was typed in this session and nothing else. It reads nothing to do so: the only value it can
+  uncover is the one already in the screen's state, and a test holds that by counting the reads
+  storage receives while the switch is used — a stored credential is still never fetched. The
+  switch starts off, it goes off again once a successful save has emptied the field, and it goes
+  off when the screen is left. Its label is a verb, never a value, so neither the label nor any
+  description derived from it can carry the credential.
+- **No input field on that screen lets the keyboard suggest or learn** `[V]`. The credential, the
+  address and the instance name are all declared to the keyboard as password fields, so that it
+  offers no word completions for them and takes nothing they contain into its dictionary. The
+  address is included deliberately: it can name an internal host, which is topology and not to be
+  kept anywhere outside this application. Measured on a device, as `EditorInfo.inputType` reported
+  by the input-method service: `0x91` for the name, the address and a revealed credential — that
+  is `TYPE_CLASS_TEXT or TYPE_TEXT_VARIATION_VISIBLE_PASSWORD` — and `0x81` for a hidden
+  credential, the ordinary password variation. This followed a finding on a television: an earlier
+  version declared the revealed credential as ordinary text so that it would stay readable, and the
+  keyboard answered with a strip of word suggestions. The limit worth naming `[U]`: withholding
+  suggestions for a password field is what the keyboards the platform ships do, not something the
+  platform enforces, and the flag that would state the intention outright —
+  `IME_FLAG_NO_PERSONALIZED_LEARNING` — cannot be set from this toolkit at all.
+- The reason that switch exists is that the credential is typed with a remote control on an
+  on-screen keyboard, where a mistake in a forty-character key would otherwise be found only when
+  the connection test fails. The risk it accepts is the obvious one — a key in clear text on a
+  television in a room with other people in it — which is why it is off unless asked for and does
+  not stay on. A refused save is the one case where it is left as the user set it, because nothing
+  was written and nothing was cleared, and they may be about to correct what is still in the field.
 - The stored configuration of an instance carries no credential at all: its type has no field
   for one, and an address containing credentials, such as `https://user:pass@host`, is refused
   when the instance is saved. A credential belongs in the keystore, not in an address.

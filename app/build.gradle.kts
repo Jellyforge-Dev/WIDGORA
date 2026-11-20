@@ -92,4 +92,13 @@ dependencies {
     // the project; they only become available to this module as well.
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
+
+    // Compose from the device's point of view: a test can put a screen on a real display and send
+    // it the keys a remote control sends. It is the only way to find out whether the focus really
+    // moves from a field to the button beside it, which is a question no unit test can answer.
+    // The bill of materials is repeated because this configuration resolves on its own and would
+    // otherwise not know which Compose version to take.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

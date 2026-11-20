@@ -33,9 +33,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Widgora">
 
+        <!--
+          windowSoftInputMode: the on-screen keyboard must not cover the field being typed into.
+          Up to Android 14 — which is what the television runs — this is what shortens the window
+          so that the form can scroll inside what is left. From Android 15 the platform no longer
+          resizes the window of an application that draws edge to edge, and the screen's own
+          imePadding takes over instead; the two are complementary, and the screen says so where
+          it applies that padding. Unverified until both have been seen on a device.
+        -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
