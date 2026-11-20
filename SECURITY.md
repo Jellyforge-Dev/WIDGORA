@@ -147,8 +147,16 @@ against the user's services themselves.
   documentation states that all of its APIs were deprecated in the stable 1.1.0 release, that no
   further releases will follow, and that the replacement is direct use of the Android Keystore,
   which is what this project does.
-- WIDGORA requests only `INTERNET` and `ACCESS_NETWORK_STATE` for the first milestone. No
+- WIDGORA asks for `INTERNET` and `ACCESS_NETWORK_STATE`, and for nothing else of its own. No
   accessibility service, no overlay permission, no system settings permission.
+- One further permission appears in a built package, and it is named here because a list that
+  quietly omits something is worth less than one that explains it `[V]`. A component library the
+  application depends on declares and requests a permission of its own, derived from the
+  application's identifier and ending in `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. It is
+  defined at signature level, it exists so that the library's own internally registered receivers
+  cannot be reached from other applications, and it grants nobody access to anything outside this
+  application. WIDGORA's own code neither declares nor requests it, and it cannot be removed
+  without removing the library.
 
 ### Where monitor names live
 
@@ -173,6 +181,75 @@ separation is therefore made structural rather than left to care at each call si
 
 When the bridge is implemented, its optional detail rows remain a separate, per-instance decision
 by the user, for the reason given in section 5.
+
+### A widget may name a monitor only by consent
+
+App widgets are the route that exists today, and they break the arrangement above in one specific
+place. The guarantee above rests on a **module boundary**, and a widget provider lives in the
+application module, where everything is reachable. Two of the three widget types are also meant
+to show names: one lists the monitors behind a failure, and one shows a set the user picked, for
+which a row without a name would be a row nobody can place.
+
+So the structural guarantee is replaced, and the replacement is **weaker**. That is stated here
+rather than glossed over, because a security document that describes a weaker measure in the
+language of the stronger one it replaced is worse than no document. A module boundary is checked
+by the build: code that reaches across it does not compile, and no amount of carelessness gets
+past it. What follows is checked by the type system within one module, by review, and by tests —
+all three of which a determined author can work around, which the dependency graph did not allow.
+
+What replaces it:
+
+- **Two render models, not one with a flag.** One has no field that can hold a name, and a test
+  holds its field list. The other can carry names. The two build functions take one model each
+  and there is no overload accepting both, so a nameless model cannot reach the naming renderer
+  or the reverse.
+- **A consent token with a private constructor**, produced in exactly one place: the reader of a
+  widget's stored settings, and only for a widget that is allowed names. The named model cannot
+  be constructed without one. The point is not that it is unforgeable — within a module nothing
+  is — but that it cannot be produced absent-mindedly, and that producing one elsewhere is a
+  visible, deliberate edit in review.
+- **Off by default**, per placed widget, for the counts and certificate types. Nothing is global:
+  consent given for one widget says nothing about another.
+- **For the selection type, the selection is the consent**, and the configuration screen says so
+  in words — that the monitors chosen there will appear by name in that widget. Consent the user
+  did not understand they were giving is not consent, so it is spelled out at the moment it is
+  given rather than recorded in a setting they would have to go looking for.
+- Monitor names are still not logged, and a host still receives nothing but what the widget draws.
+
+Four tests carry the weight the boundary used to carry. They are listed because the measure is
+only as good as they are:
+
+1. The field list of the nameless render model is asserted, so gaining a name field has to be a
+   decision made in review.
+2. The pipeline is run for a widget **without** consent against an anonymised recording of a
+   running installation, and each of that recording's 35 monitor names is asserted to appear
+   neither in the model nor in its textual form.
+3. The same pipeline is run **with** consent and the names must appear. Without this half, the
+   test above could pass because the pipeline is broken rather than because it is careful.
+4. On a device, the built hierarchy is inflated and every text and content description in it is
+   collected and checked against the same 35 names, and the same is done after a round trip
+   through the serialisation a host receives. This is the test that matters: that hierarchy is
+   the thing that actually crosses into another process, and the ones above only describe what
+   was intended to be put into it.
+
+### Certificate data is topology as well
+
+How long a certificate still has is not a secret in itself, but the list of monitors that have
+one is: it says which of the user's hosts terminate TLS, which is the same kind of statement as a
+name. It is therefore treated the same way — it lives in the application-internal item model, it
+is never part of what the deferred bridge would carry, and it reaches a widget only under the
+consent rule above.
+
+Two properties of the source make a certificate figure a claim that has to be qualified, and both
+are design constraints rather than trivia `[V]`:
+
+- The source **never clears** such a figure. It is removed when the monitor is deleted and not
+  otherwise, so a number can outlive the check that produced it. A certificate figure is
+  therefore never shown without the time the data was obtained, and an item whose own state is
+  not active is marked beside its figure.
+- Its validity flag is written as "no" for everything that is not an explicit yes, a missing
+  statement included. It is rendered as "not valid as far as the source says" and never as
+  "expired", because only the first of those two is supported by what was received.
 
 ### Transport security
 
@@ -270,8 +347,10 @@ than merely postponing it:
   the host's process. Layer 1 — exposing very little — therefore becomes the only layer carrying
   weight, and it has to hold **without** the module boundary described in section 3, which made
   monitor names structurally unreachable from the bridge. A widget provider lives in the
-  application module and can reach them. What takes the place of that boundary is settled with
-  the implementation and is not claimed here.
+  application module and can reach them. What takes the place of that boundary is now decided and
+  written down in section 3, under "A widget may name a monitor only by consent": two separate
+  render models, a consent token produced in one place, consent given per placed widget, and four
+  tests. It is weaker than the boundary it replaces, and section 3 says so in as many words.
 
 The layers are listed in order of how much weight they carried. The strongest does not involve
 identity at all.
@@ -422,6 +501,9 @@ concrete contact path at that time `[O]`.
 | Question | Marker |
 |---|---|
 | Whether deferred consent is workable in practice, given a host shows nothing until approval | `[U]` |
+| ~~What replaces the module boundary that kept monitor names unreachable, now that a widget provider can reach them~~ — **decided**, see section 3: two render models, a consent token produced in one place, consent per placed widget, four tests. Weaker than the boundary, and recorded as weaker | `[V]` |
+| Whether a user reading the configuration screen understands that choosing monitors for the third widget type is what allows their names to be displayed in it | `[U]` |
+| Whether the keyboards a television ships with withhold suggestions and dictionary learning for every field this application declares as a password field, which is the behaviour those fields rely on rather than something the platform enforces | `[U]` |
 | Whether notifications are reliably visible on Android TV as a consent prompt | `[U]` |
 | Deprecation status of the Jetpack security-crypto library before any use | `[U]` |
 | Whether per-instance certificate pinning is comprehensible enough for non-technical users | `[U]` |

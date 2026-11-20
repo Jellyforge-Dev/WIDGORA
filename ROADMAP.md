@@ -119,24 +119,38 @@ The route to a host launcher, and the replacement for the Provider Bridge that w
 before. WIDGORA supplies a standard Android app widget, so the host side is a platform feature
 rather than an agreement with one project.
 
-- An `AppWidgetProvider` handing the host a `RemoteViews` hierarchy, built directly rather than
-  through Jetpack Glance.
+- An `AppWidgetProvider` per type, handing the host a `RemoteViews` hierarchy, built directly
+  rather than through Jetpack Glance. Done for the first type `[V]`.
 - All six display states. A widget that has not been configured says so; it never shows sample
-  values.
-- Refresh through WorkManager every 30 minutes, with the widget framework's own periodic update
-  switched off. A widget counts as outdated after 45 minutes, and every successful foreground
-  fetch pushes an update as well.
-- One widget size to begin with.
-- A configuration step that chooses the instance and decides whether monitor names appear in
-  that widget. They do not by default.
-- Opening a widget opens WIDGORA and nothing else.
-- The device feature for app widgets is declared as not required, because the standalone
-  application does not depend on it.
+  values. Done `[V]`.
+- Two layouts chosen by the box the host gives, with the figures scaled to fill it, and minimum
+  sizes measured inside a real host view rather than estimated. Done for the first type `[V]`.
 - A widget host included in debug builds only, so that a widget can be seen and operated without
-  waiting for a launcher that hosts one.
+  waiting for a launcher that hosts one. Done for one provider `[V]`; extended to all three, and
+  to starting the configuration step, as part of this milestone.
+- Opening a widget opens WIDGORA and nothing else. Done `[V]`.
+- The device feature for app widgets is declared as not required, because the standalone
+  application does not depend on it. Done `[V]`.
+- **Three widget types**, each its own entry in a host's picker: the counts of an instance;
+  certificates expiring within 30 days, soonest first; and a user-chosen set of items with the
+  instance's counts above them.
+- **A configuration step per placed widget**, one screen serving all three types: which instance
+  (pre-selected while there is only one), whether monitor names may appear — off by default for
+  the first two types — and, for the third, which items. Operated with a remote control. A widget
+  never holds a credential of its own.
+- **Monitor names reach a widget only by consent.** For the third type the selection itself is
+  that consent, and the screen says so. The module boundary that used to make names unreachable
+  does not apply here; what replaces it is written down in SECURITY.md, including that it is
+  weaker.
+- **Refresh through WorkManager every 30 minutes**, with the widget framework's own periodic
+  update switched off. A widget counts as outdated after 45 minutes, and every foreground fetch
+  pushes an update as well. One dependency is added for this and nothing else.
+- Certificate data carried as far as the application's own item model, with the two properties of
+  the source that shape the display: it reports nothing at all for an item without a certificate,
+  and it never clears a figure once written.
 
-**Completion criterion:** a widget showing real data inside a host, operated with a remote
-control.
+**Completion criterion:** all three widget types showing real data inside a host, configured and
+operated with a remote control.
 
 ## M2 — Display in a host launcher `[D]`
 
