@@ -158,6 +158,68 @@ against the user's services themselves.
   application. WIDGORA's own code neither declares nor requests it, and it cannot be removed
   without removing the library.
 
+### What the background refresh adds to the package
+
+The periodic refresh behind the widgets is built on the platform's work scheduler, and that
+library writes into the merged manifest. Three permissions and six components appear in a release
+package that WIDGORA's own manifest does not mention. They are listed in full `[V]`, read out of
+the merged release manifest before and after the library was added, because an inherited manifest
+entry nobody looked at is exactly what a document like this exists to prevent.
+
+| Permission | Why the library asks for it |
+|---|---|
+| `WAKE_LOCK` | held while a run is in progress, so the device does not sleep mid-retrieval |
+| `RECEIVE_BOOT_COMPLETED` | the library's reschedule receiver re-registers work after a restart |
+| `FOREGROUND_SERVICE` | for expedited work only, which WIDGORA never asks for — see below |
+
+All three are normal permissions: granted at install time, never prompted for, and none of them
+grants another application anything. Two are load-bearing here — without the first a run can be
+cut off halfway, and without the second a television switched off at the mains comes back with no
+refresh scheduled at all.
+
+`FOREGROUND_SERVICE` is the one that is present and **unused**. The library declares it for the
+service it would start if work were requested as expedited, and WIDGORA requests none: the request
+carries an interval and a network constraint and nothing else. It is named here rather than
+quietly inherited, and whether to strip it from the merged manifest is an open question and not a
+decision already taken — removing a permission a library declares for its own fallback path is the
+kind of change that fails only in the situation it was there for.
+
+| Component | Exported | Gate |
+|---|---|---|
+| `androidx.work.impl.background.systemjob.SystemJobService` | **yes** | `android.permission.BIND_JOB_SERVICE` |
+| `androidx.work.impl.diagnostics.DiagnosticsReceiver` | **yes** | `android.permission.DUMP` |
+| `androidx.work.impl.foreground.SystemForegroundService` | no | — |
+| `androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver` | no | — |
+| `androidx.work.impl.background.systemalarm.RescheduleReceiver` | no, and `enabled="false"` | — |
+| `androidx.room.MultiInstanceInvalidationService` | no, `directBootAware="true"` | — |
+
+Two of the six are exported, and neither opens anything to another application `[V]`:
+
+- The job service **has to** be exported, because the party that binds it is the system's job
+  scheduler, in another process. What keeps everyone else out is the permission on it:
+  `BIND_JOB_SERVICE` is held by the system and cannot be granted to an ordinary application.
+- The diagnostics receiver is gated by `DUMP`, which an installed application cannot hold either;
+  what can send it is the shell. That is the same shape as the profile installer's receiver, which
+  was in the package before this change. What it reports when asked is a list of work:
+  identifiers, worker class names, unique names and states. It carries no address, no credential
+  and no monitor name — because the request it reports on has no input data to leak, which is the
+  second reason that request is built empty. The first is below.
+
+**What the work database holds.** The unique name of the request, the worker's class name, the
+interval and the network constraint. Nothing is handed to the worker: it reads the instances the
+application has already stored, through the same repository and the same keystore-backed secret
+store as the dashboard, at the moment it needs them. An address or a credential placed in input
+data would be a second copy of exactly the material this section keeps in one place.
+
+**Initialisation stays the default** `[V]`. The library registers itself as an App Startup
+initializer, and the merged manifest shows it joining a provider four other initializers already
+share — emoji handling, process lifecycle, the profile installer and the HTTP client. No custom
+configuration is used, and that is a saving rather than an omission: the documented way to supply
+one is to remove the library's initializer node from the manifest, and with a provider shared five
+ways that is a manifest edit with four unrelated things to get wrong. Nothing WIDGORA needs asks
+for it — the worker has the constructor the default factory expects, and the library's own logging
+level is left alone.
+
 ### Where monitor names live
 
 A monitor name is topology, the second of the three assets. "nas.kitchen.lan" names a machine and

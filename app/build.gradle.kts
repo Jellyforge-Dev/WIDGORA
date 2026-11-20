@@ -82,6 +82,12 @@ dependencies {
     // settings screen, rather than relied upon through another module.
     implementation(libs.kotlinx.coroutines.core)
 
+    // The periodic refresh that keeps a widget current while the application is not running.
+    // One artefact, and no custom configuration: it initialises itself through App Startup,
+    // whose provider this module's merged manifest already carries. What it adds to that
+    // manifest is listed in SECURITY.md rather than inherited unexamined.
+    implementation(libs.androidx.work.runtime)
+
     // The annotation for a preview ships in the release build; the renderer behind it does not.
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)

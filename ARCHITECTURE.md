@@ -540,10 +540,10 @@ target a different integration.
 
 **Status: partly implemented.** One widget exists and works on a television `[V]`: it shows an
 instance's counts, in two layouts that are chosen by the box it is given, with the figures scaled
-to fill that box. A debug-only host exists so that a widget can be placed and operated without
-waiting for a launcher. What is decided and **not** implemented is everything below the first
-table: three widget types instead of one, a configuration step per placed widget, the rule that
-replaces the module boundary for monitor names, and the periodic refresh.
+to fill that box, and it is refreshed in the background every thirty minutes. A debug-only host
+exists so that a widget can be placed and operated without waiting for a launcher. What is
+decided and **not** implemented is three widget types instead of one, a configuration step per
+placed widget, and the rule that replaces the module boundary for monitor names.
 
 WIDGORA supplies standard Android app widgets — an `AppWidgetProvider` per type, each handing the
 host a `RemoteViews` hierarchy. Any launcher able to host widgets can display them, which makes
@@ -706,10 +706,30 @@ not keep.
 
 ### Refresh, in practice
 
-A `CoroutineWorker` does exactly what the foreground loop does — retrieve, then push to the
-widgets — on a periodic request of 30 minutes with a network constraint, kept rather than
-replaced when it already exists. It is enqueued when the first widget appears and cancelled when
-the last one goes.
+**Implemented** for the one widget type that exists. A `CoroutineWorker` does exactly what the
+foreground loop does — retrieve, then push to the widgets — on a periodic request of 30 minutes
+with a network constraint, kept rather than replaced when it already exists. It is enqueued when
+the first widget appears and cancelled when the last one goes, and every start of the application
+brings the queue back in line with the widgets actually placed, because a broadcast can be missed
+and an update can be installed over a version that queued nothing.
+
+Three things are worth recording about how it came out:
+
+- **The scheduling decision and the outcome decision are one small object with no Android type in
+  it**, so both can be exercised without a device. Each has a wrong answer that would be invisible
+  on a television: work queued for a widget nobody placed retrieves every half hour for nothing,
+  and a retry reported for an unreachable server retries with backoff instead of letting the
+  widget say what happened.
+- **The library's default initialisation is used as it comes.** It registers itself through App
+  Startup, joining a provider four other initializers already share. A custom configuration would
+  mean removing its initializer from the merged manifest, and nothing here needs one.
+- **The library writes into the merged manifest**: three permissions and six components, two of
+  them exported behind permissions an ordinary application cannot hold. All of it is listed, with
+  its exported status, in SECURITY.md — including the one permission that is present and unused.
+
+Nothing about the widget framework's own periodic update changed: `updatePeriodMillis` stays zero,
+for the reason given above, and the staleness threshold stays 45 minutes — one and a half runs,
+which a test now holds against the interval so the pair cannot drift apart.
 
 No extra rule guards against overlapping with the foreground fetch, because one already exists:
 two retrievals of the same instance never run at once, and the later one is dropped.
@@ -950,6 +970,8 @@ adds indirection without benefit.
 | That the endpoint's two certificate gauges are written only where certificate information exists, that its validity gauge means "not valid as far as the source says" rather than "expired", and that neither is ever cleared when a check stops producing one | `[V]` against the upstream source and a captured response |
 | Whether the version of that service running on a given installation behaves as its development branch does, in particular whether a disabled certificate check leaves its last figure standing | `[U]` |
 | How long a television in a low-power state defers a periodic refresh, and what a widget therefore shows when the device wakes | `[U]` |
+| Whether the broadcasts that start and stop the periodic refresh reach the provider on the target device. The documentation states only that the filter must accept the update action and says nothing either way about the other two, so both are declared and the delivery is to be confirmed by placing and removing a widget | `[U]` |
+| Whether to strip the unused `FOREGROUND_SERVICE` permission the work library contributes, given it is declared for a fallback path WIDGORA never takes | `[O]` |
 | The minimum sizes of the second and third widget type, measured inside a real host view at several font scales rather than estimated | `[U]` |
 | Whether a directional pad scrolls the detail list as intended, and whether focus lands on its first row | `[U]` |
 | ~~Whether the state line's `=` for current data and `–` for empty data are told apart from three metres, given that both are horizontal strokes~~ — confirmed on a television: `=` is clearly legible from three metres. The two never appear together in any case, being states of one line, and the word beside the mark names which it is | `[V]` |
