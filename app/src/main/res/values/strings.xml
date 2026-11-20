@@ -117,11 +117,24 @@
 
     <string name="settings_title">Uptime Kuma instance</string>
     <string name="settings_back_hint">Press back to leave this screen.</string>
+    <!--
+      Names the way out of an edit before the user is in one. "Done" comes first because it is the
+      one press that both closes the keyboard and ends the edit: while the keyboard is open the
+      system hands it the back key first, so with back it takes two presses.
+    -->
+    <string name="settings_field_hint">Press OK on a field to edit it. Done on the keyboard ends the edit, and so does back.</string>
 
     <string name="settings_display_name">Name</string>
     <string name="settings_address">Address</string>
     <string name="settings_address_hint">https://kuma.example.com</string>
     <string name="settings_api_key">API key</string>
+
+    <!--
+      The two labels of one button, which is why they are a pair of verbs and not a sentence. The
+      key itself never appears in either of them, nor in any description of the button.
+    -->
+    <string name="settings_api_key_show">Show</string>
+    <string name="settings_api_key_hide">Hide</string>
 
     <string name="settings_api_key_new">Create a key in Uptime Kuma under Settings, API keys.</string>
     <string name="settings_api_key_stored">Key saved. Leave empty to keep it.</string>

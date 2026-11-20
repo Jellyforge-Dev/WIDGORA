@@ -170,9 +170,16 @@ private fun WidgoraApp(
     Surface(modifier = Modifier.fillMaxSize(), shape = RectangleShape) {
         when {
             showSettings -> {
-                BackHandler { showSettings = false }
                 val holder = remember(instanceStore, connectionTester) {
                     SettingsStateHolder(instanceStore, connectionTester)
+                }
+                // The screen is told it is being left rather than left to notice. A revealed API
+                // key must not still be revealed the next time the settings are opened, and
+                // whether this holder survives at all is decided here — in a line that can
+                // change — and not on that screen.
+                BackHandler {
+                    holder.onLeaveScreen()
+                    showSettings = false
                 }
                 SettingsScreen(holder)
             }

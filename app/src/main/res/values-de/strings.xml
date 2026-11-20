@@ -75,11 +75,15 @@
 
     <string name="settings_title">Uptime-Kuma-Instanz</string>
     <string name="settings_back_hint">Mit der Zurück-Taste verlässt du diesen Bildschirm.</string>
+    <string name="settings_field_hint">Mit OK bearbeitest du ein Feld. Mit Fertig auf der Tastatur beendest du die Eingabe, mit Zurück ebenso.</string>
 
     <string name="settings_display_name">Name</string>
     <string name="settings_address">Adresse</string>
     <string name="settings_address_hint">https://kuma.example.com</string>
     <string name="settings_api_key">API-Schlüssel</string>
+
+    <string name="settings_api_key_show">Anzeigen</string>
+    <string name="settings_api_key_hide">Verbergen</string>
 
     <string name="settings_api_key_new">Lege in Uptime Kuma unter Einstellungen, API-Schlüssel einen Schlüssel an.</string>
     <string name="settings_api_key_stored">Schlüssel gespeichert. Leer lassen, um ihn zu behalten.</string>

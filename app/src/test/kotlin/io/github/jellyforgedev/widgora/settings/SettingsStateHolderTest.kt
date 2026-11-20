@@ -600,6 +600,157 @@ class SettingsStateHolderTest {
         assertTrue(state.configurationUnreadable)
     }
 
+    /**
+     * The rule behind the whole change: arriving at a field is not editing it.
+     *
+     * On a television the difference is the on-screen keyboard. Nothing in the state may say a
+     * field is being edited until the user has said so, and typing into it may not change that
+     * either way.
+     */
+    @Test
+    fun nothingIsBeingEditedUntilEditingIsStarted() = runBlocking {
+        val holder = holder()
+
+        holder.load()
+        assertNull(holder.state.value.editingField)
+
+        holder.onDisplayNameChange("Uptime Kuma")
+        assertNull(holder.state.value.editingField)
+
+        holder.startEditing(EditableField.DISPLAY_NAME)
+        holder.onDisplayNameChange("Uptime Kuma 2")
+        assertEquals(EditableField.DISPLAY_NAME, holder.state.value.editingField)
+
+        holder.stopEditing()
+        assertNull(holder.state.value.editingField)
+    }
+
+    /** Two open editors would mean two places the next keystroke could land. */
+    @Test
+    fun editingAnotherFieldEndsTheOneBefore() {
+        val holder = holder()
+
+        holder.startEditing(EditableField.ADDRESS)
+        holder.startEditing(EditableField.API_KEY)
+
+        assertEquals(EditableField.API_KEY, holder.state.value.editingField)
+    }
+
+    @Test
+    fun theKeyIsHiddenUntilItIsAskedFor() {
+        val holder = holder()
+
+        assertFalse(holder.state.value.apiKeyVisible)
+
+        holder.toggleApiKeyVisible()
+        assertTrue(holder.state.value.apiKeyVisible)
+
+        holder.toggleApiKeyVisible()
+        assertFalse(holder.state.value.apiKeyVisible)
+    }
+
+    /**
+     * Revealing shows what was typed here and never what is in storage.
+     *
+     * The read count is the assertion that matters: a stored key is not in the state, so the only
+     * way the switch could ever show one is by fetching it, and that must not happen. The single
+     * read the test allows is the one [SettingsStateHolder.load] makes to find out *whether* a key
+     * exists — it asks for the state, not for the value, and nothing of it reaches the screen.
+     */
+    @Test
+    fun revealingTheKeyFieldNeverReadsTheStoredKey() = runBlocking {
+        val store = FakeInstanceStore()
+        store.put(config())
+        store.secret = SecretState.Present(STORED_KEY)
+        val holder = holder(store)
+        holder.load()
+        val readsAfterLoading = store.secretReads
+
+        holder.toggleApiKeyVisible()
+
+        val state = holder.state.value
+        assertTrue(state.apiKeyVisible)
+        assertEquals("", state.apiKeyInput)
+        assertEquals(readsAfterLoading, store.secretReads)
+        assertFalse(state.toString().contains(STORED_KEY), state.toString())
+    }
+
+    @Test
+    fun savingHidesTheKeyAgainAndEndsEditing() = runBlocking {
+        val holder = holder()
+        holder.onDisplayNameChange("Uptime Kuma")
+        holder.onAddressChange("https://kuma.example.invalid")
+        holder.onApiKeyChange(ENTERED_KEY)
+        holder.startEditing(EditableField.API_KEY)
+        holder.toggleApiKeyVisible()
+
+        assertTrue(holder.save())
+
+        val state = holder.state.value
+        assertFalse(state.apiKeyVisible)
+        assertNull(state.editingField)
+        assertEquals("", state.apiKeyInput)
+    }
+
+    /**
+     * A refused save is deliberately not the same case.
+     *
+     * Nothing was written and nothing was cleared, so the value is still in the field and the
+     * user may be about to correct it. Taking their decision to look at it away at that moment
+     * would be the screen tidying up after an attempt that failed.
+     */
+    @Test
+    fun aRefusedSaveKeepsWhatWasTypedAndKeepsItVisible() = runBlocking {
+        val store = FakeInstanceStore()
+        store.writesFail = true
+        val holder = holder(store)
+        holder.onDisplayNameChange("Uptime Kuma")
+        holder.onAddressChange("https://kuma.example.invalid")
+        holder.onApiKeyChange(ENTERED_KEY)
+        holder.toggleApiKeyVisible()
+
+        assertFalse(holder.save())
+
+        val state = holder.state.value
+        assertEquals(FailedWrite.SAVE, state.failedWrite)
+        assertEquals(ENTERED_KEY, state.apiKeyInput)
+        assertTrue(state.apiKeyVisible)
+    }
+
+    @Test
+    fun leavingTheScreenHidesTheKeyAndEndsEditing() = runBlocking {
+        val holder = holder()
+        holder.onApiKeyChange(ENTERED_KEY)
+        holder.toggleApiKeyVisible()
+        holder.startEditing(EditableField.API_KEY)
+
+        holder.onLeaveScreen()
+
+        val state = holder.state.value
+        assertFalse(state.apiKeyVisible)
+        assertNull(state.editingField)
+        // What was typed is not thrown away: leaving the screen is not a correction of the form,
+        // and the holder may well be shown again with it.
+        assertEquals(ENTERED_KEY, state.apiKeyInput)
+    }
+
+    @Test
+    fun deletingLeavesNothingVisibleBehind() = runBlocking {
+        val store = FakeInstanceStore()
+        store.put(config())
+        val holder = holder(store)
+        holder.load()
+        holder.onApiKeyChange(ENTERED_KEY)
+        holder.toggleApiKeyVisible()
+        holder.requestDelete()
+
+        holder.confirmDelete()
+
+        val state = holder.state.value
+        assertFalse(state.apiKeyVisible)
+        assertEquals("", state.apiKeyInput)
+    }
+
     private fun holder(
         store: InstanceStore = FakeInstanceStore(),
         tester: ConnectionTester = FakeTester(ConnectionTestResult.Reachable(0)),
@@ -634,7 +785,18 @@ class SettingsStateHolderTest {
 
         override val instances: Flow<StoredInstances> get() = stored
 
-        override suspend fun secretOf(instanceId: InstanceId): SecretState = secret
+        /**
+         * How often the secret was asked for.
+         *
+         * It is counted because one of the rules is about a read that must **not** happen:
+         * revealing the key field may not reach into storage.
+         */
+        var secretReads = 0
+
+        override suspend fun secretOf(instanceId: InstanceId): SecretState {
+            secretReads++
+            return secret
+        }
 
         override suspend fun save(config: InstanceConfig, apiKey: String?): StorageWriteResult {
             // Counted before the outcome is decided: a refused write is still an attempt that

@@ -14,6 +14,16 @@ import kotlinx.coroutines.flow.first
 /** Whether a secret is stored for the instance being edited, as far as the screen must know. */
 enum class StoredKey { NONE, STORED, UNREADABLE }
 
+/**
+ * A text field of this screen, named so that the state can say which one is being edited.
+ *
+ * Which field is being edited belongs in the state rather than inside a composable. Only one may
+ * be edited at a time, and the rule that matters — having the focus is not the same as being
+ * edited — is then a rule about a value a test can read instead of about three booleans living in
+ * three places.
+ */
+enum class EditableField { DISPLAY_NAME, ADDRESS, API_KEY }
+
 /** A field the user has to fill in before saving can succeed. */
 enum class MissingField {
     DISPLAY_NAME,
@@ -48,6 +58,22 @@ data class SettingsUiState(
     val displayName: String = "",
     val address: String = "",
     val apiKeyInput: String = "",
+    /**
+     * Whether what was typed into the key field is shown in clear text.
+     *
+     * It is a statement about [apiKeyInput] and about nothing else. A stored key is not in this
+     * state at all, so there is nothing here that revealing could expose beyond what the user
+     * has just typed themselves.
+     */
+    val apiKeyVisible: Boolean = false,
+    /**
+     * The field the user is editing, or `null` while they are only navigating.
+     *
+     * A television is operated with a remote, and a text field that begins editing the moment the
+     * focus reaches it opens the on-screen keyboard on the way past. So the screen keeps the two
+     * apart: a focused field shows its focus mark, and editing starts on a deliberate press.
+     */
+    val editingField: EditableField? = null,
     val storedKey: StoredKey = StoredKey.NONE,
     val existing: Boolean = false,
     val storedEntryInvalid: Boolean = false,
@@ -177,6 +203,45 @@ class SettingsStateHolder(
     }
 
     /**
+     * Begins editing [field], which is what opens the keyboard.
+     *
+     * Editing another field ends the one before it rather than adding to it: two open editors
+     * would mean two places the next keystroke could land.
+     */
+    fun startEditing(field: EditableField) {
+        mutableState.value = mutableState.value.copy(editingField = field)
+    }
+
+    /** Ends editing and leaves the focus where it was, so navigation can continue. */
+    fun stopEditing() {
+        mutableState.value = mutableState.value.copy(editingField = null)
+    }
+
+    /**
+     * Shows or hides what was typed into the key field.
+     *
+     * It reads nothing and writes nothing: the value it uncovers is the one the user has just
+     * entered, which is already in the state. A stored key is never fetched for this — it is not
+     * read back into a screen at all, and pressing this must not be the exception.
+     */
+    fun toggleApiKeyVisible() {
+        val current = mutableState.value
+        mutableState.value = current.copy(apiKeyVisible = !current.apiKeyVisible)
+    }
+
+    /**
+     * Called when the screen is left.
+     *
+     * A revealed key must not still be on screen the next time the settings are opened, and an
+     * editor must not be left open either. The screen cannot be relied upon to forget this by
+     * itself: whether its state survives depends on where the holder happens to be remembered,
+     * which is a decision made elsewhere and can change.
+     */
+    fun onLeaveScreen() {
+        mutableState.value = mutableState.value.copy(apiKeyVisible = false, editingField = null)
+    }
+
+    /**
      * @return true when the instance was written.
      *
      * An empty key field is not an empty key: for an instance that already has one, it means
@@ -229,6 +294,12 @@ class SettingsStateHolder(
             displayName = displayName,
             address = normalised,
             apiKeyInput = "",
+            // There is nothing left in the field to reveal, so a revealing switch left on would
+            // be a switch about nothing — and on next time a key is typed. A refused save is
+            // deliberately different: it keeps what was typed, and with it the user's decision
+            // to look at it, because nothing has moved and they may be about to correct it.
+            apiKeyVisible = false,
+            editingField = null,
             storedKey = StoredKey.STORED,
             existing = true,
             storedEntryInvalid = false,
