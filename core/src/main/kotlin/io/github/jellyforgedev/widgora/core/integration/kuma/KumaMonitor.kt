@@ -21,6 +21,18 @@ data class KumaMonitor(
     val certificateValid: Boolean?,
     val certificateDaysRemaining: Int?,
     /**
+     * The response carried at least one certificate row for this monitor.
+     *
+     * Without it the two fields above cannot answer the question anybody actually asks. Both are
+     * `null` for a monitor the source holds no certificate information about — a ping check — and
+     * `null` again for one it does hold information about but described inconsistently. Those are
+     * different things: the first has no certificate to talk about, the second has one whose
+     * validity is unknown. This flag is what keeps "not applicable" apart from "not known", and it
+     * follows the presence of a row rather than the usefulness of its value, because a row the
+     * source wrote is the source saying this monitor has a certificate at all.
+     */
+    val certificateReported: Boolean = false,
+    /**
      * The response stated this monitor's state more than once and the statements disagreed, which
      * is why [status] is [KumaMonitorStatus.UNKNOWN].
      *

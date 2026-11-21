@@ -199,6 +199,24 @@ A monitored item may carry two further values: how many days its certificate has
 whether the source considers that certificate valid. They belong to the same application-internal
 item type as the name and the state, and to nothing that leaves the application.
 
+**Implemented** `[V]`, as a nullable value on the item type and nowhere else. Three points of its
+shape are decisions rather than mechanics:
+
+- **No certificate means no value, not an empty one.** An item that terminates no TLS carries
+  nothing here. Fifteen of the captured installation's thirty-five items are in that position, and
+  a placeholder on each of them would make "this does not apply" indistinguishable from "nobody
+  knows".
+- **Validity has three states, not two.** Valid as far as the source says, *not* valid as far as
+  the source says, and unknown. The middle one is phrased as the absence of a yes because that is
+  all the gauge supports, and it is never rendered as "expired". Unknown is reached two ways — a
+  value this version does not recognise, and two rows that disagree — and is not the same as having
+  no certificate, so an item in that position still carries one.
+- **The days figure is not clamped.** Zero and below are kept as they are: a figure that has run
+  out is the one figure anybody needs to see.
+
+Nothing displays any of this yet, and the snapshot the deferred bridge would carry is unchanged —
+its field list is still frozen by its own test.
+
 What the first integration's endpoint actually provides, read from the upstream source `[V]`:
 
 - Two gauges, `monitor_cert_days_remaining` and `monitor_cert_is_valid`. The unit of the first is
@@ -541,9 +559,10 @@ target a different integration.
 **Status: partly implemented.** One widget exists and works on a television `[V]`: it shows an
 instance's counts, in two layouts that are chosen by the box it is given, with the figures scaled
 to fill that box, and it is refreshed in the background every thirty minutes. A debug-only host
-exists so that a widget can be placed and operated without waiting for a launcher. What is
-decided and **not** implemented is three widget types instead of one, a configuration step per
-placed widget, and the rule that replaces the module boundary for monitor names.
+exists so that a widget can be placed and operated without waiting for a launcher. The per-widget
+settings store below is implemented and nothing writes to it. What is decided and **not**
+implemented is three widget types instead of one, the configuration step that would fill that
+store, and the rule that replaces the module boundary for monitor names.
 
 WIDGORA supplies standard Android app widgets — an `AppWidgetProvider` per type, each handing the
 host a `RemoteViews` hierarchy. Any launcher able to host widgets can display them, which makes
@@ -635,11 +654,26 @@ up. That is the whole point of configuring instances once, in the application.
 
 ### Where a widget's settings live
 
+**The store is implemented** `[V]`; nothing writes to it yet, because the configuration step that
+asks the questions is a later change. It exists, it is cleaned up, and it is tested.
+
 A second key-value store, in a file of its own beside the instance store. Separate deliberately,
 because the two obey **opposite** rules: an instance file holds an address and an encrypted
 credential and may never be replaced on the application's own initiative, while a widget file
 holds nothing that cannot be asked again and may be discarded if it is damaged. Two opposite
-rules in one file would mean the stricter one losing.
+rules in one file would mean the stricter one losing. The discarding is the store's own corruption
+handler rather than a hand-written special case — one line, and the only line in which the
+opposite rule lives.
+
+Two things came out of building it that are worth recording:
+
+- **There is no index of placements.** Which widgets have an entry is read from the key names. An
+  index would be a second place the truth lives, and a write that updated one and not the other
+  would leave either an entry nothing can find or an identifier with nothing behind it.
+- **Exactly one store per file, enforced by the library.** A second live store over the same file
+  raises `[V]`, so this repository is a singleton of the application like the instance one. The
+  configuration step is the obvious place that temptation will arise, which is why it is written
+  down here and on the type.
 
 Keys are flat and per `appWidgetId`: the type, the instance, whether names are allowed and — for
 the selection type — the chosen identifiers in the order the user put them in. Everything read

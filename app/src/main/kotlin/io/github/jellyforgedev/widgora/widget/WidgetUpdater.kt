@@ -24,7 +24,8 @@ import kotlinx.coroutines.flow.first
  * genuinely means nothing is configured. [pushFromStorage] serves an update arriving at a process
  * that may have just been started for it, where an empty list means only that nothing has been
  * retrieved *yet* — a different statement entirely. That path therefore reads the stored instance
- * list, which is one small file and no network.
+ * list, and takes the opportunity to sweep stale per-widget settings while it is at it: two small
+ * files and no network.
  *
  * Both of them prefer what is in memory wherever there is anything, and the decision itself lives
  * in [WidgetModelSelection], which is where it can be tested.
@@ -69,6 +70,15 @@ object WidgetUpdater {
     suspend fun pushFromStorage(context: Context) {
         val application = context.applicationContext as? WidgoraApplication ?: return
         val ids = widgetIds(context)
+
+        // The second half of the per-widget settings cleanup. A host's deletion callback can fail
+        // to arrive, and a stored entry for a widget nobody can see would then stay for good. This
+        // is the one moment at which the application knows which widgets really exist, so it is
+        // the moment to compare. It runs before the early return on purpose: no widget at all is
+        // precisely the case where everything stored is an orphan. Nothing is written when nothing
+        // is stale, so an ordinary update costs one read and no write.
+        application.widgetSettings.removeOrphans(ids.toSet())
+
         if (ids.isEmpty()) return
 
         push(

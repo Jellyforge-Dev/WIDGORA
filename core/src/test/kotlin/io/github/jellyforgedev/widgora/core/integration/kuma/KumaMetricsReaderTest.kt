@@ -307,8 +307,18 @@ class KumaMetricsReaderTest {
         assertEquals("Service", monitor.name)
     }
 
+    /**
+     * Contradicting certificate rows leave no value — and still leave a certificate.
+     *
+     * The last assertion is the one that carries weight. The rule for a contradiction is the same
+     * as for the status: use what the rows agree on, never guess between them. But dropping the
+     * values must not also drop the fact that this monitor *has* a certificate, because the two
+     * statements lead to different places: "no certificate" means the item is not a TLS check at
+     * all, while "certificate, validity unknown" is something worth showing. Without the flag both
+     * would arrive as two nulls and be indistinguishable.
+     */
     @Test
-    fun contradictingCertificateValuesAreDropped() {
+    fun contradictingCertificateValuesAreDroppedButTheCertificateRemains() {
         val monitor = success(
             "monitor_status{monitor_id=\"7\"} 1",
             "monitor_cert_is_valid{monitor_id=\"7\"} 1",
@@ -318,6 +328,56 @@ class KumaMetricsReaderTest {
         ).single()
         assertNull(monitor.certificateValid)
         assertNull(monitor.certificateDaysRemaining)
+        assertTrue(monitor.certificateReported)
+    }
+
+    /** No certificate row at all is the one case that means there is no certificate. */
+    @Test
+    fun aMonitorWithoutCertificateRowsReportsNoCertificate() {
+        val monitor = success("monitor_status{monitor_id=\"7\"} 1").single()
+
+        assertFalse(monitor.certificateReported)
+        assertNull(monitor.certificateValid)
+        assertNull(monitor.certificateDaysRemaining)
+    }
+
+    /**
+     * One row of either family is enough to say the monitor has a certificate.
+     *
+     * The flag follows the presence of a row rather than the usefulness of its value: a row the
+     * source wrote is the source saying this monitor has a certificate, whatever it then says
+     * about it.
+     */
+    @Test
+    fun oneCertificateRowOfEitherFamilyIsEnoughToReportOne() {
+        val daysOnly = success(
+            "monitor_status{monitor_id=\"7\"} 1",
+            "monitor_cert_days_remaining{monitor_id=\"7\"} 5",
+        ).single()
+        val validityOnly = success(
+            "monitor_status{monitor_id=\"8\"} 1",
+            "monitor_cert_is_valid{monitor_id=\"8\"} 0",
+        ).single()
+
+        assertTrue(daysOnly.certificateReported)
+        assertNull(daysOnly.certificateValid)
+        assertEquals(5, daysOnly.certificateDaysRemaining)
+
+        assertTrue(validityOnly.certificateReported)
+        assertEquals(false, validityOnly.certificateValid)
+        assertNull(validityOnly.certificateDaysRemaining)
+    }
+
+    /** A figure at or below zero is kept as it is: it is the one figure anybody needs to see. */
+    @Test
+    fun aDaysFigureAtOrBelowZeroIsKept() {
+        for (value in listOf("0", "-1", "-37")) {
+            val monitor = success(
+                "monitor_status{monitor_id=\"7\"} 1",
+                "monitor_cert_days_remaining{monitor_id=\"7\"} $value",
+            ).single()
+            assertEquals(value.toInt(), monitor.certificateDaysRemaining, value)
+        }
     }
 
     /** Repeated rows share an identifier, so they must not count against the monitor limit. */

@@ -53,12 +53,13 @@
 
         <!--
           The widget. It is not exported: the only thing that talks to it is the system's own
-          widget service, and nothing else has any business sending it a broadcast. All three
+          widget service, and nothing else has any business sending it a broadcast. All four
           actions below are intents the platform documents as protected and sendable by the
           system alone, so declaring them opens nothing to anybody.
 
-          The two beside the update are the ones that start and stop the periodic refresh: the
-          first widget of this provider appearing, and the last one going away.
+          Beside the update: two that start and stop the periodic refresh — the first widget of
+          this provider appearing, and the last one going away — and one that names the widgets
+          which have been removed, so that their stored settings can go with them.
 
           They are declared although the documentation does not say they must be. What it does
           say is that the filter has to accept APPWIDGET_UPDATE; about the others it says nothing
@@ -74,6 +75,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

@@ -144,6 +144,14 @@ object KumaMetricsReader {
         private val responseTimes = LinkedHashSet<Long?>()
         private val certificateValidities = LinkedHashSet<Boolean?>()
         private val certificateDays = LinkedHashSet<Int?>()
+
+        /**
+         * Whether the response wrote any certificate row for this monitor.
+         *
+         * A plain flag and not a set, because there is nothing here two rows could disagree
+         * about: the question is whether the source said anything, and one row is enough.
+         */
+        private var certificateRowSeen = false
         private val uptimeRatiosByWindow = LinkedHashMap<String, LinkedHashSet<Double>>()
 
         fun accept(metric: MetricLine) {
@@ -175,16 +183,24 @@ object KumaMetricsReader {
                 }
 
                 CERT_IS_VALID -> {
+                    certificateRowSeen = true
                     certificateValidities += when (metric.value) {
                         1.0 -> true
+                        // The gauge is written as zero for everything that is not an explicit
+                        // yes, a missing statement included. It therefore means "not valid as far
+                        // as the source says" and never "expired".
                         0.0 -> false
                         else -> null
                     }
                 }
 
                 CERT_DAYS_REMAINING -> {
+                    certificateRowSeen = true
                     certificateDays += when {
                         metric.value.isNaN() || metric.value.isInfinite() -> null
+                        // Not coerced to zero or above: a figure that has run out is the one
+                        // figure anybody needs to see. The unit is whole days, per the metric's
+                        // own help text.
                         else -> metric.value.roundToInt()
                     }
                 }
@@ -209,6 +225,7 @@ object KumaMetricsReader {
                     .toMap(),
                 certificateValid = certificateValidities.agreedValue(),
                 certificateDaysRemaining = certificateDays.agreedValue(),
+                certificateReported = certificateRowSeen,
             )
         }
 

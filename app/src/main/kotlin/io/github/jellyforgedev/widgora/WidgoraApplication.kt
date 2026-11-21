@@ -4,6 +4,7 @@ import android.app.Application
 import io.github.jellyforgedev.widgora.core.data.Clock
 import io.github.jellyforgedev.widgora.core.data.InstanceRepository
 import io.github.jellyforgedev.widgora.core.data.SnapshotRepository
+import io.github.jellyforgedev.widgora.core.data.WidgetSettingsRepository
 import io.github.jellyforgedev.widgora.core.integration.kuma.KumaMetricsClient
 import io.github.jellyforgedev.widgora.core.transport.http.OkHttpTransport
 import io.github.jellyforgedev.widgora.dashboard.DashboardTiming
@@ -30,6 +31,18 @@ class WidgoraApplication : Application() {
     val instanceStore: InstanceStore by lazy { RepositoryInstanceStore(instances) }
 
     val connectionTester: ConnectionTester by lazy { KumaConnectionTester() }
+
+    /**
+     * What each placed widget was configured to show.
+     *
+     * A second store beside [instanceStore], and deliberately not part of it: the two obey opposite
+     * rules about a damaged file, and one file would mean the stricter rule losing. Nothing renders
+     * from it yet — the configuration step that fills it is a later change — so for now it exists,
+     * is cleaned up when widgets go, and is tested.
+     */
+    val widgetSettings: WidgetSettingsRepository by lazy {
+        WidgetSettingsRepository.create(this)
+    }
 
     /**
      * Holds what the dashboard shows. The transport is wired to the integration here, which is

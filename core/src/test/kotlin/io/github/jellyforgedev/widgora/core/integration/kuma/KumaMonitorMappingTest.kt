@@ -1,6 +1,7 @@
 package io.github.jellyforgedev.widgora.core.integration.kuma
 
 import io.github.jellyforgedev.widgora.core.R
+import io.github.jellyforgedev.widgora.core.data.CertificateValidity
 import io.github.jellyforgedev.widgora.core.data.MonitorEntry
 import io.github.jellyforgedev.widgora.core.data.MonitorNote
 import io.github.jellyforgedev.widgora.core.data.MonitorState
@@ -156,12 +157,104 @@ class KumaMonitorMappingTest {
         assertEquals(emptyList(), notes)
     }
 
+    // --- Certificates --------------------------------------------------------------------------
+
+    /**
+     * A monitor the source wrote no certificate row for carries no certificate at all.
+     *
+     * The ordinary case: a ping check, a plain connection test. Fifteen of a captured
+     * installation's thirty-five monitors are in this position. Handing them a value with empty
+     * fields would make "this does not apply" look like "nobody knows".
+     */
+    @Test
+    fun aMonitorWithoutCertificateRowsCarriesNoCertificate() {
+        assertNull(mapped(monitor("1", KumaMonitorStatus.UP)).certificate)
+    }
+
+    /**
+     * The two answers the gauge can give, translated into claims that can be defended.
+     *
+     * A no from this source is neither "expired" nor "invalid": the gauge is written as zero for
+     * every case that is not an explicit yes, a missing statement included. The enum value says
+     * exactly that much and no more, which is the whole reason it is not a `Boolean`.
+     */
+    @Test
+    fun theValidityGaugeBecomesAStatementAboutTheSource() {
+        val valid = mapped(
+            monitor("1", KumaMonitorStatus.UP, certificateValid = true, certificateReported = true),
+        )
+        val notValid = mapped(
+            monitor(
+                "2",
+                KumaMonitorStatus.UP,
+                certificateValid = false,
+                certificateReported = true,
+            ),
+        )
+
+        assertEquals(
+            CertificateValidity.VALID_ACCORDING_TO_SOURCE,
+            assertNotNull(valid.certificate).validity,
+        )
+        assertEquals(
+            CertificateValidity.NOT_VALID_ACCORDING_TO_SOURCE,
+            assertNotNull(notValid.certificate).validity,
+        )
+    }
+
+    /**
+     * Certificate information exists and its validity does not: that is the third state.
+     *
+     * It is reached two ways — the source wrote a value this version does not recognise, or two
+     * rows for the same monitor disagreed — and both leave the same `null` behind. Neither is the
+     * same as having no certificate, which is why the item still carries one.
+     */
+    @Test
+    fun aReportedCertificateWithoutAValidityStatementIsUnknown() {
+        val entry = mapped(
+            monitor(
+                "1",
+                KumaMonitorStatus.UP,
+                certificateValid = null,
+                certificateDaysRemaining = 12,
+                certificateReported = true,
+            ),
+        )
+
+        val certificate = assertNotNull(entry.certificate)
+        assertEquals(CertificateValidity.UNKNOWN, certificate.validity)
+        assertEquals(12, certificate.daysRemaining)
+    }
+
+    /** A figure that has run out is the one figure anybody needs, so it is not clamped away. */
+    @Test
+    fun aFigureAtOrBelowZeroSurvivesTheMapping() {
+        for (days in listOf(0, -1, -400)) {
+            val entry = mapped(
+                monitor(
+                    "1",
+                    KumaMonitorStatus.UP,
+                    certificateValid = false,
+                    certificateDaysRemaining = days,
+                    certificateReported = true,
+                ),
+            )
+            assertEquals(days, assertNotNull(entry.certificate).daysRemaining)
+        }
+    }
+
+    private fun mapped(monitor: KumaMonitor): MonitorEntry =
+        KumaMonitorMapping.overviewOf(listOf(monitor)).entries.single()
+
     private fun monitor(
         id: String,
         status: KumaMonitorStatus,
         name: String? = "Service " + id,
         responseTimeMs: Long? = null,
         statusContradicted: Boolean = false,
+        certificateValid: Boolean? = null,
+        certificateDaysRemaining: Int? = null,
+        certificateReported: Boolean = false,
     ): KumaMonitor = KumaMonitor(
         monitorId = id,
         name = name,
@@ -169,8 +262,9 @@ class KumaMonitorMappingTest {
         status = status,
         responseTimeMs = responseTimeMs,
         uptimeRatioByWindow = emptyMap(),
-        certificateValid = null,
-        certificateDaysRemaining = null,
+        certificateValid = certificateValid,
+        certificateDaysRemaining = certificateDaysRemaining,
+        certificateReported = certificateReported,
         statusContradicted = statusContradicted,
     )
 }
