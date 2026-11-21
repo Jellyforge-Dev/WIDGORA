@@ -23,6 +23,27 @@ internal class InMemoryPreferences : DataStore<Preferences> {
      */
     var failWith: Throwable? = null
 
+    /**
+     * Set to make every write fail, the way a full or unwritable medium does.
+     *
+     * Separate from [failWith] rather than folded into it, because a store that cannot be read is
+     * not necessarily one that cannot be written: the widget settings file replaces a damaged copy
+     * and writes on, while the instance file reports the failure. Two flags keep the two
+     * situations apart instead of making every test about the one that is easier to produce.
+     */
+    var failWritesWith: Throwable? = null
+
+    /**
+     * How many times a write was attempted.
+     *
+     * It serves one claim that cannot be made any other way: that a cleanup sweep with nothing to
+     * clean up does not write. The sweep runs on every widget update, so "no change, no write" is
+     * the difference between a cleanup and a steady stream of file writes — and the stored result
+     * of both is identical, which is exactly why it has to be counted rather than observed.
+     */
+    var writes = 0
+        private set
+
     private val state = MutableStateFlow(emptyPreferences())
 
     override val data: Flow<Preferences> get() = flow {
@@ -33,6 +54,8 @@ internal class InMemoryPreferences : DataStore<Preferences> {
     override suspend fun updateData(
         transform: suspend (t: Preferences) -> Preferences,
     ): Preferences {
+        writes++
+        failWritesWith?.let { throw it }
         val updated = transform(state.value)
         state.value = updated
         return updated

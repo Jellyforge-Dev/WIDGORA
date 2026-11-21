@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.os.Bundle
+import io.github.jellyforgedev.widgora.WidgoraApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -81,6 +82,34 @@ class CountsWidgetProvider : AppWidgetProvider() {
      */
     override fun onDisabled(context: Context) {
         WidgetRefreshScheduler.applyToPlacedWidgets(context)
+    }
+
+    /**
+     * One or more widgets are gone, so what was stored for them should be too.
+     *
+     * The first half of a two-part cleanup, and the half that can be missed: a broadcast arrives at
+     * a receiver that has to be running to hear it. The second half is a sweep against the widgets
+     * that really exist, run on every push — see
+     * [io.github.jellyforgedev.widgora.core.data.WidgetSettingsRepository.removeOrphans]. Either is
+     * enough on a given occasion; neither is enough on its own.
+     *
+     * The work is handed to a coroutine for the same reason the rendering is: this is file access,
+     * and a receiver's main thread is not the place for it.
+     */
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        val application = context.applicationContext as? WidgoraApplication ?: return
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try {
+                withTimeoutOrNull(WORK_BUDGET_MS) {
+                    for (appWidgetId in appWidgetIds) {
+                        application.widgetSettings.delete(appWidgetId)
+                    }
+                }
+            } finally {
+                pending.finish()
+            }
+        }
     }
 
     private fun render(context: Context) {

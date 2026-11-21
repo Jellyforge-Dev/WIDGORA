@@ -135,6 +135,13 @@ data class MonitorEntry(
      * sixth state would change every count, every ordering and the summary the bridge carries.
      */
     val note: MonitorNote? = null,
+    /**
+     * What the source says about this item's certificate, or `null` where it says nothing at all.
+     *
+     * Nullable rather than a value with empty fields, and the null case is the common one: most
+     * items terminate no TLS. See [CertificateInfo] for why the difference is kept.
+     */
+    val certificate: CertificateInfo? = null,
 ) {
 
     init {
@@ -162,12 +169,14 @@ data class MonitorEntry(
             state: MonitorState,
             responseTimeMs: Long?,
             note: MonitorNote? = null,
+            certificate: CertificateInfo? = null,
         ): MonitorEntry = MonitorEntry(
             monitorId = monitorId,
             name = name.truncateToCodePoints(MAX_NAME_CODE_POINTS),
             state = state,
             responseTimeMs = responseTimeMs,
             note = note,
+            certificate = certificate,
         )
     }
 }

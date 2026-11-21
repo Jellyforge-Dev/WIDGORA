@@ -1,6 +1,8 @@
 package io.github.jellyforgedev.widgora.core.integration.kuma
 
 import io.github.jellyforgedev.widgora.core.R
+import io.github.jellyforgedev.widgora.core.data.CertificateInfo
+import io.github.jellyforgedev.widgora.core.data.CertificateValidity
 import io.github.jellyforgedev.widgora.core.data.MonitorEntry
 import io.github.jellyforgedev.widgora.core.data.MonitorNote
 import io.github.jellyforgedev.widgora.core.data.MonitorOverview
@@ -30,7 +32,34 @@ object KumaMonitorMapping {
         state = stateOf(monitor.status),
         responseTimeMs = monitor.responseTimeMs,
         note = noteOf(monitor),
+        certificate = certificateOf(monitor),
     )
+
+    /**
+     * The certificate of one item, or nothing where the source said nothing.
+     *
+     * The absence is the point of the first line. This endpoint writes its two certificate gauges
+     * only for a monitor it holds certificate information about, so no row means no certificate
+     * rather than an unknown one. Fifteen of a captured installation's thirty-five monitors are in
+     * that position `[V]`, and handing each of them a value with empty fields would make "does not
+     * apply" indistinguishable from "nobody knows".
+     *
+     * The validity is translated rather than passed through. A no from this source does not mean
+     * the certificate is bad — the gauge is written as zero for every case that is not an explicit
+     * yes — so it becomes the statement that can actually be defended. `null`, which is what both
+     * an unrecognised value and two disagreeing rows leave behind, becomes unknown.
+     */
+    private fun certificateOf(monitor: KumaMonitor): CertificateInfo? {
+        if (!monitor.certificateReported) return null
+        return CertificateInfo(
+            validity = when (monitor.certificateValid) {
+                true -> CertificateValidity.VALID_ACCORDING_TO_SOURCE
+                false -> CertificateValidity.NOT_VALID_ACCORDING_TO_SOURCE
+                null -> CertificateValidity.UNKNOWN
+            },
+            daysRemaining = monitor.certificateDaysRemaining,
+        )
+    }
 
     /**
      * The explanation for a state that the state alone cannot account for.
