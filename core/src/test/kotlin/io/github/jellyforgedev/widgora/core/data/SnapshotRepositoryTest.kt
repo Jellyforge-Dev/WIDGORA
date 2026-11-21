@@ -202,6 +202,44 @@ class SnapshotRepositoryTest {
         assertEquals(WidgetDisplayState.Error(Reason.ENDPOINT_NOT_FOUND), world.displayState())
     }
 
+    /**
+     * A failed retrieval is recorded, never raised into the caller.
+     *
+     * The other tests in this group assert what each failure *becomes*; this one asserts that it
+     * does not arrive as an exception, which is a different claim and one something else now
+     * rests on. The background refresh behind the widgets decides between reporting success and
+     * asking to be retried, and it draws that line at a technical break-off. Could this call
+     * raise for a server that is merely unreachable, every unreachable server would become a run
+     * that retries with backoff instead of a widget that says so.
+     *
+     * `runCatching` rather than a plain call: a thrown exception would fail the test either way,
+     * but only this way does the test state that not throwing is the point.
+     */
+    @Test
+    fun aFailedRetrievalIsRecordedRatherThanRaised() = runBlocking {
+        val failures = listOf(
+            TransportResult.Unreachable,
+            TransportResult.HttpStatus(401),
+            TransportResult.HttpStatus(404),
+            TransportResult.HttpStatus(500),
+            TransportResult.TooLarge,
+            TransportResult.Success(""),
+        )
+
+        for (failure in failures) {
+            val world = World()
+            world.configure()
+            world.transport.failWith(failure)
+
+            val outcome = runCatching { world.repository.refresh() }
+
+            assertTrue(outcome.isSuccess, "$failure raised ${outcome.exceptionOrNull()}")
+            // And it reaches the tile rather than being swallowed: a call that returned quietly
+            // without recording anything would satisfy the line above and tell the user nothing.
+            assertTrue(world.displayState() != WidgetDisplayState.Ok, failure.toString())
+        }
+    }
+
     @Test
     fun anOversizedAnswerNamesItsOwnReason() = runBlocking {
         val world = World()

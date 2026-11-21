@@ -15,16 +15,12 @@ import kotlinx.coroutines.withTimeoutOrNull
  *
  * ### What it does, and the two things it deliberately does not
  *
- * It **renders**. It does not retrieve: no network call happens on any path reachable from here.
- * And it asks for no periodic update from the widget framework — `updatePeriodMillis` is zero in
- * the provider's metadata — because that mechanism has a floor of thirty minutes and wakes a
- * sleeping device to run, which on a television means waking up to fetch data nobody is looking
- * at.
- *
- * What updates a widget today is the application itself, while it is in the foreground. That
- * leaves a gap this step does not close: with the application gone, a widget keeps showing
- * whatever was last pushed to it, carrying the timestamp of that moment. The refresh that closes
- * the gap is the next step.
+ * It **renders**, and it says when the periodic refresh ought to exist. It does not retrieve: no
+ * network call happens on any path reachable from here. And it asks for no periodic update from
+ * the widget framework — `updatePeriodMillis` is zero in the provider's metadata — because that
+ * mechanism wakes a sleeping device in order to run, which on a television means waking up to
+ * fetch data nobody is looking at. The retrieving is [WidgetRefreshWorker]'s, and this class only
+ * schedules and cancels it.
  *
  * ### Why the work is handed to a coroutine
  *
@@ -58,6 +54,33 @@ class CountsWidgetProvider : AppWidgetProvider() {
         newOptions: Bundle,
     ) {
         render(context)
+    }
+
+    /**
+     * The first widget of this provider now exists, so the periodic refresh should.
+     *
+     * The number of placed widgets is not consulted here. This callback *is* the system saying
+     * one exists, and counting them would be asking the party that just said so to say it again.
+     * Queuing is idempotent under its unique name, so a second arrival of this callback — which
+     * the platform documents at boot time, for a host that holds an instance — changes nothing.
+     */
+    override fun onEnabled(context: Context) {
+        WidgetRefreshScheduler.schedule(context)
+    }
+
+    /**
+     * The last widget is gone, so nothing is left to refresh for.
+     *
+     * The count is consulted here, unlike above, and the asymmetry is deliberate: this path ends
+     * in a cancellation, and the one thing worth being sure of before cancelling is that nobody
+     * is still looking. If a widget somehow remains, the work is renewed instead of removed.
+     *
+     * This is not the only route out of the queue. A callback can be missed — the receiver is not
+     * running, the broadcast is dropped — so every start of the application applies the same rule
+     * to the real count.
+     */
+    override fun onDisabled(context: Context) {
+        WidgetRefreshScheduler.applyToPlacedWidgets(context)
     }
 
     private fun render(context: Context) {

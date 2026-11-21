@@ -29,6 +29,7 @@ import io.github.jellyforgedev.widgora.settings.SettingsStateHolder
 import io.github.jellyforgedev.widgora.ui.HomeScreen
 import io.github.jellyforgedev.widgora.ui.MonitorDetailScreen
 import io.github.jellyforgedev.widgora.widget.WidgetLaunch
+import io.github.jellyforgedev.widgora.widget.WidgetRefreshScheduler
 import io.github.jellyforgedev.widgora.widget.WidgetUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -60,6 +61,19 @@ class MainActivity : ComponentActivity() {
          * otherwise would.
          */
         val openedFromWidget = WidgetLaunch.validAppWidgetIdFrom(this, intent) != null
+
+        /*
+         * Brings the periodic widget refresh in line with the widgets that are actually placed.
+         *
+         * Here rather than in the application class, which is the other candidate and the wrong
+         * one: a widget broadcast starts the process too, and putting this in Application.onCreate
+         * would open the work database on every such start in order to re-assert something already
+         * stored. This is the repair for the cases where queue and reality drifted apart — an
+         * update installed over a version that scheduled nothing, a cancellation that never
+         * arrived, work lost with the application's data — and opening the application is exactly
+         * when a repair costs nothing anybody notices.
+         */
+        WidgetRefreshScheduler.applyToPlacedWidgets(this)
 
         setContent {
             WidgoraTheme {

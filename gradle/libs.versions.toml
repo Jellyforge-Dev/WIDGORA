@@ -41,6 +41,13 @@ datastore = "1.3.0"
 # taken from whatever DataStore happens to pull in.
 coroutines = "1.11.0"
 
+# Background work. Taken from the publishing repository's own metadata for
+# androidx.work:work-runtime, where <latest> and <release> both name this version.
+# Only this one artefact. The -ktx variant is not used: the coroutine worker and the
+# request builders it once added now live in the main artefact, so taking it would be a
+# second coordinate for the same code.
+work = "2.12.0"
+
 # Instrumented tests only. Versions as listed on the AndroidX test release page: the JUnit
 # extension and the runner are on separate release lines and do not share a number.
 androidxTestJunit = "1.3.0"
@@ -86,6 +93,10 @@ androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling
 # Debug builds only: it carries the preview renderer and would otherwise ship in a release.
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-tv-material = { module = "androidx.tv:tv-material", version.ref = "tvMaterial" }
+
+# The periodic refresh behind the widgets. It brings manifest entries of its own, which are
+# listed and accounted for in SECURITY.md rather than inherited unexamined.
+androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
 
 # Instrumented tests only. Both take their version from the Compose bill of materials above, so
 # they cannot drift away from the Compose the application is built against. The first carries the

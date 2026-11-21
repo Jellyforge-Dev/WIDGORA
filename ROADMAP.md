@@ -8,8 +8,8 @@ beneath and the time the data was obtained. The tile is focusable and opens a sc
 monitor with its state and, where one was measured, its response time. The design system's brand
 colours were measured from the project's own logo, and its contrast and line heights are checked
 by tests. Anything below that is not described as implemented is not implemented: there is no
-widget per monitor, no background refresh, no bridge to a host launcher, and no release has been
-made.
+widget per monitor, no bridge to a host launcher, and no release has been made. The one widget
+that does exist is refreshed in the background every thirty minutes.
 
 This roadmap lists intentions, not promises. Items carry the evidence markers used throughout
 the project documentation:
