@@ -161,8 +161,20 @@ object WidgetModelSelection {
      * Turns one view into the render this widget's settings call for.
      *
      * The nameless model is built exactly as it always was, from three of the view's fields. The
-     * fourth — the item list, which holds the monitor names — is read **only** when a consent
-     * token could be produced, and such a token can only come from a stored yes.
+     * fourth — the item list, which holds the monitor names — is read **only** when a consent token
+     * could be produced, and such a token can only come from something the user stored.
+     *
+     * ### Why the kind decides the model and not the renderer
+     *
+     * Each kind has a model of its own, and the renderers take one model each with no overload
+     * taking two. So the question "what sort of surface is this" is answered once, here, where the
+     * stored entry is in hand — and a widget configured as one kind cannot be handed to the
+     * renderer of another, whatever a later change does to the drawing code.
+     *
+     * A widget of one of the two list kinds with no consent is drawn from the nameless model, which
+     * is the counts surface with nothing listed on it. That is the honest outcome rather than a
+     * contradiction: such an entry has no selection and no yes behind it, so there is nothing the
+     * widget is permitted to name.
      */
     private fun render(
         settings: WidgetSettings,
@@ -182,13 +194,32 @@ object WidgetModelSelection {
         }
 
         val consent = NameConsent.from(settings) ?: return WidgetRender.Nameless(instance)
-        return WidgetRender.Named(
-            NamedWidgetRenderModel.of(
-                consent = consent,
-                instance = instance,
-                overview = view?.overview,
-            ),
-        )
+        return when (settings.kind) {
+            WidgetKind.STATUS -> WidgetRender.Named(
+                NamedWidgetRenderModel.of(
+                    consent = consent,
+                    instance = instance,
+                    overview = view?.overview,
+                ),
+            )
+
+            WidgetKind.CERTIFICATES -> WidgetRender.Listed(
+                WidgetListRenderModel.certificates(
+                    consent = consent,
+                    instance = instance,
+                    overview = view?.overview,
+                ),
+            )
+
+            WidgetKind.SELECTION -> WidgetRender.Listed(
+                WidgetListRenderModel.selection(
+                    consent = consent,
+                    instance = instance,
+                    overview = view?.overview,
+                    monitorIds = settings.monitorIds,
+                ),
+            )
+        }
     }
 
     /**

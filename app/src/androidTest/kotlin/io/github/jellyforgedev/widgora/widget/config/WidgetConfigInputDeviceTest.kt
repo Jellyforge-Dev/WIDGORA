@@ -224,6 +224,10 @@ class WidgetConfigInputDeviceTest {
                 ),
             ),
             settings = store,
+            // A status widget never asks for one, and this test is about the focus order of the
+            // screen rather than about the list. A source that reports nothing is the honest
+            // stand-in: it is what a kind that does not ask would get.
+            monitors = NoMonitors,
         )
 
         var modes: InputModeManager? = null
@@ -237,6 +241,12 @@ class WidgetConfigInputDeviceTest {
         compose.runOnIdle { checkNotNull(modes).requestInputMode(InputMode.Keyboard) }
         compose.waitForIdle()
         return holder
+    }
+
+    /** A monitor source that is never asked, for the kind that does not ask. */
+    private object NoMonitors : MonitorCatalogueSource {
+
+        override suspend fun monitorsOf(instanceId: InstanceId): List<MonitorChoice>? = null
     }
 
     private fun valid(instanceId: InstanceId, displayName: String) = StoredInstance.Valid(

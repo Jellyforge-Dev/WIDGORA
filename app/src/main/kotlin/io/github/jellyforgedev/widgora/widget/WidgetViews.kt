@@ -2,19 +2,13 @@ package io.github.jellyforgedev.widgora.widget
 
 import android.content.Context
 import android.os.Build
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.format.DateFormat
-import android.text.style.ForegroundColorSpan
 import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import androidx.compose.ui.graphics.toArgb
 import io.github.jellyforgedev.widgora.R
-import io.github.jellyforgedev.widgora.design.MonitorMarks
 import io.github.jellyforgedev.widgora.design.WidgetPresentation
 import io.github.jellyforgedev.widgora.design.WidgoraColors
-import java.util.Date
 
 /**
  * The one place a widget's view hierarchy is built.
@@ -320,25 +314,14 @@ object WidgetViews {
         model: WidgetRenderModel.Instance,
         presentation: WidgetPresentation,
         layout: Layout,
-    ): String {
-        val updatedAt = model.updatedAtEpochMs
-            ?: return context.getString(R.string.dashboard_no_data_yet)
-        val time = DateFormat.getTimeFormat(context).format(Date(updatedAt))
-
-        // On a shared line the long sentence would be cut off, and the one part of it that has
-        // to survive is the time. The state beside it already says whether the value is current,
-        // so the sentence was saying it twice.
-        if (layout == Layout.COMPACT) {
-            return context.getString(R.string.widget_updated_compact, time)
-        }
-
-        val template = if (presentation.valueIsOutdated) {
-            R.string.dashboard_last_updated_outdated
-        } else {
-            R.string.dashboard_last_updated
-        }
-        return context.getString(template, time)
-    }
+    ): String = WidgetLines.footer(
+        context = context,
+        updatedAtEpochMs = model.updatedAtEpochMs,
+        valueIsOutdated = presentation.valueIsOutdated,
+        // Only the compact variant shares the bottom line with the state; the other two give the
+        // time a line of its own and can afford the whole sentence.
+        sharesItsLine = layout == Layout.COMPACT,
+    )
 
     /**
      * The counts line with each mark in the colour of the state it stands for.
@@ -353,23 +336,11 @@ object WidgetViews {
      * reader is actually after stays at full contrast against the surface rather than inheriting
      * a state colour.
      *
-     * [ForegroundColorSpan] is a `ParcelableSpan`, which is what lets it survive the journey into
-     * the host's process: a `RemoteViews` object is parcelled, and only spans the platform knows
-     * how to write are carried across. An instrumented test parcels and unparcels the views and
-     * reads the spans back out, rather than taking that for granted.
+     * The colouring itself is in [WidgetLines], because the list widgets colour their marks the
+     * same way, and two implementations of it is how a mark comes to be green on one widget and
+     * white on another.
      */
-    private fun coloured(counts: String): CharSequence {
-        val spannable = SpannableString(counts)
-        for (mark in MonitorMarks.inCounts(counts)) {
-            spannable.setSpan(
-                ForegroundColorSpan(mark.color.toArgb()),
-                mark.startIndex,
-                mark.endIndex,
-                Spanned.SPAN_INCLUSIVE_EXCLUSIVE,
-            )
-        }
-        return spannable
-    }
+    private fun coloured(counts: String): CharSequence = WidgetLines.coloured(counts)
 
     /**
      * Puts the first affected monitor in the title line, with the count of the others beside it.
@@ -388,7 +359,7 @@ object WidgetViews {
         context: Context,
         headline: NamedWidgetRenderModel.Headline,
     ) {
-        setTextViewText(R.id.widget_title, headline.mark + MARK_SEPARATOR + headline.name)
+        setTextViewText(R.id.widget_title, WidgetLines.marked(headline.mark, headline.name))
 
         val others = headline.others
         setViewVisibility(R.id.widget_title_more, if (others > 0) View.VISIBLE else View.GONE)
@@ -416,15 +387,11 @@ object WidgetViews {
         setViewVisibility(R.id.widget_counts, if (counts == null) View.GONE else View.VISIBLE)
         setTextViewText(R.id.widget_counts, counts ?: "")
 
-        // Mark and word on one line, and never the word alone: the mark is the second channel
-        // that keeps the states apart for someone who cannot tell the colours apart.
-        setTextViewText(R.id.widget_state, mark + MARK_SEPARATOR + label)
+        setTextViewText(R.id.widget_state, WidgetLines.marked(mark, label))
         setTextColor(R.id.widget_state, stateColor)
 
         setViewVisibility(R.id.widget_footer, if (footer == null) View.GONE else View.VISIBLE)
         setTextViewText(R.id.widget_footer, footer.orEmpty())
     }
 
-    /** A thin space: it separates the mark from the word without reading as punctuation. */
-    private const val MARK_SEPARATOR = " "
 }

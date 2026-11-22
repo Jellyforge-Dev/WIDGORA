@@ -2,6 +2,7 @@ package io.github.jellyforgedev.widgora.widget
 
 import io.github.jellyforgedev.widgora.core.data.MonitorOverview
 import io.github.jellyforgedev.widgora.core.data.MonitorState
+import io.github.jellyforgedev.widgora.core.data.WidgetKind
 import io.github.jellyforgedev.widgora.core.data.WidgetSettings
 
 /**
@@ -43,9 +44,28 @@ class NameConsent private constructor() {
          * Absent settings are a no, not an unknown. A widget with no stored entry has never been
          * asked the question, and the project's rule is that names stay off until the user says
          * otherwise — so there is nothing to distinguish here.
+         *
+         * ### Why a selection is a consent of its own
+         *
+         * Two of the three kinds answer the question with a switch, and the user may say no to it.
+         * A selection widget cannot: naming the monitors the user picked is the whole of what it
+         * does, and the picking is done one monitor at a time on a screen that says so. Asking a
+         * second time whether those names may be shown would be asking whether the widget may do
+         * the thing it was just configured to do.
+         *
+         * The property this class exists for is untouched by that. A token can still only be made
+         * from something the user stored: either a switch they turned on, or a list of monitors
+         * they assembled. An empty list is not a consent — there is nothing in it that anybody
+         * chose — and a selection widget with one draws no names, which is also all it could draw.
          */
-        fun from(settings: WidgetSettings?): NameConsent? =
-            if (settings != null && settings.showNames) NameConsent() else null
+        fun from(settings: WidgetSettings?): NameConsent? = when {
+            settings == null -> null
+            settings.showNames -> NameConsent()
+            settings.kind == WidgetKind.SELECTION && settings.monitorIds.isNotEmpty() ->
+                NameConsent()
+
+            else -> null
+        }
     }
 }
 
@@ -220,10 +240,11 @@ class NamedWidgetRenderModel private constructor(
 }
 
 /**
- * Which of the two models a widget is to be drawn from.
+ * Which of the three models a widget is to be drawn from.
  *
  * One decision point, made where the stored settings are read, so the renderers themselves have
- * nothing to decide. Both variants carry one model each and there is no variant carrying both.
+ * nothing to decide. Each variant carries one model, and no variant carries two: a nameless model
+ * cannot reach a renderer that draws names, and neither of the naming models can reach the other's.
  */
 sealed interface WidgetRender {
 
@@ -232,4 +253,14 @@ sealed interface WidgetRender {
 
     /** Names may appear, and the model that carries them could only be built with consent. */
     data class Named(val model: NamedWidgetRenderModel) : WidgetRender
+
+    /**
+     * A list of named items, which is what the two newer widget kinds are.
+     *
+     * Its model, like the one above, can only be built with a consent token — and unlike the one
+     * above there is no nameless form of such a widget: naming the items is what it is for. A
+     * widget of either kind whose settings carry no consent is drawn from [Nameless] instead, with
+     * nothing to list.
+     */
+    data class Listed(val model: WidgetListRenderModel) : WidgetRender
 }

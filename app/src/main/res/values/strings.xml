@@ -118,6 +118,15 @@
     -->
     <string name="widget_label">Status overview</string>
     <string name="widget_description">Counts per state for one instance.</string>
+    <!--
+      The other two kinds, each with its own entry in a host's picker. The descriptions say what
+      the widget lists and, for the certificates, over what period — somebody choosing a widget is
+      deciding whether it will tell them anything, and "certificates" alone does not say.
+    -->
+    <string name="widget_label_certificates">Certificates</string>
+    <string name="widget_description_certificates">Certificates the source reports as running out within 30 days.</string>
+    <string name="widget_label_selection">Selected monitors</string>
+    <string name="widget_description_selection">The monitors you pick, with the state of each.</string>
     <!-- Spoken for the widget as a whole; pressing it opens the application and nothing else. -->
     <string name="widget_open_app">Open WIDGORA</string>
     <string name="widget_not_set_up">Not set up yet. Open WIDGORA to add an instance.</string>
@@ -144,6 +153,48 @@
       decision made in code is one no translation can reach.
     -->
     <string name="widget_title_more">+%1$d</string>
+
+    <!--
+      The two list widgets.
+
+      ### Why "per source" is a line of its own
+
+      Every figure a certificates widget shows is the source's claim: the days remaining and the
+      validity are two gauges it publishes, and the source never clears them — they go when the
+      monitor goes. So nothing here may read as WIDGORA's own finding, and nothing may say a
+      certificate has expired, which is a different claim that nothing in the answer supports.
+
+      Saying that in each row is not possible: a row is about twenty characters wide at the text
+      size this project insists on, and a name needs most of them. So it is said once, in the
+      state line, where it stands beside the time the data was obtained — which is exactly what it
+      qualifies. It replaces the usual word for a current value; an outdated or unreachable
+      instance keeps its own wording, because that is the more urgent thing to say.
+    -->
+    <string name="widget_certificates_source">per source</string>
+    <!--
+      The figure beside a name. A plural, which is why it is a resource and not a number with a
+      letter after it in code. The count may be zero or negative — a certificate whose figure has
+      run out still has a figure, and this project does not clamp it — so the wording is chosen by
+      the absolute value while the figure itself is what is shown.
+    -->
+    <plurals name="widget_certificate_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <!--
+      What the source says when it will not vouch for a certificate. Not "expired": the gauge
+      behind it is written as a plain no both for a certificate that is genuinely bad and for one
+      the source has no opinion on, and those two are not distinguishable in what arrives. The
+      attribution is in the state line.
+    -->
+    <string name="widget_certificate_rejected">not valid</string>
+    <!--
+      Nothing to list. For the certificates widget this is the ordinary, good case rather than an
+      error, so it states the fact and names the period it looked over. The number comes from the
+      code that did the looking, so the two cannot disagree.
+    -->
+    <string name="widget_certificates_none">No certificate runs out within the next %1$d days.</string>
+    <string name="widget_selection_none">None of the monitors you picked is in the data.</string>
 
     <!--
       The configuration step a host runs when a widget is placed. One screen serves all three
@@ -176,6 +227,37 @@
     <string name="widget_config_show_names_hint">Off by default. When on, this widget names the monitors that are not working — in a small widget, the first of them takes the place of the title. A monitor name usually contains a host name from your network, and the widget is drawn by the launcher.</string>
     <string name="widget_config_on">On</string>
     <string name="widget_config_off">Off</string>
+
+    <!--
+      The certificates widget has no switch, and that is a decision rather than an omission: a
+      list of certificates is a list of the hosts they belong to, so a widget of this kind that
+      may not name them has nothing to show. The screen therefore says plainly what will be shown
+      and what pressing save means, which is the same consent the switch above collects — only
+      asked as a statement, because there is no second answer to offer.
+    -->
+    <string name="widget_config_names_shown">This widget lists monitors by name. A monitor name usually contains a host name from your network, and the widget is drawn by the launcher. Saving is your agreement to that.</string>
+
+    <!--
+      The selection. The list is the consent: each monitor is picked one at a time, on this
+      screen, and nothing is stored until save is pressed. The limit is a limit on what is stored
+      rather than on what is shown — a widget draws at most eight — and it is named because a
+      refused press has to say why.
+    -->
+    <string name="widget_config_monitors">Monitors</string>
+    <string name="widget_config_monitors_hint">Pick with OK. Picking is your agreement to these names being shown in the widget, which is drawn by the launcher. At most %1$d, and the widget shows the first eight of them.</string>
+    <string name="widget_config_monitors_loading">Reading the monitor list…</string>
+    <!--
+      Reading the list means asking the instance, which can fail for every reason a network call
+      can. The line says what to do about it, and the retry below is what a remote can press.
+    -->
+    <string name="widget_config_monitors_failed">The monitor list could not be read. Check the instance in WIDGORA, or try again.</string>
+    <string name="widget_config_monitors_empty">This instance reports no monitors.</string>
+    <string name="widget_config_monitors_limit">That is the limit of %1$d. Unpick one to pick another.</string>
+    <string name="widget_config_retry">Try again</string>
+    <plurals name="widget_config_picked">
+        <item quantity="one">%1$d picked</item>
+        <item quantity="other">%1$d picked</item>
+    </plurals>
 
     <string name="widget_config_save">Save</string>
     <string name="widget_config_cancel">Cancel</string>

@@ -306,6 +306,28 @@ What replaces it:
   given rather than recorded in a setting they would have to go looking for.
 - Monitor names are still not logged, and a host still receives nothing but what the widget draws.
 
+**The two list types are implemented now, and they widen what crosses in a third way.** Both draw
+up to eight monitor names, which is more than any status widget ever shows, and both reach a
+renderer only through a third render model — built by two factories that each require a consent
+token, with a private constructor and a `toString` that prints counts rather than names, exactly
+as the named model does. Three things bound it:
+
+- **Each type's consent is stored, and each is a real answer.** The certificates type has no
+  switch: a list of certificates is a list of the hosts they belong to, so a version of it that
+  may not name them has nothing to show. The screen states that names will be shown and saving is
+  the agreement, which is recorded as the same stored yes the switch records — so one rule reads
+  consent back for all three types. For the selection type a **non-empty** selection is the
+  consent, and an empty one is not: that second half is what stops "the selection is the consent"
+  from becoming "this type may always name monitors". An empty selection cannot be saved either.
+- **A certificates widget names TLS hosts specifically**, which is a narrower and more useful
+  disclosure than a list of failures: it says which of the user's machines terminate TLS and when
+  each certificate runs out. That is topology in the same sense a host name is, and it is why this
+  type asks rather than assumes, and why its wording attributes everything to the source instead
+  of claiming it.
+- **A list widget without a stored consent draws no names at all.** It is handed the nameless
+  model and shows what a status widget with nothing to report shows. That is the honest outcome
+  rather than a contradiction: such an entry has neither a selection nor a yes behind it.
+
 Four tests carry the weight the boundary used to carry. They are listed because the measure is
 only as good as they are:
 
@@ -678,6 +700,8 @@ concrete contact path at that time `[O]`.
 | Whether a host that applies no padding of its own reaches the naming step in a smaller box than the largest declared one, now that the threshold is expressed as the size a widget is offered rather than the box a host announces. Functionally harmless — the step was measured to fit in the smaller of those two figures — but it means the list of names can appear in a box this project has not pictured it in, and only a host that behaves that way would show it | `[U]` |
 | Whether the exported configuration activity is reachable in practice by another application on the target device, and whether anything but a launcher ever starts it | `[U]` |
 | Whether a user reading the configuration screen understands that choosing monitors for the third widget type is what allows their names to be displayed in it | `[U]` |
+| Whether a certificates widget's consent is understood as given by pressing save, there being no switch to turn on — and whether the sentence stating it is read on a television at all | `[U]` |
+| Whether showing which hosts terminate TLS, and when each certificate runs out, is a disclosure a user would weigh differently from a list of failing monitors, given both are granted by one agreement per widget | `[O]` |
 | Whether the keyboards a television ships with withhold suggestions and dictionary learning for every field this application declares as a password field, which is the behaviour those fields rely on rather than something the platform enforces | `[U]` |
 | Whether notifications are reliably visible on Android TV as a consent prompt | `[U]` |
 | Deprecation status of the Jetpack security-crypto library before any use | `[U]` |

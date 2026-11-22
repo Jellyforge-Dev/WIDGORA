@@ -68,12 +68,25 @@
 
     <string name="widget_label">Statusübersicht</string>
     <string name="widget_description">Anzahl je Zustand für eine Instanz.</string>
+    <string name="widget_label_certificates">Zertifikate</string>
+    <string name="widget_description_certificates">Zertifikate, die laut Quelle in 30 Tagen ablaufen.</string>
+    <string name="widget_label_selection">Ausgewählte Monitore</string>
+    <string name="widget_description_selection">Die Monitore, die du auswählst, mit ihrem Zustand.</string>
     <string name="widget_open_app">WIDGORA öffnen</string>
     <string name="widget_not_set_up">Noch nicht eingerichtet. Öffne WIDGORA, um eine Instanz anzulegen.</string>
     <string name="widget_config_unreadable">Die gespeicherten Einstellungen sind nicht lesbar.</string>
     <string name="widget_instance_gone">Die gewählte Instanz gibt es nicht mehr. Richte dieses Widget neu ein.</string>
     <string name="widget_updated_compact">um %1$s</string>
     <string name="widget_title_more">+%1$d</string>
+
+    <string name="widget_certificates_source">laut Quelle</string>
+    <plurals name="widget_certificate_days">
+        <item quantity="one">%1$d Tag</item>
+        <item quantity="other">%1$d Tage</item>
+    </plurals>
+    <string name="widget_certificate_rejected">ungültig</string>
+    <string name="widget_certificates_none">Kein Zertifikat läuft in den nächsten %1$d Tagen ab.</string>
+    <string name="widget_selection_none">Keiner der ausgewählten Monitore ist in den Daten.</string>
 
     <string name="widget_config_title">Widget einrichten</string>
     <string name="widget_config_hint">Mit dem Steuerkreuz auswählen, mit OK bestätigen. Zurück verlässt den Bildschirm ohne zu speichern.</string>
@@ -89,6 +102,20 @@
     <string name="widget_config_show_names_hint">Standardmäßig aus. Wenn an, nennt dieses Widget die Monitore, die nicht laufen — in einem kleinen Widget steht der erste davon anstelle des Titels. Ein Monitorname enthält meist einen Hostnamen aus deinem Netz, und das Widget wird vom Launcher gezeichnet.</string>
     <string name="widget_config_on">An</string>
     <string name="widget_config_off">Aus</string>
+
+    <string name="widget_config_names_shown">Dieses Widget listet Monitore mit Namen auf. Ein Monitorname enthält meist einen Hostnamen aus deinem Netz, und das Widget wird vom Launcher gezeichnet. Mit Speichern stimmst du dem zu.</string>
+
+    <string name="widget_config_monitors">Monitore</string>
+    <string name="widget_config_monitors_hint">Mit OK auswählen. Die Auswahl ist deine Zustimmung, dass diese Namen im Widget stehen, das der Launcher zeichnet. Höchstens %1$d, und das Widget zeigt die ersten acht davon.</string>
+    <string name="widget_config_monitors_loading">Monitorliste wird gelesen …</string>
+    <string name="widget_config_monitors_failed">Die Monitorliste konnte nicht gelesen werden. Prüfe die Instanz in WIDGORA oder versuche es erneut.</string>
+    <string name="widget_config_monitors_empty">Diese Instanz meldet keine Monitore.</string>
+    <string name="widget_config_monitors_limit">Das ist die Grenze von %1$d. Wähle einen ab, um einen anderen zu wählen.</string>
+    <string name="widget_config_retry">Erneut versuchen</string>
+    <plurals name="widget_config_picked">
+        <item quantity="one">%1$d ausgewählt</item>
+        <item quantity="other">%1$d ausgewählt</item>
+    </plurals>
 
     <string name="widget_config_save">Speichern</string>
     <string name="widget_config_cancel">Abbrechen</string>

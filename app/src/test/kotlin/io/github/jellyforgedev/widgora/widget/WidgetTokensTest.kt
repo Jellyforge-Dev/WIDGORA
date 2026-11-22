@@ -66,6 +66,9 @@ class WidgetTokensTest {
             "widget_text_footer" to WidgoraText.Caption.size.asDimension(),
             "widget_text_names" to WidgoraText.Caption.size.asDimension(),
             "widget_padding_compact" to WidgoraSpacing.Small.asDimension(),
+            "widget_padding_tiny" to WidgoraSpacing.Tiny.asDimension(),
+            "widget_text_list_title" to WidgoraText.Label.size.asDimension(),
+            "widget_text_list_row" to WidgoraText.Caption.size.asDimension(),
             "widget_text_compact_title" to WidgoraText.Label.size.asDimension(),
             "widget_text_compact_counts" to WidgoraText.WidgetValue.size.asDimension(),
             "widget_text_compact_line" to WidgoraText.Caption.size.asDimension(),
@@ -236,10 +239,99 @@ class WidgetTokensTest {
         )
     }
 
-    /** The widget framework's own periodic update stays switched off. */
+    /**
+     * The resize floor and the ceiling are the same promise for all three kinds.
+     *
+     * The box a kind is *placed* at differs — see below — but the range it accepts does not, and
+     * that is what the layouts are built for: every kind has a compact, a full and a large variant,
+     * measured at the same three boxes. A kind whose floor was higher would be a kind with a
+     * variant no host could ask for.
+     */
+    @Test
+    fun everyKindAcceptsTheSameRangeOfBoxes() {
+        for ((name, path) in ALL_PROVIDER_PATHS) {
+            val declared = providerAttributes(path)
+
+            assertEquals(
+                WidgetSizes.MIN_WIDTH_DP,
+                dimension(declared.getValue("minResizeWidth"), name).value.toInt(),
+                "$name minResizeWidth",
+            )
+            assertEquals(
+                WidgetSizes.MIN_HEIGHT_DP,
+                dimension(declared.getValue("minResizeHeight"), name).value.toInt(),
+                "$name minResizeHeight",
+            )
+            assertEquals(
+                WidgetSizes.LARGE_WIDTH_DP,
+                dimension(declared.getValue("maxResizeWidth"), name).value.toInt(),
+                "$name maxResizeWidth",
+            )
+            assertEquals(
+                WidgetSizes.LARGE_HEIGHT_DP,
+                dimension(declared.getValue("maxResizeHeight"), name).value.toInt(),
+                "$name maxResizeHeight",
+            )
+        }
+    }
+
+    /**
+     * Each kind is placed at the box its own content needs.
+     *
+     * Three figures in two places again — the metadata a host reads and the constants the code
+     * states — so a change to one of them has to be a change to both. The figures themselves are
+     * argued for where they are declared; what this holds is only that they agree.
+     */
+    @Test
+    fun everyKindIsPlacedAtTheBoxItsContentNeeds() {
+        val expected = mapOf(
+            PROVIDER_PATH to WidgetSizes.Default.COUNTS,
+            CERTIFICATES_PROVIDER_PATH to WidgetSizes.Default.CERTIFICATES,
+            SELECTION_PROVIDER_PATH to WidgetSizes.Default.SELECTION,
+        )
+
+        for ((path, box) in expected) {
+            val declared = providerAttributes(path)
+
+            assertEquals(
+                box.widthDp,
+                dimension(declared.getValue("minWidth"), path).value.toInt(),
+                "$path minWidth",
+            )
+            assertEquals(
+                box.heightDp,
+                dimension(declared.getValue("minHeight"), path).value.toInt(),
+                "$path minHeight",
+            )
+            // A host with a cell grid reads the cells instead, so the two have to describe the
+            // same box: three cells wide and 640dp wide would be two different answers to one
+            // question. The cell size is taken from the counts widget, whose three by two cells
+            // are its 300 by 170 dp, and the others are held to the same proportion.
+            assertEquals(
+                cellsFor(box.widthDp, WidgetSizes.MIN_WIDTH_DP, COUNTS_CELL_WIDTH),
+                declared.getValue("targetCellWidth").toInt(),
+                "$path targetCellWidth against ${box.widthDp}dp",
+            )
+            assertEquals(
+                cellsFor(box.heightDp, WidgetSizes.MIN_HEIGHT_DP, COUNTS_CELL_HEIGHT),
+                declared.getValue("targetCellHeight").toInt(),
+                "$path targetCellHeight against ${box.heightDp}dp",
+            )
+        }
+    }
+
+    /** The widget framework's own periodic update stays switched off, for every kind. */
     @Test
     fun theWidgetFrameworkIsNotAskedForPeriodicUpdates() {
-        assertEquals("0", providerAttributes().getValue("updatePeriodMillis"))
+        for ((name, path) in ALL_PROVIDER_PATHS) {
+            assertEquals("0", providerAttributes(path).getValue("updatePeriodMillis"), name)
+        }
+    }
+
+    /** How many cells a box is, in the units the counts widget's own declaration sets. */
+    private fun cellsFor(sizeDp: Int, referenceDp: Int, referenceCells: Int): Int {
+        val cellSize = referenceDp.toFloat() / referenceCells
+        return Math.round(sizeDp / cellSize)
     }
 
     /**
@@ -251,10 +343,13 @@ class WidgetTokensTest {
      */
     @Test
     fun theDeclaredConfigurationActivityIsTheOneThatExists() {
-        assertEquals(
-            WidgetConfigActivity::class.java.name,
-            providerAttributes().getValue("configure"),
-        )
+        for ((name, path) in ALL_PROVIDER_PATHS) {
+            assertEquals(
+                WidgetConfigActivity::class.java.name,
+                providerAttributes(path).getValue("configure"),
+                name,
+            )
+        }
     }
 
     /**
@@ -269,12 +364,58 @@ class WidgetTokensTest {
      */
     @Test
     fun theConfigurationStepIsRequiredAndTheWidgetIsReconfigurable() {
-        val features = providerAttributes().getValue("widgetFeatures")
-            .split("|")
-            .map { flag -> flag.trim() }
+        for ((name, path) in ALL_PROVIDER_PATHS) {
+            val features = providerAttributes(path).getValue("widgetFeatures")
+                .split("|")
+                .map { flag -> flag.trim() }
 
-        assertTrue("reconfigurable" in features, features.toString())
-        assertFalse("configuration_optional" in features, features.toString())
+            assertTrue("reconfigurable" in features, "$name: $features")
+            assertFalse("configuration_optional" in features, "$name: $features")
+        }
+    }
+
+    /**
+     * The three list layouts are one layout with three line budgets.
+     *
+     * Each declares the first two, the first four or all eight item lines, in order, and every line
+     * the renderer writes to has to exist in the layout it writes to. What this holds is both
+     * halves of that: the number of lines each file has, and that the lines they share are
+     * identical — a text size raised in one file and not the others would be three widgets of one
+     * product with three different text sizes.
+     */
+    @Test
+    fun theThreeListLayoutsDifferOnlyInHowManyLinesTheyHave() {
+        val byPath = LIST_LAYOUT_PATHS.associateWith { path -> textViewAttributes(path) }
+
+        for ((path, budget) in LIST_LAYOUT_BUDGETS) {
+            val views = byPath.getValue(path)
+            for (index in 0 until budget) {
+                assertTrue("@+id/widget_row_$index" in views, "$path has no line $index")
+                assertTrue(
+                    "@+id/widget_row_${index}_detail" in views,
+                    "$path has no figure beside line $index",
+                )
+            }
+            assertFalse(
+                "@+id/widget_row_$budget" in views,
+                "$path declares a line beyond its budget of $budget",
+            )
+            for (id in LIST_SHARED_IDS) {
+                assertTrue(id in views, "$path has no $id")
+            }
+        }
+
+        val reference = byPath.getValue(LIST_LAYOUT_PATHS.first())
+        for (path in LIST_LAYOUT_PATHS.drop(1)) {
+            val other = byPath.getValue(path)
+            for (id in reference.keys.intersect(other.keys)) {
+                assertEquals(
+                    reference.getValue(id),
+                    other.getValue(id),
+                    "'$id' differs between ${LIST_LAYOUT_PATHS.first()} and $path",
+                )
+            }
+        }
     }
 
     /**
@@ -337,11 +478,11 @@ class WidgetTokensTest {
         }
     }
 
-    private fun providerAttributes(): Map<String, String> {
+    private fun providerAttributes(path: String = PROVIDER_PATH): Map<String, String> {
         val document = DocumentBuilderFactory.newInstance()
             .apply { isNamespaceAware = false }
             .newDocumentBuilder()
-            .parse(resourceFile(PROVIDER_PATH))
+            .parse(resourceFile(path))
         val element = document.getElementsByTagName("appwidget-provider").item(0)
             ?: fail("the provider declaration has no appwidget-provider element")
         val attributes = element.attributes
@@ -388,8 +529,39 @@ class WidgetTokensTest {
 
         const val TOKENS_PATH = "src/main/res/values/widget_tokens.xml"
         const val PROVIDER_PATH = "src/main/res/xml/counts_widget_info.xml"
+        const val CERTIFICATES_PROVIDER_PATH = "src/main/res/xml/certificates_widget_info.xml"
+        const val SELECTION_PROVIDER_PATH = "src/main/res/xml/selection_widget_info.xml"
         const val FULL_LAYOUT_PATH = "src/main/res/layout/widget_counts.xml"
         const val NAMED_LAYOUT_PATH = "src/main/res/layout/widget_counts_named.xml"
+
+        /** Every provider declaration, by a name a failure message can carry. */
+        val ALL_PROVIDER_PATHS = listOf(
+            "counts" to PROVIDER_PATH,
+            "certificates" to CERTIFICATES_PROVIDER_PATH,
+            "selection" to SELECTION_PROVIDER_PATH,
+        )
+
+        /** The cells the counts widget declares, which set the cell size the others are held to. */
+        const val COUNTS_CELL_WIDTH = 3
+        const val COUNTS_CELL_HEIGHT = 2
+
+        /** The list layouts, smallest first, with the number of item lines each one has. */
+        val LIST_LAYOUT_BUDGETS = listOf(
+            "src/main/res/layout/widget_list_compact.xml" to 2,
+            "src/main/res/layout/widget_list.xml" to 4,
+            "src/main/res/layout/widget_list_large.xml" to 8,
+        )
+
+        val LIST_LAYOUT_PATHS = LIST_LAYOUT_BUDGETS.map { (path, _) -> path }
+
+        /** The lines every list layout has, whatever its budget. */
+        val LIST_SHARED_IDS = listOf(
+            "@+id/widget_title",
+            "@+id/widget_title_more",
+            "@+id/widget_empty",
+            "@+id/widget_state",
+            "@+id/widget_footer",
+        )
 
         /** The one attribute the naming layout exists in order to change. */
         const val ALLOWED_DIFFERENCE = "autoSizeMaxTextSize"

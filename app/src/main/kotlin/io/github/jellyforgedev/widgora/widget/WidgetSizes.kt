@@ -99,4 +99,43 @@ object WidgetSizes {
      */
     const val NAMES_HEIGHT_DP = LARGE_HEIGHT_DP
 
+    /**
+     * The box a widget is placed in before anybody resizes it, which differs by kind.
+     *
+     * ### Why this is not the same figure for all three
+     *
+     * A declared minimum is a promise about the smallest box the widget can keep; the box a host
+     * gives it at placement is a separate statement about how much it needs to be useful. The three
+     * kinds genuinely differ there:
+     *
+     * - the counts widget says everything it has to say in three lines, so it is placed small;
+     * - the certificates widget is a list, and a list of two is a list that mostly says "and more";
+     * - a selection the user assembled by hand is one they mean to read, so it is placed at the box
+     *   that shows eight of them.
+     *
+     * Every kind still works at every step. These are the boxes a host picks without being asked,
+     * not the boxes a kind is limited to.
+     *
+     * ### How a host reads them
+     *
+     * `minWidth` and `minHeight` are both the declared minimum *and* the size a host without a cell
+     * grid places the widget at, which is why the resize floor is declared separately in
+     * `minResizeWidth` and `minResizeHeight`. From Android 12 a host with a grid uses
+     * `targetCellWidth` and `targetCellHeight` instead; both are given, because a host that ignores
+     * one reads the other. A test holds each provider's metadata against the figures here.
+     */
+    object Default {
+
+        /** The counts widget: the smallest box it is declared for. */
+        val COUNTS = WidgetBox(MIN_WIDTH_DP, MIN_HEIGHT_DP)
+
+        /** The certificates widget: the box that lists four. */
+        val CERTIFICATES = WidgetBox(MIN_WIDTH_DP, FULL_HEIGHT_DP)
+
+        /** The selection widget: the box that lists eight. */
+        val SELECTION = WidgetBox(LARGE_WIDTH_DP, LARGE_HEIGHT_DP)
+    }
 }
+
+/** A box, in density-independent pixels. */
+data class WidgetBox(val widthDp: Int, val heightDp: Int)

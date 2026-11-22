@@ -17,25 +17,39 @@ class WidgetProvidersTest {
         )
     }
 
+    @Test
+    fun theOtherTwoTypesAreServedByTheirOwnProviders() {
+        assertEquals(
+            CertificatesWidgetProvider::class.java.name,
+            WidgetProviders.classNameOf(WidgetKind.CERTIFICATES),
+        )
+        assertEquals(
+            SelectionWidgetProvider::class.java.name,
+            WidgetProviders.classNameOf(WidgetKind.SELECTION),
+        )
+    }
+
     /**
-     * The two types that are decided and not implemented say so.
+     * Every kind has a provider, and no two kinds share one.
      *
-     * Stated as a test rather than left implicit, so that adding a provider for one of them comes
-     * with a decision here instead of being discovered through a widget that cannot be
-     * configured.
+     * The second half is the one with teeth. A host binds a placement to a provider class name and
+     * the configuration step reads the kind back from it, so two kinds behind one class would mean
+     * a widget placed as one and configured as the other.
      */
     @Test
-    fun theTwoFutureTypesHaveNoProviderYet() {
-        assertNull(WidgetProviders.classNameOf(WidgetKind.CERTIFICATES))
-        assertNull(WidgetProviders.classNameOf(WidgetKind.SELECTION))
+    fun everyKindHasAProviderAndNoneIsShared() {
+        val classNames = WidgetKind.entries.map { kind -> WidgetProviders.classNameOf(kind) }
+
+        assertEquals(emptyList(), classNames.filter { it == null }, "a kind has no provider")
+        assertEquals(classNames.size, classNames.distinct().size, classNames.toString())
     }
 
     @Test
     fun aProviderClassNameMapsBackToItsType() {
-        assertEquals(
-            WidgetKind.STATUS,
-            WidgetProviders.kindOf(CountsWidgetProvider::class.java.name),
-        )
+        for (kind in WidgetKind.entries) {
+            val className = assertNotNull(WidgetProviders.classNameOf(kind), kind.name)
+            assertEquals(kind, WidgetProviders.kindOf(className), className)
+        }
     }
 
     /** A class that is not one of ours maps to nothing rather than to the one type that exists. */

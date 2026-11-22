@@ -289,17 +289,282 @@ class WidgetConfigStateHolderTest {
         assertFalse(holder.state.value.saveFailed)
     }
 
+    // --- The certificates widget ---------------------------------------------------------------
+
+    /**
+     * Saving a certificates widget records the consent the screen asked for as a statement.
+     *
+     * There is no switch on that screen, and the stored yes is what one rule reads back — see
+     * NameConsent. A widget of this kind stored with a no would be a widget that can show nothing.
+     */
+    @Test
+    fun savingACertificatesWidgetRecordsTheConsentItAskedFor() = runBlocking {
+        val store = FakeStore()
+        val holder = holder(kind = WidgetKind.CERTIFICATES, store = store)
+        holder.load()
+
+        assertTrue(holder.save())
+
+        assertEquals(
+            WidgetSettings(
+                kind = WidgetKind.CERTIFICATES,
+                instanceId = INSTANCE_ID,
+                showNames = true,
+                monitorIds = emptyList(),
+            ),
+            store.stored[APP_WIDGET_ID],
+        )
+    }
+
+    // --- The selection widget ------------------------------------------------------------------
+
+    @Test
+    fun theMonitorsOfTheChosenInstanceAreRead() = runBlocking {
+        val catalogue = FakeCatalogue(mapOf(INSTANCE_ID to listOf(monitor("1"), monitor("2"))))
+        val holder = holder(kind = WidgetKind.SELECTION, monitors = catalogue)
+        holder.load()
+
+        holder.loadMonitors(INSTANCE_ID)
+
+        assertEquals(listOf(INSTANCE_ID), catalogue.asked)
+        assertEquals(
+            listOf("1", "2"),
+            (holder.state.value.monitors as MonitorCatalogue.Monitors)
+                .choices
+                .map { it.monitorId },
+        )
+    }
+
+    /** A list that could not be read is said so, and is not an empty list. */
+    @Test
+    fun aListThatCouldNotBeReadIsReportedAsSuch() = runBlocking {
+        val holder = holder(kind = WidgetKind.SELECTION, monitors = FakeCatalogue())
+        holder.load()
+
+        holder.loadMonitors(INSTANCE_ID)
+
+        assertEquals(MonitorCatalogue.Unavailable, holder.state.value.monitors)
+        assertFalse(holder.state.value.canSave)
+    }
+
+    /** An instance that answered and has no monitors is a different case, and says so. */
+    @Test
+    fun anInstanceWithNoMonitorsIsAnEmptyListAndNotAFailure() = runBlocking {
+        val holder = holder(
+            kind = WidgetKind.SELECTION,
+            monitors = FakeCatalogue(mapOf(INSTANCE_ID to emptyList())),
+        )
+        holder.load()
+
+        holder.loadMonitors(INSTANCE_ID)
+
+        assertEquals(MonitorCatalogue.Monitors(emptyList()), holder.state.value.monitors)
+    }
+
+    /** An identifier storage could not round-trip is not offered at all. */
+    @Test
+    fun anIdentifierThatCannotBeStoredIsNotOffered() = runBlocking {
+        val holder = holder(
+            kind = WidgetKind.SELECTION,
+            monitors = FakeCatalogue(
+                mapOf(INSTANCE_ID to listOf(monitor("1"), monitor("a,b"), monitor("with space"))),
+            ),
+        )
+        holder.load()
+
+        holder.loadMonitors(INSTANCE_ID)
+
+        assertEquals(
+            listOf("1"),
+            (holder.state.value.monitors as MonitorCatalogue.Monitors)
+                .choices
+                .map { it.monitorId },
+        )
+    }
+
+    @Test
+    fun aMonitorIsPickedAndUnpickedInTheOrderItWasPicked() = runBlocking {
+        val holder = selectionHolder(listOf("1", "2", "3"))
+
+        holder.toggleMonitor("3")
+        holder.toggleMonitor("1")
+        assertEquals(listOf("3", "1"), holder.state.value.selectedMonitorIds)
+        assertTrue(holder.state.value.canSave)
+
+        holder.toggleMonitor("3")
+        assertEquals(listOf("1"), holder.state.value.selectedMonitorIds)
+    }
+
+    /** Nothing picked is nothing to show and nothing to consent to, so there is nothing to save. */
+    @Test
+    fun aSelectionWidgetWithNothingPickedCannotBeSaved() = runBlocking {
+        val store = FakeStore()
+        val holder = selectionHolder(listOf("1"), store = store)
+
+        assertFalse(holder.state.value.canSave)
+        assertFalse(holder.save())
+        assertTrue(store.stored.isEmpty())
+    }
+
+    /**
+     * A pick beyond the stored limit is refused and says so.
+     *
+     * The alternatives are both worse: a press that does nothing reads as a broken remote, and
+     * dropping the oldest pick would be the application deciding which monitor matters least.
+     */
+    @Test
+    fun aPickBeyondTheLimitIsRefusedAndSaysSo() = runBlocking {
+        val offered = (1..WidgetSettings.MAX_SELECTED_MONITORS + 1).map { it.toString() }
+        val holder = selectionHolder(offered)
+
+        for (monitorId in offered) holder.toggleMonitor(monitorId)
+
+        assertEquals(
+            WidgetSettings.MAX_SELECTED_MONITORS,
+            holder.state.value.selectedMonitorIds.size,
+        )
+        assertTrue(holder.state.value.pickRefused)
+
+        // And the refusal is about the last press rather than a state the screen gets stuck in.
+        holder.toggleMonitor(offered.first())
+        assertFalse(holder.state.value.pickRefused)
+    }
+
+    @Test
+    fun savingASelectionWidgetStoresWhatWasPickedAndNoSwitch() = runBlocking {
+        val store = FakeStore()
+        val holder = selectionHolder(listOf("1", "2"), store = store)
+        holder.toggleMonitor("2")
+
+        assertTrue(holder.save())
+
+        assertEquals(
+            WidgetSettings(
+                kind = WidgetKind.SELECTION,
+                instanceId = INSTANCE_ID,
+                showNames = false,
+                monitorIds = listOf("2"),
+            ),
+            store.stored[APP_WIDGET_ID],
+        )
+    }
+
+    /**
+     * A picked monitor the instance no longer lists is dropped once the list has been read.
+     *
+     * The screen cannot offer it to be unpicked, so keeping it would keep an entry the user can
+     * neither see nor remove — and it would count towards the limit for as long as the widget
+     * exists.
+     */
+    @Test
+    fun aPickedMonitorTheInstanceNoLongerListsIsDropped() = runBlocking {
+        val store = FakeStore(
+            stored = mapOf(
+                APP_WIDGET_ID to WidgetSettings(
+                    kind = WidgetKind.SELECTION,
+                    instanceId = INSTANCE_ID,
+                    monitorIds = listOf("1", "gone"),
+                ),
+            ),
+        )
+        val holder = holder(
+            kind = WidgetKind.SELECTION,
+            store = store,
+            monitors = FakeCatalogue(mapOf(INSTANCE_ID to listOf(monitor("1")))),
+        )
+
+        holder.load()
+        assertEquals(listOf("1", "gone"), holder.state.value.selectedMonitorIds)
+
+        holder.loadMonitors(INSTANCE_ID)
+        assertEquals(listOf("1"), holder.state.value.selectedMonitorIds)
+    }
+
+    /** A failed read drops nothing: a failed read is not evidence about anything. */
+    @Test
+    fun aFailedReadDoesNotDropWhatWasPicked() = runBlocking {
+        val store = FakeStore(
+            stored = mapOf(
+                APP_WIDGET_ID to WidgetSettings(
+                    kind = WidgetKind.SELECTION,
+                    instanceId = INSTANCE_ID,
+                    monitorIds = listOf("1"),
+                ),
+            ),
+        )
+        val holder = holder(
+            kind = WidgetKind.SELECTION,
+            store = store,
+            monitors = FakeCatalogue(),
+        )
+        holder.load()
+
+        holder.loadMonitors(INSTANCE_ID)
+
+        assertEquals(listOf("1"), holder.state.value.selectedMonitorIds)
+    }
+
+    /** Another instance has other monitors, so a selection made against one does not travel. */
+    @Test
+    fun choosingAnotherInstanceClearsTheSelection() = runBlocking {
+        val holder = holder(
+            kind = WidgetKind.SELECTION,
+            stored = StoredInstances.Readable(listOf(valid(), valid(OTHER_INSTANCE_ID, "Other"))),
+            monitors = FakeCatalogue(mapOf(INSTANCE_ID to listOf(monitor("1")))),
+        )
+        holder.load()
+        holder.loadMonitors(INSTANCE_ID)
+        holder.toggleMonitor("1")
+
+        holder.selectInstance(OTHER_INSTANCE_ID)
+
+        assertTrue(holder.state.value.selectedMonitorIds.isEmpty())
+        assertEquals(MonitorCatalogue.Loading, holder.state.value.monitors)
+    }
+
+    /** A monitor that is not on the list cannot be picked by a stray call. */
+    @Test
+    fun aMonitorThatIsNotOfferedCannotBePicked() = runBlocking {
+        val holder = selectionHolder(listOf("1"))
+
+        holder.toggleMonitor("other")
+
+        assertTrue(holder.state.value.selectedMonitorIds.isEmpty())
+    }
+
     // --- Helpers -------------------------------------------------------------------------------
+
+    /** A loaded selection screen whose instance reports the given monitors. */
+    private suspend fun selectionHolder(
+        monitorIds: List<String>,
+        store: WidgetSettingsStore = FakeStore(),
+    ): WidgetConfigStateHolder {
+        val holder = holder(
+            kind = WidgetKind.SELECTION,
+            store = store,
+            monitors = FakeCatalogue(
+                mapOf(INSTANCE_ID to monitorIds.map { monitorId -> monitor(monitorId) }),
+            ),
+        )
+        holder.load()
+        holder.loadMonitors(INSTANCE_ID)
+        return holder
+    }
+
+    private fun monitor(monitorId: String) =
+        MonitorChoice(monitorId = monitorId, label = "monitor-$monitorId")
 
     private fun holder(
         kind: WidgetKind = WidgetKind.STATUS,
         stored: StoredInstances = StoredInstances.Readable(listOf(valid())),
         store: WidgetSettingsStore = FakeStore(),
+        monitors: MonitorCatalogueSource = FakeCatalogue(),
     ) = WidgetConfigStateHolder(
         appWidgetId = APP_WIDGET_ID,
         kind = kind,
         instances = flowOf(stored),
         settings = store,
+        monitors = monitors,
     )
 
     private fun valid(
@@ -313,6 +578,25 @@ class WidgetConfigStateHolderTest {
             enabled = true,
         ),
     )
+
+    /**
+     * A monitor list in memory, or the refusal to produce one.
+     *
+     * It also records which instance it was asked about: a selection made against one server means
+     * nothing on another, so asking about the right one is part of what is checked.
+     */
+    private class FakeCatalogue(
+        private val monitors: Map<InstanceId, List<MonitorChoice>?> = emptyMap(),
+    ) : MonitorCatalogueSource {
+
+        var asked: List<InstanceId> = emptyList()
+            private set
+
+        override suspend fun monitorsOf(instanceId: InstanceId): List<MonitorChoice>? {
+            asked = asked + instanceId
+            return monitors[instanceId]
+        }
+    }
 
     /** A store in memory. It records what it was asked to write, which is what is checked. */
     private class FakeStore(

@@ -27,11 +27,13 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.tv.material3.Button
 import androidx.tv.material3.Text
 import io.github.jellyforgedev.widgora.R
 import io.github.jellyforgedev.widgora.core.data.WidgetKind
+import io.github.jellyforgedev.widgora.core.data.WidgetSettings
 import io.github.jellyforgedev.widgora.design.WidgoraColors
 import io.github.jellyforgedev.widgora.design.WidgoraFocus
 import io.github.jellyforgedev.widgora.design.WidgoraOverscan
@@ -46,21 +48,28 @@ import kotlinx.coroutines.launch
  * ### Why one screen and not three
  *
  * Three screens would be three places for the same focus handling, the same instance list and the
- * same confirmation to drift apart. The type decides which questions appear and nothing else; the
- * two types that do not exist yet need no new screen, only a new section — which is why the
- * sections are written as a `when` over the type rather than as one body with the others bolted
- * on later.
+ * same confirmation to drift apart. The type decides which questions appear and nothing else, and
+ * the sections are written as a `when` over the type so that a type gaining a question is a section
+ * here rather than a screen of its own.
  *
  * ### Why there is not a single text field on it
  *
  * There is nothing here to type. Every answer is a choice between things that already exist: an
- * instance the application was told about, and a yes or no. That is what makes this screen
- * operable from a remote without the compromises the settings screen had to make — no on-screen
- * keyboard appears at any point, so none of the focus trouble a keyboard brings can arise.
+ * instance the application was told about, a yes or no, and monitors the instance reported. That is
+ * what makes this screen operable from a remote without the compromises the settings screen had to
+ * make — no on-screen keyboard appears at any point, so none of the focus trouble a keyboard brings
+ * can arise.
  *
  * Everything is reachable with the directional pad and confirmed with OK: each row is a focusable
  * surface with [androidx.compose.foundation.clickable], which already treats the centre key as a
  * click, and the focus mark is the project's own single token rather than a variant invented here.
+ *
+ * ### The one thing on this screen that takes time
+ *
+ * A selection widget needs the monitors of the chosen instance, and the only party that knows them
+ * is the instance. So that section reads them, which is a network call, and says which of the four
+ * things is true while it does — asking, failed, none, or here they are. A screen that showed an
+ * empty list for all four would be a screen that lies in three of them.
  */
 @Composable
 fun WidgetConfigScreen(
@@ -81,6 +90,16 @@ fun WidgetConfigScreen(
     // about to be replaced, and the focus does not follow a replaced node.
     LaunchedEffect(state.loaded, state.instances.size) {
         if (state.loaded && state.instances.isNotEmpty()) firstRow.requestFocus()
+    }
+
+    // The monitors belong to the chosen instance, so they are read when that answer appears and
+    // again whenever it changes. Keyed on the identifier rather than requested from the holder's
+    // own load, so that choosing another instance cannot leave the previous server's list standing.
+    val instanceId = state.selectedInstanceId
+    LaunchedEffect(state.kind, instanceId) {
+        if (state.kind == WidgetKind.SELECTION && instanceId != null) {
+            holder.loadMonitors(instanceId)
+        }
     }
 
     Column(
@@ -122,8 +141,6 @@ fun WidgetConfigScreen(
         val afterTheLastAnswer: Modifier = Modifier.focusProperties {
             down = if (state.canSave) saveButton else FocusRequester.Default
         }
-        val switchIsShown = state.kind != WidgetKind.SELECTION
-
         Label(stringResource(R.string.widget_config_instance))
         if (state.instances.isEmpty()) {
             Message(
@@ -131,6 +148,12 @@ fun WidgetConfigScreen(
                 WidgoraColors.OnSurfaceMuted,
             )
         } else {
+            val monitorRows = (state.monitors as? MonitorCatalogue.Monitors)?.choices?.size ?: 0
+            val somethingFollows = when (state.kind) {
+                WidgetKind.STATUS -> true
+                WidgetKind.CERTIFICATES -> false
+                WidgetKind.SELECTION -> monitorRows > 0
+            }
             state.instances.forEachIndexed { index, choice ->
                 ChoiceRow(
                     text = choice.label,
@@ -138,8 +161,7 @@ fun WidgetConfigScreen(
                     onClick = { holder.selectInstance(choice.instanceId) },
                     testTag = WidgetConfigTags.instanceRow(index),
                     focusRequester = firstRow.takeIf { index == 0 },
-                    // The last instance is the last answer only where no switch follows it.
-                    modifier = if (!switchIsShown && index == state.instances.lastIndex) {
+                    modifier = if (!somethingFollows && index == state.instances.lastIndex) {
                         afterTheLastAnswer
                     } else {
                         Modifier
@@ -148,11 +170,10 @@ fun WidgetConfigScreen(
             }
         }
 
-        // The consent question, for the two types that show names as an option. For the selection
-        // type the selection itself is the consent, so a switch would be a second answer to a
-        // question already answered — see SECURITY.md.
         when (state.kind) {
-            WidgetKind.STATUS, WidgetKind.CERTIFICATES -> {
+            // The consent as a question, for the one kind that can show its figures without
+            // naming anything.
+            WidgetKind.STATUS -> {
                 Label(stringResource(R.string.widget_config_show_names))
                 ChoiceRow(
                     text = stringResource(
@@ -170,7 +191,22 @@ fun WidgetConfigScreen(
                 Caption(stringResource(R.string.widget_config_show_names_hint))
             }
 
-            WidgetKind.SELECTION -> Unit
+            // The consent as a statement. A certificates widget lists the hosts its certificates
+            // belong to, so a version of it that may not name them would have nothing to show —
+            // there is no second answer to offer, and pressing save is the agreement.
+            WidgetKind.CERTIFICATES ->
+                Caption(stringResource(R.string.widget_config_names_shown))
+
+            // The consent as the selection itself.
+            WidgetKind.SELECTION -> MonitorSection(
+                state = state,
+                holder = holder,
+                afterTheLastAnswer = afterTheLastAnswer,
+                onRetry = {
+                    val id = state.selectedInstanceId
+                    if (id != null) scope.launch { holder.loadMonitors(id) }
+                },
+            )
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(WidgoraSpacing.Medium)) {
@@ -192,11 +228,92 @@ fun WidgetConfigScreen(
 }
 
 /**
+ * The monitors, and which of the four things is true about them.
+ *
+ * The count of what is picked sits above the list rather than below it: on a list of thirty-five
+ * rows the line below would be off the screen exactly when the limit becomes interesting.
+ */
+@Composable
+private fun MonitorSection(
+    state: WidgetConfigState,
+    holder: WidgetConfigStateHolder,
+    afterTheLastAnswer: Modifier,
+    onRetry: () -> Unit,
+) {
+    Label(stringResource(R.string.widget_config_monitors))
+    Caption(
+        stringResource(
+            R.string.widget_config_monitors_hint,
+            WidgetSettings.MAX_SELECTED_MONITORS,
+        ),
+    )
+
+    when (val monitors = state.monitors) {
+        MonitorCatalogue.Idle, MonitorCatalogue.Loading ->
+            Message(
+                stringResource(R.string.widget_config_monitors_loading),
+                WidgoraColors.OnSurfaceMuted,
+            )
+
+        MonitorCatalogue.Unavailable -> {
+            Message(
+                stringResource(R.string.widget_config_monitors_failed),
+                WidgoraColors.StateError,
+            )
+            Action(text = stringResource(R.string.widget_config_retry), onClick = onRetry)
+        }
+
+        is MonitorCatalogue.Monitors -> {
+            if (monitors.choices.isEmpty()) {
+                Message(
+                    stringResource(R.string.widget_config_monitors_empty),
+                    WidgoraColors.OnSurfaceMuted,
+                )
+                return
+            }
+
+            Caption(
+                pluralStringResource(
+                    R.plurals.widget_config_picked,
+                    state.selectedMonitorIds.size,
+                    state.selectedMonitorIds.size,
+                ),
+            )
+            if (state.pickRefused) {
+                Message(
+                    stringResource(
+                        R.string.widget_config_monitors_limit,
+                        WidgetSettings.MAX_SELECTED_MONITORS,
+                    ),
+                    WidgoraColors.StateStale,
+                )
+            }
+
+            monitors.choices.forEachIndexed { index, choice ->
+                ChoiceRow(
+                    text = choice.label,
+                    chosen = choice.monitorId in state.selectedMonitorIds,
+                    onClick = { holder.toggleMonitor(choice.monitorId) },
+                    testTag = WidgetConfigTags.monitorRow(index),
+                    modifier = if (index == monitors.choices.lastIndex) {
+                        afterTheLastAnswer
+                    } else {
+                        Modifier
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
  * One answer, focusable and confirmed with OK.
  *
  * The chosen one is marked by a character rather than by colour alone, for the same reason every
  * state in this application carries a mark: a viewer who cannot tell the two colours apart still
- * has to be able to see which answer is in force.
+ * has to be able to see which answer is in force. The same row serves a single choice and a
+ * multiple one — on a list of monitors several of them carry the mark at once, which is what being
+ * picked looks like.
  */
 @Composable
 private fun ChoiceRow(
@@ -304,7 +421,7 @@ private fun kindLabel(kind: WidgetKind): Int = when (kind) {
  *
  * Plain characters from the text font, as everywhere else in this application, and deliberately
  * not from the Unicode block the five monitor marks are drawn from — a shape that reads as a
- * monitor state has no business marking a chosen row.
+ * monitor state has no business marking a chosen row, least of all on a screen listing monitors.
  */
 private const val CHOSEN_MARK = "✓"
 private const val UNCHOSEN_MARK = "·"
@@ -315,4 +432,6 @@ internal object WidgetConfigTags {
     const val SHOW_NAMES = "widgetConfig.showNames"
 
     fun instanceRow(index: Int): String = "widgetConfig.instance.$index"
+
+    fun monitorRow(index: Int): String = "widgetConfig.monitor.$index"
 }
