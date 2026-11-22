@@ -9,6 +9,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -24,6 +25,7 @@ import io.github.jellyforgedev.widgora.R
 import io.github.jellyforgedev.widgora.core.data.InstanceConfig
 import io.github.jellyforgedev.widgora.core.data.SecretState
 import io.github.jellyforgedev.widgora.core.data.StorageWriteResult
+import io.github.jellyforgedev.widgora.core.data.StoredInstance
 import io.github.jellyforgedev.widgora.core.data.StoredInstances
 import io.github.jellyforgedev.widgora.design.WidgoraTheme
 import io.github.jellyforgedev.widgora.model.InstanceId
@@ -170,12 +172,76 @@ class SettingsInputDeviceTest {
     }
 
     /**
+     * Leaving the last field arrives at save, never at delete.
+     *
+     * This test exists because of what was found on a television `[V]`: one press down from the
+     * key field landed on **delete**. The row below holds several buttons side by side, the field
+     * above them is full width, and the focus system picks the candidate nearest the middle of the
+     * screen — which on a wide display is not the first button. A user walking down the form
+     * arrived at the control that destroys the instance, one centre press from losing it.
+     *
+     * The same defect had already been found and fixed on the widget configuration step. Finding
+     * it twice is what settles that it belongs to the shape — a full-width field above a row of
+     * buttons — rather than to one screen, which is why both screens now state where down goes
+     * and both state it in a test.
+     *
+     * A stored instance is set up on purpose: without one there is no delete button at all, and
+     * the test would pass on a screen that never had the defect.
+     */
+    @Test
+    fun leavingTheLastFieldArrivesAtSaveAndNotAtDelete() {
+        start(store = OneInstanceStore())
+
+        compose.onNodeWithText(label(R.string.settings_delete)).assertExists()
+
+        compose.onRoot().performKeyInput {
+            pressKey(Key.DirectionDown)
+            pressKey(Key.DirectionDown)
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag(SettingsTags.API_KEY_FIELD).assertIsFocused()
+
+        compose.onRoot().performKeyInput { pressKey(Key.DirectionDown) }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(label(R.string.settings_save)).assertIsFocused()
+        compose.onNodeWithText(label(R.string.settings_delete)).assertIsNotFocused()
+    }
+
+    /**
+     * And so does leaving the button beside that field.
+     *
+     * It sits on the same line and had the same defect for the same reason. Asserted separately so
+     * that a failure says which of the two went wrong.
+     */
+    @Test
+    fun leavingTheButtonBesideTheLastFieldArrivesAtSave() {
+        start(store = OneInstanceStore())
+
+        compose.onRoot().performKeyInput {
+            pressKey(Key.DirectionDown)
+            pressKey(Key.DirectionDown)
+            pressKey(Key.DirectionRight)
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText(label(R.string.settings_api_key_show)).assertIsFocused()
+
+        compose.onRoot().performKeyInput { pressKey(Key.DirectionDown) }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(label(R.string.settings_save)).assertIsFocused()
+    }
+
+    /**
      * Puts the screen on the display and returns its state holder.
      *
      * @param height the height in dp the screen is given, or `null` for the whole display.
      */
-    private fun start(height: Int? = null): SettingsStateHolder {
-        val holder = SettingsStateHolder(EmptyStore(), ReachableTester)
+    private fun start(
+        height: Int? = null,
+        store: InstanceStore = EmptyStore(),
+    ): SettingsStateHolder {
+        val holder = SettingsStateHolder(store, ReachableTester)
         var modes: InputModeManager? = null
         compose.setContent {
             modes = LocalInputModeManager.current
@@ -204,6 +270,42 @@ class SettingsInputDeviceTest {
             MutableStateFlow(StoredInstances.Readable(emptyList()))
 
         override suspend fun secretOf(instanceId: InstanceId): SecretState = SecretState.Missing
+
+        override suspend fun save(config: InstanceConfig, apiKey: String?): StorageWriteResult =
+            StorageWriteResult.DONE
+
+        override suspend fun delete(instanceId: InstanceId): StorageWriteResult =
+            StorageWriteResult.DONE
+
+        override suspend fun reset(): StorageWriteResult = StorageWriteResult.DONE
+    }
+
+    /**
+     * One stored instance, so that the screen offers everything it offers for an existing one.
+     *
+     * Nothing here is writable either: what is being tested is where the focus goes, and a store
+     * that accepted writes would invite a test to assert something it has no business asserting.
+     * The address is in the reserved `.invalid` domain and the key is a literal, not a credential.
+     */
+    private class OneInstanceStore : InstanceStore {
+
+        override val instances: Flow<StoredInstances> = MutableStateFlow(
+            StoredInstances.Readable(
+                listOf(
+                    StoredInstance.Valid(
+                        InstanceConfig(
+                            instanceId = InstanceId("kuma"),
+                            displayName = "Kuma at home",
+                            baseUrl = "https://kuma.example.invalid",
+                            enabled = true,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        override suspend fun secretOf(instanceId: InstanceId): SecretState =
+            SecretState.Present("not-a-real-key")
 
         override suspend fun save(config: InstanceConfig, apiKey: String?): StorageWriteResult =
             StorageWriteResult.DONE

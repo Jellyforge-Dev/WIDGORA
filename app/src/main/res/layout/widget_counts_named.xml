@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget in the one box tall enough to name the affected monitors.
+
+  ### Why this is a layout of its own and not the full one with two lines switched on
+
+  It was exactly that, and it did not fit. Measured in a real host view at 640 x 320 dp with
+  three names and an overflow count: 528 px of text in 592 px, leaving 10 % of the height spare
+  against this project's floor of 15 % — and the line responsible was the one that scales. The
+  counts line takes the leftover room and grows into it, reaching 94 sp, which is right for a
+  widget whose only content is the counts and wrong for one with four lines beneath them.
+
+  The one difference from widget_counts.xml is therefore the ceiling the counts line may scale
+  to. It cannot be set at runtime: RemoteViews has no call for the auto-size bounds, and the one
+  that looked like a substitute — setViewLayoutHeight — does nothing to a child whose height
+  comes from layout_weight. So the ceiling lives where it can, in a second file, and the
+  duplication is named here rather than left to be discovered.
+
+  Everything else is identical on purpose, and a test holds both files against the same tokens.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:contentDescription="@string/widget_open_app"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="@dimen/widget_padding">
+
+    <!--
+      The same title row as the full layout, so that the two files stay identical in everything
+      but the scaling ceiling and one piece of code fills either.
+
+      In this box the count beside the title stays gone and the title stays the instance's name:
+      the affected items have lines of their own below, and naming the first of them up here as
+      well would spend the one line that says which instance this is on something already said.
+    -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/app_name"
+            android:textColor="@color/widget_on_surface"
+            android:textSize="@dimen/widget_text_title" />
+
+        <TextView
+            android:id="@+id/widget_title_more"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/widget_padding"
+            android:ellipsize="end"
+            android:gravity="end"
+            android:maxLines="1"
+            android:textColor="@color/widget_on_surface_muted"
+            android:textSize="@dimen/widget_text_title"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!--
+      The counts, scaled as in the full layout but to a lower ceiling. The figure is a dashboard
+      tile's value size, which is as large as this line gets anywhere else in the application, so
+      the widget that names monitors is not also the one place with the largest digits in it.
+    -->
+    <TextView
+        android:id="@+id/widget_counts"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:autoSizeMaxTextSize="@dimen/widget_counts_autosize_max_named"
+        android:autoSizeMinTextSize="@dimen/widget_counts_autosize_min"
+        android:autoSizeStepGranularity="@dimen/widget_counts_autosize_step"
+        android:autoSizeTextType="uniform"
+        android:ellipsize="end"
+        android:gravity="center_vertical|start"
+        android:maxLines="2"
+        android:textColor="@color/widget_on_surface"
+        android:textSize="@dimen/widget_text_counts"
+        android:visibility="gone" />
+
+    <!--
+      The affected monitors by name, and only ever with the user's consent. Both lines stay gone
+      unless a consent token could be produced for this placement; see NameConsent.
+    -->
+    <TextView
+        android:id="@+id/widget_names"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:textColor="@color/widget_on_surface_muted"
+        android:textSize="@dimen/widget_text_names"
+        android:visibility="gone" />
+
+    <!--
+      The overflow count is a line of its own rather than part of the text above, so that cutting
+      the names can never swallow the statement that there are more of them.
+    -->
+    <TextView
+        android:id="@+id/widget_more"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/widget_on_surface_muted"
+        android:textSize="@dimen/widget_text_names"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/dashboard_state_loading"
+        android:textColor="@color/widget_on_surface_muted"
+        android:textSize="@dimen/widget_text_state" />
+
+    <TextView
+        android:id="@+id/widget_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/dashboard_no_data_yet"
+        android:textColor="@color/widget_on_surface_muted"
+        android:textSize="@dimen/widget_text_footer" />
+
+</LinearLayout>

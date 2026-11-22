@@ -38,11 +38,22 @@ class WidgetRenderModelTest {
         assertEquals(expected, fieldNamesOf(WidgetRenderModel.Instance::class.java))
     }
 
-    /** The two stateless variants carry nothing at all, which is the point of them. */
+    /**
+     * The stateless variants carry nothing at all, which is the point of them.
+     *
+     * "Nothing" includes the one that could most plausibly have grown a field: the widget whose
+     * instance is gone names no instance. Which one it was is of no use on a surface that cannot
+     * offer the repair, and it is a server name that would otherwise cross into another process
+     * for no purpose.
+     */
     @Test
     fun theVariantsWithoutAnInstanceCarryNoFields() {
         assertEquals(emptyList(), fieldNamesOf(WidgetRenderModel.NotSetUp::class.java))
-        assertEquals(emptyList(), fieldNamesOf(WidgetRenderModel.ConfigurationUnreadable::class.java))
+        assertEquals(
+            emptyList(),
+            fieldNamesOf(WidgetRenderModel.ConfigurationUnreadable::class.java),
+        )
+        assertEquals(emptyList(), fieldNamesOf(WidgetRenderModel.InstanceGone::class.java))
     }
 
     /**

@@ -47,6 +47,24 @@ android {
         }
     }
 
+    /*
+     * The captured response of a real installation, shared with :core rather than copied.
+     *
+     * The tests that keep monitor names out of a widget have to run against names of the shape
+     * the real thing produces, and that recording already exists in :core's test resources. A
+     * second copy here would be two files to anonymise, two to keep in step, and a silent
+     * divergence the day one of them is corrected — while the thing being asserted is that
+     * *these* thirty-five names do not appear.
+     *
+     * Both test source sets get it: the unit tests assert it against the model, and the
+     * instrumented one against the view tree that actually crosses into another process.
+     */
+    sourceSets {
+        val sharedTestResources = rootProject.file("core/src/test/resources").path
+        getByName("test").resources.directories.add(sharedTestResources)
+        getByName("androidTest").resources.directories.add(sharedTestResources)
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
         targetCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())

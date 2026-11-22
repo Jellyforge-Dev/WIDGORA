@@ -11,11 +11,13 @@ import io.github.jellyforgedev.widgora.design.WidgoraFocus
 import io.github.jellyforgedev.widgora.design.WidgoraShapes
 import io.github.jellyforgedev.widgora.design.WidgoraSpacing
 import io.github.jellyforgedev.widgora.design.WidgoraText
+import io.github.jellyforgedev.widgora.widget.config.WidgetConfigActivity
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -62,6 +64,7 @@ class WidgetTokensTest {
             "widget_text_counts" to WidgoraText.TileValue.size.asDimension(),
             "widget_text_state" to WidgoraText.Label.size.asDimension(),
             "widget_text_footer" to WidgoraText.Caption.size.asDimension(),
+            "widget_text_names" to WidgoraText.Caption.size.asDimension(),
             "widget_padding_compact" to WidgoraSpacing.Small.asDimension(),
             "widget_text_compact_title" to WidgoraText.Label.size.asDimension(),
             "widget_text_compact_counts" to WidgoraText.WidgetValue.size.asDimension(),
@@ -69,6 +72,7 @@ class WidgetTokensTest {
             "widget_counts_autosize_min" to WidgoraText.Minimum.asDimension(),
             "widget_counts_autosize_max" to WidgoraText.WidgetValueMaximum.asDimension(),
             "widget_counts_autosize_max_compact" to WidgoraText.TileValue.size.asDimension(),
+            "widget_counts_autosize_max_named" to WidgoraText.TileValue.size.asDimension(),
             "widget_counts_autosize_step" to WidgoraText.AutoSizeStep.asDimension(),
         )
 
@@ -238,6 +242,101 @@ class WidgetTokensTest {
         assertEquals("0", providerAttributes().getValue("updatePeriodMillis"))
     }
 
+    /**
+     * The declared configuration activity is the one that exists.
+     *
+     * The attribute is a class name in a resource file, so nothing about it is checked by the
+     * compiler: a rename would leave a provider pointing at a class that is gone, and a host
+     * would fail to start a configuration step with nothing in this repository saying why.
+     */
+    @Test
+    fun theDeclaredConfigurationActivityIsTheOneThatExists() {
+        assertEquals(
+            WidgetConfigActivity::class.java.name,
+            providerAttributes().getValue("configure"),
+        )
+    }
+
+    /**
+     * The widget is reconfigurable and its configuration step is **not** optional.
+     *
+     * Both halves are decisions rather than defaults, and the second is the one worth holding.
+     * `configuration_optional` would let a host place the widget without asking anything, and the
+     * instance question is the point of the step. It is also only honoured from API level 31,
+     * while this application's minSdk is 28 — so on three platform versions the same package
+     * would behave differently, which is the kind of difference nobody discovers until a second
+     * television shows it.
+     */
+    @Test
+    fun theConfigurationStepIsRequiredAndTheWidgetIsReconfigurable() {
+        val features = providerAttributes().getValue("widgetFeatures")
+            .split("|")
+            .map { flag -> flag.trim() }
+
+        assertTrue("reconfigurable" in features, features.toString())
+        assertFalse("configuration_optional" in features, features.toString())
+    }
+
+    /**
+     * The two full layouts differ in exactly one attribute and nothing else.
+     *
+     * There are two of them because the step that names monitors needs a lower ceiling for the
+     * counts line, and that ceiling cannot be set at runtime. Two near-identical files is a real
+     * cost, and this is what keeps it from becoming a silent one: a change made to one line in
+     * one file and not the other fails here rather than on a television.
+     *
+     * Only the lines both files have are compared. The naming layout has two more, which is the
+     * point of it.
+     */
+    @Test
+    fun theTwoFullLayoutsDifferOnlyInTheScalingCeiling() {
+        val plain = textViewAttributes(FULL_LAYOUT_PATH)
+        val named = textViewAttributes(NAMED_LAYOUT_PATH)
+
+        val shared = plain.keys.intersect(named.keys)
+        assertTrue(shared.isNotEmpty(), "the two layouts share no line at all")
+
+        for (id in shared) {
+            val here = plain.getValue(id)
+            val there = named.getValue(id)
+            val differing = (here.keys + there.keys)
+                .filter { attribute -> here[attribute] != there[attribute] }
+
+            assertEquals(
+                emptyList(),
+                differing - ALLOWED_DIFFERENCE,
+                "'$id' differs in more than the scaling ceiling",
+            )
+        }
+
+        // And the one allowed difference is actually there, or the second file would be a copy
+        // with no reason to exist.
+        assertTrue(
+            plain.getValue(COUNTS_ID)[ALLOWED_DIFFERENCE] !=
+                named.getValue(COUNTS_ID)[ALLOWED_DIFFERENCE],
+            "the naming layout does not lower the ceiling at all",
+        )
+    }
+
+    /** Every `TextView` of a layout by its identifier, with its attributes. */
+    private fun textViewAttributes(path: String): Map<String, Map<String, String>> {
+        val document = DocumentBuilderFactory.newInstance()
+            .apply { isNamespaceAware = false }
+            .newDocumentBuilder()
+            .parse(resourceFile(path))
+        val nodes = document.getElementsByTagName("TextView")
+
+        return (0 until nodes.length).associate { index ->
+            val attributes = nodes.item(index).attributes
+            val byName = (0 until attributes.length).associate { position ->
+                val attribute = attributes.item(position)
+                attribute.nodeName.removePrefix("android:") to attribute.nodeValue
+            }
+            val id = byName["id"] ?: fail("a TextView in $path has no id")
+            id to byName
+        }
+    }
+
     private fun providerAttributes(): Map<String, String> {
         val document = DocumentBuilderFactory.newInstance()
             .apply { isNamespaceAware = false }
@@ -289,6 +388,13 @@ class WidgetTokensTest {
 
         const val TOKENS_PATH = "src/main/res/values/widget_tokens.xml"
         const val PROVIDER_PATH = "src/main/res/xml/counts_widget_info.xml"
+        const val FULL_LAYOUT_PATH = "src/main/res/layout/widget_counts.xml"
+        const val NAMED_LAYOUT_PATH = "src/main/res/layout/widget_counts_named.xml"
+
+        /** The one attribute the naming layout exists in order to change. */
+        const val ALLOWED_DIFFERENCE = "autoSizeMaxTextSize"
+
+        const val COUNTS_ID = "@+id/widget_counts"
         const val SEARCH_DEPTH = 5
         const val TOLERANCE = 0.001f
         const val MAX_WIDGET_CORNER_RADIUS_DP = 28f

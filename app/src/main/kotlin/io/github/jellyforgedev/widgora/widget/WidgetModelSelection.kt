@@ -2,17 +2,34 @@ package io.github.jellyforgedev.widgora.widget
 
 import io.github.jellyforgedev.widgora.core.data.StoredInstance
 import io.github.jellyforgedev.widgora.core.data.StoredInstances
+import io.github.jellyforgedev.widgora.core.data.WidgetKind
+import io.github.jellyforgedev.widgora.core.data.WidgetSettings
 import io.github.jellyforgedev.widgora.core.data.WidgetView
 import io.github.jellyforgedev.widgora.core.data.WidgetViewState
+import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState
 
 /**
- * Decides what a widget shows, given what storage holds and what the application holds.
+ * Decides what one widget shows, given its own settings, what storage holds and what the
+ * application holds.
  *
  * It is separated from [WidgetUpdater] for one reason: this is the part worth testing, and the
  * part around it is Android — a widget manager, a context, a package name. Here there is nothing
  * but values in and a value out, so every case can be stated as a test instead of being reasoned
  * about over a device.
+ *
+ * ### One decision per widget, not one per push
+ *
+ * Both entry points take the settings of **one** widget. Before there were settings, every widget
+ * of a provider was handed the same model; now two widgets of the same provider can point at
+ * different instances and differ in whether they may name monitors, so the model is built per
+ * placement and [WidgetUpdater] loops.
+ *
+ * ### This is where consent is read, and the only place
+ *
+ * The return value already says which of the two renderers applies: a [WidgetRender.Named] can
+ * only be built from a consent token, and a token can only be made from stored settings that say
+ * yes. Nothing downstream re-decides it — see [NameConsent].
  *
  * ### Memory outranks storage wherever memory has anything
  *
@@ -30,25 +47,34 @@ object WidgetModelSelection {
      * Storage is read because an empty list of views is ambiguous here: it means "nothing
      * retrieved yet", which is not the same statement as "nothing set up", and a widget must not
      * confuse the two. Memory is then preferred wherever it holds something for that instance.
+     *
+     * @param kind what sort of widget this is, read from the provider the update is for
+     * @param settings what the configuration step stored for it, or `null` when it stored nothing
      */
     fun fromStorage(
+        kind: WidgetKind,
+        settings: WidgetSettings?,
         stored: StoredInstances,
         views: List<WidgetView>,
         nowEpochMs: Long,
-    ): WidgetRenderModel = when (stored) {
-        is StoredInstances.Unreadable -> WidgetRenderModel.ConfigurationUnreadable
+    ): WidgetRender = when (stored) {
+        is StoredInstances.Unreadable ->
+            WidgetRender.Nameless(WidgetRenderModel.ConfigurationUnreadable)
 
         is StoredInstances.Readable -> {
-            val instance = stored.instances.firstOrNull()
-            if (instance == null) {
-                WidgetRenderModel.NotSetUp
-            } else {
-                // Until a widget can be pointed at an instance of its own, it shows the first
-                // one. With one instance configured that is the only one; with several it is a
-                // stand-in, and choosing is the next step's job.
-                views.firstOrNull { view -> view.instanceId == instance.instanceId }
-                    ?.let { view -> modelOf(view, nowEpochMs) }
-                    ?: nothingRetrievedYet(titleOf(instance), nowEpochMs)
+            val available = stored.instances.map { instance -> instance.instanceId }
+            when (val chosen = chosenInstance(kind, settings, available)) {
+                is Chosen.Nothing -> WidgetRender.Nameless(chosen.model)
+
+                is Chosen.Instance -> {
+                    val instance = stored.instances.first { it.instanceId == chosen.instanceId }
+                    render(
+                        settings = chosen.settings,
+                        view = views.firstOrNull { it.instanceId == chosen.instanceId },
+                        fallbackTitle = titleOf(instance),
+                        nowEpochMs = nowEpochMs,
+                    )
+                }
             }
         }
     }
@@ -60,30 +86,110 @@ object WidgetModelSelection {
      * configured, and the unreadable case is a flag the repository publishes beside the views.
      */
     fun fromMemory(
+        kind: WidgetKind,
+        settings: WidgetSettings?,
         configurationUnreadable: Boolean,
         views: List<WidgetView>,
         nowEpochMs: Long,
-    ): WidgetRenderModel = when {
-        configurationUnreadable -> WidgetRenderModel.ConfigurationUnreadable
-        else -> views.firstOrNull()
-            ?.let { view -> modelOf(view, nowEpochMs) }
-            ?: WidgetRenderModel.NotSetUp
+    ): WidgetRender = when {
+        configurationUnreadable ->
+            WidgetRender.Nameless(WidgetRenderModel.ConfigurationUnreadable)
+
+        else -> {
+            val available = views.map { view -> view.instanceId }
+            when (val chosen = chosenInstance(kind, settings, available)) {
+                is Chosen.Nothing -> WidgetRender.Nameless(chosen.model)
+
+                is Chosen.Instance -> {
+                    val view = views.first { view -> view.instanceId == chosen.instanceId }
+                    render(
+                        settings = chosen.settings,
+                        view = view,
+                        fallbackTitle = view.title,
+                        nowEpochMs = nowEpochMs,
+                    )
+                }
+            }
+        }
+    }
+
+    /** Which instance this widget is for, or the statement that it has none. */
+    private sealed interface Chosen {
+
+        data class Instance(val instanceId: InstanceId, val settings: WidgetSettings) : Chosen
+
+        data class Nothing(val model: WidgetRenderModel) : Chosen
     }
 
     /**
-     * Turns one view into a render model.
+     * Applies the settings, or the defined default where there are none.
      *
-     * It reads three of the view's fields and leaves the fourth alone. That fourth one is the
-     * item list, which holds the monitor names, and it has no business in anything a launcher
-     * receives.
+     * The three outcomes are kept apart deliberately:
+     *
+     * - **No instance at all.** The widget says nothing is set up, which is the truth about the
+     *   application rather than about this widget, and names the one thing to do about it.
+     * - **The configured instance is gone.** Other instances may exist and this widget is not for
+     *   them. Re-pointing it at the first one would make a widget report on a server the user
+     *   never chose for it, which is the one outcome ARCHITECTURE.md rules out by name.
+     * - **A kind with no default and no entry.** Only reachable for the two kinds that do not
+     *   exist yet; see [WidgetDefaults].
      */
-    private fun modelOf(view: WidgetView, nowEpochMs: Long): WidgetRenderModel =
-        WidgetRenderModels.forInstance(
-            title = view.title,
-            state = view.state,
-            snapshot = view.snapshot,
-            nowEpochMs = nowEpochMs,
+    private fun chosenInstance(
+        kind: WidgetKind,
+        settings: WidgetSettings?,
+        available: List<InstanceId>,
+    ): Chosen {
+        val effective = settings
+            ?: WidgetDefaults.withoutAnEntry(kind, available.firstOrNull())
+            ?: return Chosen.Nothing(WidgetRenderModel.NotSetUp)
+
+        if (effective.instanceId !in available) {
+            // Nothing set up at all is reported as such even for a widget that names an instance:
+            // the action is the same — set an instance up — and "not set up" is the accurate
+            // statement about an application with no instances in it.
+            val model = if (available.isEmpty()) {
+                WidgetRenderModel.NotSetUp
+            } else {
+                WidgetRenderModel.InstanceGone
+            }
+            return Chosen.Nothing(model)
+        }
+        return Chosen.Instance(effective.instanceId, effective)
+    }
+
+    /**
+     * Turns one view into the render this widget's settings call for.
+     *
+     * The nameless model is built exactly as it always was, from three of the view's fields. The
+     * fourth — the item list, which holds the monitor names — is read **only** when a consent
+     * token could be produced, and such a token can only come from a stored yes.
+     */
+    private fun render(
+        settings: WidgetSettings,
+        view: WidgetView?,
+        fallbackTitle: String,
+        nowEpochMs: Long,
+    ): WidgetRender {
+        val instance = if (view == null) {
+            nothingRetrievedYet(fallbackTitle, nowEpochMs)
+        } else {
+            WidgetRenderModels.forInstance(
+                title = view.title,
+                state = view.state,
+                snapshot = view.snapshot,
+                nowEpochMs = nowEpochMs,
+            )
+        }
+
+        val consent = NameConsent.from(settings) ?: return WidgetRender.Nameless(instance)
+        return WidgetRender.Named(
+            NamedWidgetRenderModel.of(
+                consent = consent,
+                instance = instance,
+                overview = view?.overview,
+            ),
         )
+    }
 
     /**
      * An instance that is known to exist and about which nothing has been retrieved.
@@ -92,13 +198,15 @@ object WidgetModelSelection {
      * whether it is switched off, whether its credential is usable — would put the repository's
      * own reasoning in a second place to keep in step, and would claim more than this code knows.
      */
-    private fun nothingRetrievedYet(title: String, nowEpochMs: Long): WidgetRenderModel =
-        WidgetRenderModels.forInstance(
-            title = title,
-            state = WidgetViewState.Display(WidgetDisplayState.Loading),
-            snapshot = null,
-            nowEpochMs = nowEpochMs,
-        )
+    private fun nothingRetrievedYet(
+        title: String,
+        nowEpochMs: Long,
+    ): WidgetRenderModel.Instance = WidgetRenderModels.forInstance(
+        title = title,
+        state = WidgetViewState.Display(WidgetDisplayState.Loading),
+        snapshot = null,
+        nowEpochMs = nowEpochMs,
+    )
 
     private fun titleOf(instance: StoredInstance): String = when (instance) {
         is StoredInstance.Valid -> instance.config.displayName

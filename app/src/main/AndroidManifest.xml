@@ -52,6 +52,31 @@
         </activity>
 
         <!--
+          The configuration step a host runs when a widget is placed.
+
+          It is exported, and it has to be: the party that starts it is the host launcher, in
+          another process, and an activity a launcher cannot start is a configuration step that
+          never runs. The intent filter carries the action the platform documents for this purpose.
+
+          Exported means any application on the device can start it with any identifier, so the
+          identifier is checked against the widget manager rather than believed — see
+          WidgetConfigRequests, and SECURITY.md for what that defends against and what the screen
+          does not hold in the first place. There is no address, no credential and no monitor name
+          on it.
+
+          No windowSoftInputMode: the screen has no text field at all. Every answer on it is a
+          choice between things that already exist, so no on-screen keyboard appears.
+        -->
+        <activity
+            android:name=".widget.config.WidgetConfigActivity"
+            android:exported="true"
+            android:label="@string/widget_config_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <!--
           The widget. It is not exported: the only thing that talks to it is the system's own
           widget service, and nothing else has any business sending it a broadcast. All four
           actions below are intents the platform documents as protected and sendable by the

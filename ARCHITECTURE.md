@@ -557,12 +557,15 @@ target a different integration.
 ## 5a. App widgets
 
 **Status: partly implemented.** One widget exists and works on a television `[V]`: it shows an
-instance's counts, in two layouts that are chosen by the box it is given, with the figures scaled
-to fill that box, and it is refreshed in the background every thirty minutes. A debug-only host
-exists so that a widget can be placed and operated without waiting for a launcher. The per-widget
-settings store below is implemented and nothing writes to it. What is decided and **not**
-implemented is three widget types instead of one, the configuration step that would fill that
-store, and the rule that replaces the module boundary for monitor names.
+instance's counts, in layouts chosen by the box it is given, with the figures scaled to fill that
+box, and it is refreshed in the background every thirty minutes. A debug-only host exists so that
+a widget can be placed and operated without waiting for a launcher.
+
+Implemented since: the **configuration step**, which asks which instance a widget shows and
+whether it may name monitors, and the **consent rule** that replaces the module boundary for
+monitor names. Both are exercised on an emulator `[V]` and neither has been seen on a television
+yet `[U]`. What is decided and still **not** implemented is three widget types instead of one;
+only the status type exists.
 
 WIDGORA supplies standard Android app widgets — an `AppWidgetProvider` per type, each handing the
 host a `RemoteViews` hierarchy. Any launcher able to host widgets can display them, which makes
@@ -573,7 +576,8 @@ the host side a platform feature rather than an agreement with one project.
 | Implementation | `RemoteViews` directly, not Jetpack Glance |
 | Widget types | three, each a provider of its own and its own entry in a host's picker |
 | Credentials per widget | **none, ever** — a widget points at an instance set up once in the application |
-| Configuration | one step per placed widget, one screen serving all three types |
+| Configuration | one step per placed widget, one screen serving all three types, required rather than optional |
+| A widget placed before that step existed | a defined default: the first instance, and no names |
 | Periodic update by the widget framework | off, `updatePeriodMillis="0"` |
 | Refresh | WorkManager, every 30 minutes |
 | Outdated after | 45 minutes |
@@ -634,7 +638,8 @@ has to act on — a captured response of a real installation has one monitor at 
 
 ### One configuration step, one screen
 
-Placing a widget runs a configuration step declared as `android:configure`. It asks for:
+**Implemented** `[V]`. Placing a widget runs a configuration step declared as `android:configure`.
+It asks for:
 
 - **the instance** — pre-selected when only one exists, which today is always. It is asked even
   so, because the question is what makes a widget point at *an* instance rather than at whichever
@@ -652,10 +657,42 @@ the settings screen is built to; the rules there apply here unchanged.
 path from a widget to the secret store other than the instance the application has already set
 up. That is the whole point of configuring instances once, in the application.
 
+Four things came out of building it that are decisions rather than details:
+
+- **The screen has no text field at all**, and that is what makes it easy to operate with a
+  remote. Every answer is a choice between things that already exist, so no on-screen keyboard
+  appears at any point and none of the focus trouble the settings screen had to solve can arise.
+- **The result contract is the part a host depends on.** `RESULT_CANCELED` is set first, before
+  anything that could fail, and carries the widget's identifier; `RESULT_OK` is sent on one path
+  only and only after a write that reported success. A host told a widget is configured while
+  nothing reached the file would leave a widget that keeps asking to be set up.
+- **The activity is exported, because a launcher in another process is what starts it.** The
+  identifier it is handed is therefore checked against the widget manager rather than believed:
+  it has to name a widget whose provider is in this package and of a type this version knows.
+  What that defends against, and what the screen does not hold in the first place, is in
+  SECURITY.md.
+- **`configuration_optional` is deliberately not declared**, and the reason is checkable rather
+  than a preference `[V]`. The flag is `WIDGET_FEATURE_CONFIGURATION_OPTIONAL`, recorded at API
+  level 31 in the SDK's own `api-versions.xml` while `reconfigurable` is recorded at 28. This
+  application's `minSdk` is 28, so on three platform versions the flag is ignored: the same
+  package would run the step on one television and skip it on another. The second reason stands
+  on its own — the flag lets a host place a widget without asking anything, and the instance
+  question is the point of the step.
+
+**A widget placed before the step existed keeps working.** It has no stored entry, and what
+applies to it is a defined default rather than a guess: the first stored instance and no monitor
+names, which is exactly what such a widget already did. The rule lives in one function with a
+test, and the missing entry is **not** written to storage — nothing asked the user the question,
+so recording an answer in their name would turn a fallback into a consent they never gave.
+
+**A widget whose instance is gone says so.** It is never re-pointed at another instance, and it
+is a state of its own rather than "not set up": other instances may exist, and this widget is not
+for them. With no instance at all it does say "not set up", which is the accurate statement about
+the application and names the one thing to do about it.
+
 ### Where a widget's settings live
 
-**The store is implemented** `[V]`; nothing writes to it yet, because the configuration step that
-asks the questions is a later change. It exists, it is cleaned up, and it is tested.
+**The store is implemented and the configuration step writes to it** `[V]`.
 
 A second key-value store, in a file of its own beside the instance store. Separate deliberately,
 because the two obey **opposite** rules: an instance file holds an address and an encrypted
@@ -685,6 +722,20 @@ Removal happens twice over, because once is not reliable. The provider's own del
 removes the entry, and every update additionally sweeps stored identifiers that no longer belong
 to a placed widget. The callback can be missed; the sweep cannot.
 
+**The sweep compares against the widgets of every provider of the package, and that is a
+correction.** It compared against one provider's, which was right while there was one — and would
+have deleted the settings of every widget of the second type the day that type was declared, on
+the first update after it was placed. The providers asked are the installed ones **plus** the ones
+this version maps, which is safe in both directions: an installed provider with no mapping still
+has its widgets counted, and a mapped provider the package manager does not name on some occasion
+is still asked. One of those two mistakes deletes a user's settings, so the union is worth the
+line.
+
+One exception is named rather than left to a race: the configuration step pushes an update
+immediately after its own write, and hands that identifier to the push as one to keep. It is the
+one moment at which a stored entry can legitimately be newer than what the widget manager
+reports.
+
 Two situations are decided rather than left to the code:
 
 - **The instance is gone.** The widget says so and asks for the settings. It is never silently
@@ -698,7 +749,8 @@ Two situations are decided rather than left to the code:
 
 ### Keeping monitor names out of a widget without the module boundary
 
-Until now one boundary did this work on its own: the bridge module depends on the domain module
+**Implemented** `[V]`. Until now one boundary did this work on its own: the bridge module depends
+on the domain module
 and never on the data module, so it could not reference the type holding the names even by
 mistake. A widget provider lives in the application module and can reach everything, so that
 boundary does not apply, and two of the three types need names on purpose. The replacement is
@@ -709,7 +761,8 @@ boundary does not apply, and two of the three types need names on purpose. The r
 - A separate named render model, constructible only through a factory that requires a consent
   token. The token has a private constructor and is produced in one place: the reader of a
   widget's settings, when that widget is allowed names.
-- Two build functions, one per model, with no overload accepting both. There is no path on which
+- Two build functions, with different names, one per model and no overload accepting both. There
+  is no path on which
   a nameless model reaches the naming renderer or the reverse.
 
 This is weaker than a module boundary and is written down as weaker. What carries the remaining
@@ -719,14 +772,100 @@ thirty-five names in a captured response of a real installation appears in it.
 
 ### What a widget shows at each size
 
-The existing size steps are kept: a compact layout, a full one, and scaling into a large box. The
-line budgets below are a starting point to be corrected by the first measurement, not a result.
+Three size steps for the status type now, and the third one is a result of measuring rather than
+of planning. The line budgets for the two types that do not exist yet are still a starting point
+to be corrected by their first measurement.
 
 | | compact | full | large |
 |---|---|---|---|
-| Status | title, counts, state and time | the same, figures scaled up | plus up to 3 affected items named |
+| Status | title, counts, state and time; `[V]` with consent the title names the first affected item | the same, figures scaled up | `[V]` the instance's title plus up to 3 affected items named, where the user allowed it |
 | Certificates | how many within the horizon, and the smallest figure | up to 3 rows | up to 6 rows |
 | Selection | the instance's counts plus 2 rows | plus 4 rows | plus 8 rows |
+
+**The names turned out to need a step of their own**, and the plan said otherwise. The intention
+was names in the full step and the large one alike. Measured in a real host view, at 300 × 250 dp
+they do not fit: with one name only 14 % of the height was left spare against this project's floor
+of 15 %, and with three the counts line was squeezed to 82 px for 83 px of text `[V]`. Two lines
+were added and the box did not grow.
+
+So the names as a list belong to the third step, which is offered for the taller box.
+
+**And for one round that third step was unreachable.** A widget may hand the platform several view
+hierarchies at once, each with the size it is meant for, and the platform compares those sizes
+against the box the widget is actually *given* — the box a host offers minus the padding the
+framework's own host view applies, 12 / 4 / 12 / 20 dp on Android 14. The sizes handed over were
+the declared boxes instead, so the naming step asked for 320 dp of height in a box that offers
+296. Seen on a television first — names allowed, one monitor down, the largest box, and what
+appeared was the full variant with the failed monitor in its title and no names anywhere — then
+reproduced on an emulator at the same platform level `[V]`.
+
+The same arithmetic broke the step below it, and that one hid for longer because it produced a
+correct widget of the wrong step. At 300 × 250 dp **no** size fitted at all, and the platform's
+documented fallback is the hierarchy with the smallest area, so the full step was served the
+compact variant: `box 300×250dp, host padding 24/8/24/40px, so the widget is offered
+276.0×226.0dp` `[V]`. Not one of the three steps was getting what the code intended.
+
+Three consequences, recorded rather than assumed:
+
+- **The sizes handed over are offered sizes, not declared boxes.** Each is a declared box minus the
+  framework's padding, and that padding is asked of the platform rather than written down: 24 dp is
+  a measurement of one version, and the figure lives in a platform resource a later version may
+  change.
+- **Which step a box gets is now held by a test**, and that test names no layout. It hands over the
+  whole size map, lays it out in a real host view at each of the three boxes, and reads out of the
+  inflated hierarchy which variant arrived. It was run against the unfixed code and failed in both
+  of the ways described above `[V]`. Every other widget test builds the variant it names and
+  measures that one, which is why none of them could see this: the pairing of a box with a variant
+  was an assumption the tests shared with the code.
+- **A host that takes more padding than the framework's default loses the tallest step** and draws
+  the full variant instead — a correct widget without names rather than a broken one. Not observed,
+  and the launcher on the intended television is one WIDGORA has never seen `[U]`.
+
+**What the two smaller steps do instead is give up their title line** — the answer to the
+consequence the paragraph above used to end with, which was that a user who allows names and keeps
+the widget small sees none. They have no line to add; what they have is a line they already own,
+and in a box that small the instance's own name is the least useful thing on the surface. A user
+with one instance knows which one it is; what they cannot know is which monitor is down. So with
+consent and something actually wrong, the title says that instead: the mark, the first affected
+item's name, and a count of the others — `▼ some-monitor +2`.
+
+Three decisions inside that, each with a reason:
+
+- **Only a failure or an unrecognised state takes the title.** Both are reasons to go and look,
+  and the application's own urgency order already places them first. Waiting and maintenance are
+  expected conditions, and a widget that replaces its title because something is deliberately
+  paused is a widget that cries wolf. With nothing wrong, the title is the instance's name exactly
+  as before.
+- **The count is a view of its own, beside the name**, not text appended to it. The line can run
+  out of width, and then something has to give: the name may be shortened, because the widget
+  opens the application where the whole list is, while the mark and the count may not — the mark
+  is what identifies the kind of trouble for a viewer who cannot tell the colours apart, and
+  nothing else on the surface says how many others there are. It is the same division the compact
+  variant already makes between its state and its time. A single text ending in `+2` would lose
+  the `+2` to the ellipsis first.
+- **The step that lists the names keeps its title.** There the affected items have lines of their
+  own, and naming the first of them twice would spend the line that says which instance this is.
+
+The security consequence is not cosmetic and is recorded in SECURITY.md rather than only here:
+with consent, one monitor name now crosses into a host's process in **every** size step, where
+before the two smaller ones carried none. One name, the one the user asked to see, in the title
+line and nowhere else — which is what the device test asserts.
+
+Two further findings, both from the same measurement:
+
+- **The counts line needed a lower ceiling in that step.** Left to scale as it does elsewhere it
+  reached 94 sp and took 257 px of a 592 px box, leaving 10 % spare once three names and an
+  overflow count sat beneath it `[V]`. It is capped at a dashboard tile's value size — in a widget
+  that names monitors the names are the information and the figures are the summary.
+- **That cap cannot be applied at runtime**, because `RemoteViews` has no call for the auto-size
+  bounds and the one that looked like a substitute does nothing to a child whose height comes from
+  `layout_weight`. So the naming step has a layout file of its own, differing in exactly that one
+  attribute, and a test holds the two files' shared lines identical.
+
+The spare-height ceiling has a second exemption for the same reason the first one exists. A widget
+that names monitors is given a box measured for the full set of three; with one name that box is
+genuinely underused, and there is nothing it should be filled with, since growing the figures is
+what the cap exists to prevent.
 
 More entries than rows produces the first *n* in the type's own order followed by a count of the
 rest. A widget draws at most twelve rows whatever its size, so that an installation with a
@@ -814,6 +953,46 @@ repository.
 - Publishing media items to the Watch Next provider is an additional, independent surface that
   requires no change in any launcher. It suits media content only — not weather or server status
   — and still needs device verification `[U]`.
+
+### What a host has to do for the configuration step to start
+
+**A host on Android 14 or later must grant the activity start explicitly, or the configuration
+step never appears** `[V]`. This is written down here because it is the one requirement a host
+cannot infer from WIDGORA's metadata, and because WIDGORA's own debug host failed it on a
+television — the widget bound, and then nothing happened:
+
+```
+ActivityTaskManager: Background activity launch blocked … callingUid: 1000
+  realCallingPackage: io.github.jellyforgedev.widgora; realCallingUidProcState: TOP
+  originatingPendingIntent: PendingIntentRecord{… android startActivity}
+  intent: … act=android.appwidget.action.APPWIDGET_CONFIGURE … (BAL_BLOCK)
+```
+
+The host was in the foreground — the log records it as `TOP` — so this is not a background
+application being stopped from taking the screen. `AppWidgetHost`'s own
+`startAppWidgetConfigureActivityForResult` does not start the activity itself; it sends a
+`PendingIntent` the **system** created, and from Android 14 the privilege to start an activity
+from a pending intent is no longer inherited from whoever happens to be visible. The sender grants
+it, in the options it passes:
+
+| Platform | What to pass |
+|---|---|
+| below API 34 | nothing; the options argument stays absent |
+| API 34, 35 | `setPendingIntentBackgroundActivityStartMode(MODE_BACKGROUND_ACTIVITY_START_ALLOWED)` |
+| API 36 and later | the same call with `MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE` |
+
+The version boundaries are read out of the platform's own `api-versions.xml` rather than
+remembered `[V]`: the setter exists from 34, `…_ALLOWED` exists from 34 and is **deprecated at
+36**, and the two narrower modes that replace it exist from 36. The narrower of those two is the
+right one for this call — a host is visible at the moment it configures a widget, so asking for
+the privilege while visible is enough, and asking for the unconditional one would be more than the
+case needs. The 36 branch is reasoned from the SDK and not yet exercised on a device `[U]`.
+
+Nothing about this is specific to WIDGORA; it applies to any widget with a configuration step. It
+is recorded here because the gap it left was invisible from inside the test suite: no test went
+through a host, so the one platform call between binding a widget and its configuration screen had
+never been made by anything but a real launcher. There is now an instrumented test that makes it,
+and it fails against the version without the option `[V]`.
 
 Until a host integration exists, the standalone application is the product.
 
@@ -1007,6 +1186,16 @@ adds indirection without benefit.
 | Whether the broadcasts that start and stop the periodic refresh reach the provider on the target device. The documentation states only that the filter must accept the update action and says nothing either way about the other two, so both are declared and the delivery is to be confirmed by placing and removing a widget | `[U]` |
 | Whether to strip the unused `FOREGROUND_SERVICE` permission the work library contributes, given it is declared for a fallback path WIDGORA never takes | `[O]` |
 | The minimum sizes of the second and third widget type, measured inside a real host view at several font scales rather than estimated | `[U]` |
+| ~~Whether up to three monitor names fit the full step of the status widget, as the size table assumed~~ — **measured, and they do not**: 14 % of the height spare against a floor of 15 % with one name, and the counts line squeezed to 82 px for 83 px of text with three. They have a size step of their own; the smaller boxes name the first affected item in their title line instead | `[V]` |
+| ~~Whether each size step actually receives the variant it was built for~~ — **no, and not one of the three did.** The sizes handed to the platform were the declared boxes, while the platform compares them against the box minus the framework's host padding: the naming step was unreachable, and the full step fitted nothing and was served the compact variant by the documented fallback. Found on a television, reproduced on an emulator, and now held by a test that hands over the whole size map and lets the platform choose | `[V]` |
+| Whether a host launcher applies more padding than the framework's default, which would cost the tallest step its names while leaving the widget itself correct | `[U]` |
+| Whether the names now appear in the largest box on a television, and whether three of them are legible there from three metres | `[U]` |
+| ~~Whether a host that is itself in the foreground may start a widget's configuration step on Android 14~~ — **no, not without saying so**: the step is sent as a pending intent the system created, and from API 34 the sender has to grant the activity start in the options it passes. Reproduced on a television and then on the tablet emulator, both API 34 | `[V]` |
+| Whether the replacement mode for API 36 is the right one, given the mode used on 34 and 35 is deprecated there and was replaced by two narrower ones | `[U]` |
+| Whether the title line naming the first affected monitor is read as intended on a television, or whether a title that changes between a server name and a monitor name is confusing | `[U]` |
+| Whether the configuration step is operable with a real remote control, and whether its rows and buttons are reachable in the order a viewer expects | `[U]` |
+| Whether a host launcher on the target device runs the configuration step at all, and whether it removes the placement when the step reports `RESULT_CANCELED` | `[U]` |
+| ~~Whether a user who allows names and keeps the widget small understands why none appear, given the step says nothing about size~~ — **answered by changing the behaviour rather than the wording**: the small steps now name the first affected item in their title line, so consent shows itself at every size. Whether the whole *list* being absent in a small box still needs explaining is open | `[U]` |
 | Whether a directional pad scrolls the detail list as intended, and whether focus lands on its first row | `[U]` |
 | ~~Whether the state line's `=` for current data and `–` for empty data are told apart from three metres, given that both are horizontal strokes~~ — confirmed on a television: `=` is clearly legible from three metres. The two never appear together in any case, being states of one line, and the word beside the mark names which it is | `[V]` |
 | ~~Whether the lengthened wordings of the state line still fit the widget's compact row on a television without the word shortening in the common cases~~ — confirmed on a television: "= Data current" is not shortened at any widget size | `[V]` |

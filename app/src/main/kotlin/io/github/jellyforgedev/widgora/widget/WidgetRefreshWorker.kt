@@ -60,7 +60,7 @@ internal class WidgetRefreshWorker(
     private suspend fun attempt(): RefreshRun {
         val application = applicationContext as? WidgoraApplication
             ?: return RefreshRun.NothingToPushTo
-        if (WidgetUpdater.widgetIds(applicationContext).isEmpty()) {
+        if (WidgetUpdater.allWidgetIds(applicationContext).isEmpty()) {
             return RefreshRun.NothingToPushTo
         }
 

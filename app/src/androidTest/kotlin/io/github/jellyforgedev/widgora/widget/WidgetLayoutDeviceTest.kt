@@ -8,13 +8,20 @@ import android.content.res.Configuration
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.widget.RemoteViews
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.jellyforgedev.widgora.R
+import io.github.jellyforgedev.widgora.core.data.MonitorEntry
+import io.github.jellyforgedev.widgora.core.data.MonitorOverview
+import io.github.jellyforgedev.widgora.core.data.MonitorState
+import io.github.jellyforgedev.widgora.core.data.WidgetKind
+import io.github.jellyforgedev.widgora.core.data.WidgetSettings
 import io.github.jellyforgedev.widgora.core.data.WidgetViewState
 import io.github.jellyforgedev.widgora.design.WidgetPresentation
 import io.github.jellyforgedev.widgora.design.WidgoraText
+import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState
 import io.github.jellyforgedev.widgora.model.WidgetDisplayState.Error.Reason
 import org.junit.Assert.assertEquals
@@ -91,6 +98,9 @@ class WidgetLayoutDeviceTest {
         ),
         "not set up" to WidgetRenderModel.NotSetUp,
         "settings unreadable" to WidgetRenderModel.ConfigurationUnreadable,
+        // The newest of the three notices, and the one with the longest wording: it has to name
+        // the repair, because "add an instance" is the wrong instruction for it.
+        "instance gone" to WidgetRenderModel.InstanceGone,
     )
 
     @Test
@@ -235,8 +245,279 @@ class WidgetLayoutDeviceTest {
     private fun markOf(model: WidgetRenderModel): String = when (model) {
         WidgetRenderModel.NotSetUp -> WidgetPresentation.MARK_NOT_SET_UP
         WidgetRenderModel.ConfigurationUnreadable -> WidgetPresentation.MARK_UNREADABLE
+        WidgetRenderModel.InstanceGone -> WidgetPresentation.MARK_INSTANCE_GONE
         is WidgetRenderModel.Instance -> WidgetPresentation.of(model.state).mark
     }
+
+    // --- The variant that names monitors -------------------------------------------------------
+
+    /**
+     * A widget with consent fits too, at every size and every font scale.
+     *
+     * This is the measurement the naming variant turns on. Two lines were added to the full
+     * layout and the box did not grow; whether three names still leave the spare height this
+     * project asks for is a question for a host view rather than for arithmetic. The compact
+     * variant is measured as well, where it must come out identical to a widget without consent:
+     * its layout declares no line for a name.
+     */
+    @Test
+    fun theNamingVariantFitsAtEveryFontScale() {
+        for (step in NAMING_STEPS) {
+            for (scale in FONT_SCALES) {
+                for ((name, model) in namedModels()) {
+                    val context = scaled(scale)
+                    assertFitsIn(
+                        description = "${step.description} at font scale $scale, $name",
+                        hosted = hostedViews(
+                            step,
+                            WidgetViews.buildNaming(context, APP_WIDGET_ID, model, step.layout),
+                            scale,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * And it keeps the spare height, which is the part more lines put at risk.
+     *
+     * The ceiling is asked only of the fullest model, which is the last one in the list and the
+     * case the box was measured for; see the note where that exemption is applied.
+     */
+    @Test
+    fun theNamingVariantKeepsItsSpareHeight() {
+        val models = namedModels()
+        for (step in NAMING_STEPS) {
+            for ((index, entry) in models.withIndex()) {
+                val (name, model) = entry
+                assertSpareHeightIn(
+                    description = "${step.description}, $name",
+                    hosted = hostedViews(
+                        step,
+                        WidgetViews.buildNaming(
+                            baseContext,
+                            APP_WIDGET_ID,
+                            model,
+                            step.layout,
+                        ),
+                        DEFAULT_FONT_SCALE,
+                    ),
+                    fillsTheBox = index == models.lastIndex,
+                )
+            }
+        }
+    }
+
+    /**
+     * In the two smaller steps, consent changes exactly one line: the title.
+     *
+     * The names themselves still do not fit in those boxes — that finding produced the third size
+     * step and stands — so what a widget with consent gains there is the line it already had. This
+     * asserts both halves at once: the title differs, and every other line is identical to what a
+     * widget without consent draws. Compared on the inflated trees rather than on the layout
+     * files, because that is where a difference would show.
+     */
+    @Test
+    fun inTheSmallerStepsConsentChangesTheTitleAndNothingElse() {
+        val model = namedModels().last().second
+        val headline = requireNotNull(model.headline) { "the model has no title line to check" }
+
+        for (step in listOf(NAMING_STEPS[0], NAMING_STEPS[1])) {
+            val withConsent = lines(
+                hostedViews(
+                    step,
+                    WidgetViews.buildNaming(baseContext, APP_WIDGET_ID, model, step.layout),
+                    DEFAULT_FONT_SCALE,
+                ),
+            )
+            val without = lines(
+                hostedViews(
+                    step,
+                    WidgetViews.build(baseContext, APP_WIDGET_ID, model.instance, step.layout),
+                    DEFAULT_FONT_SCALE,
+                ),
+            )
+
+            val title = requireNotNull(withConsent[TITLE_ID]) { "${step.description}: no title" }
+            assertTrue(
+                "${step.description}: the title does not name the affected monitor: $title",
+                title.contains(headline.name) && title.startsWith(headline.mark),
+            )
+
+            // Everything the two have in common apart from the title and the count beside it.
+            val changed = (withConsent.keys + without.keys)
+                .filterNot { id -> id == TITLE_ID || id == TITLE_MORE_ID }
+                .filter { id -> withConsent[id] != without[id] }
+            assertEquals(
+                "${step.description}: consent changed a line other than the title",
+                emptyList<String>(),
+                changed,
+            )
+        }
+    }
+
+    /**
+     * The step that has lines for the names keeps the instance on its title line.
+     *
+     * The opposite decision from the two steps above, and deliberately so: there the title is the
+     * only line available, here the affected items have lines of their own and the title is what
+     * says which instance this is.
+     */
+    @Test
+    fun theNamingStepLeavesTheTitleAlone() {
+        val step = NAMING_STEPS.last()
+        val model = namedModels().last().second
+
+        val lines = lines(
+            hostedViews(
+                step,
+                WidgetViews.buildNaming(baseContext, APP_WIDGET_ID, model, step.layout),
+                DEFAULT_FONT_SCALE,
+            ),
+        )
+
+        assertEquals("the naming step changed its title line", TITLE, lines[TITLE_ID])
+        assertTrue(
+            "the naming step showed a count beside its title: ${lines[TITLE_MORE_ID]}",
+            lines[TITLE_MORE_ID] == null,
+        )
+    }
+
+    /**
+     * The title line keeps its mark and its count at every font scale.
+     *
+     * The same division the compact variant's bottom line already makes, and for the same reason:
+     * when a line is too long something has to give, and what may give is the part that can be
+     * recovered by looking elsewhere. The name may be shortened — the widget opens the application
+     * where the whole list is. The mark may not, because it is what says what kind of trouble this
+     * is to a viewer who cannot tell the colours apart, and the count may not, because nothing
+     * else on the surface says how many others there are.
+     *
+     * The names are as long as the model permits, since a short name proves nothing about a line
+     * that has to hold a mark and a count as well.
+     */
+    @Test
+    fun theTitleLineKeepsItsMarkAndItsCountAtEveryFontScale() {
+        val model = namedModels().last().second
+        val headline = requireNotNull(model.headline) { "the model has no title line to check" }
+
+        for (step in listOf(NAMING_STEPS[0], NAMING_STEPS[1])) {
+            for (scale in FONT_SCALES) {
+                val hosted = hostedViews(
+                    step,
+                    WidgetViews.buildNaming(scaled(scale), APP_WIDGET_ID, model, step.layout),
+                    scale,
+                )
+                val where = "${step.description} at font scale $scale"
+                assertFitsIn(where, hosted)
+
+                val title = hosted.findViewById<TextView>(R.id.widget_title)
+                assertTrue(
+                    "$where: the title line lost its mark: '${title.text}'",
+                    title.text.startsWith(headline.mark),
+                )
+                assertTrue("$where: the title line has no width", title.width > 0)
+
+                val more = hosted.findViewById<TextView>(R.id.widget_title_more)
+                assertEquals("$where: the count is not visible", View.VISIBLE, more.visibility)
+                assertEquals(
+                    "$where: the count was shortened, which is the one thing it may not be",
+                    0,
+                    more.layout?.getEllipsisCount(0) ?: 0,
+                )
+            }
+        }
+    }
+
+    /** Every visible line of a hosted widget by its resource name. */
+    private fun lines(hosted: AppWidgetHostView): Map<String, String> =
+        visibleTextViews(widgetRoot(hosted)).associate { line ->
+            name(line) to line.text.toString()
+        }
+
+    /**
+     * In the box meant to carry names, they are actually drawn.
+     *
+     * Without this the two tests above could both pass on a widget that quietly draws nothing —
+     * the failure a measurement test is least able to notice on its own.
+     */
+    @Test
+    fun theFullVariantDrawsTheNamesItWasGiven() {
+        val step = NAMING_STEPS.last()
+        val model = namedModels().last().second
+
+        val hosted = hostedViews(
+            step,
+            WidgetViews.buildNaming(baseContext, APP_WIDGET_ID, model, step.layout),
+            DEFAULT_FONT_SCALE,
+        )
+
+        val names = hosted.findViewById<TextView>(R.id.widget_names)
+        val more = hosted.findViewById<TextView>(R.id.widget_more)
+        assertEquals("the names line is not visible", View.VISIBLE, names.visibility)
+        for (shown in model.names) {
+            assertTrue(
+                "the names line does not carry '$shown': ${names.text}",
+                names.text.contains(shown),
+            )
+        }
+        assertEquals("the overflow line is not visible", View.VISIBLE, more.visibility)
+        assertEquals("the overflow count was shortened", 0, more.layout?.getEllipsisCount(0) ?: 0)
+    }
+
+    /**
+     * The naming models, each stressing the layout more than the one before.
+     *
+     * The names are as long as the model permits, because a short name proves nothing about a
+     * line that has to hold three of them.
+     */
+    private fun namedModels(): List<Pair<String, NamedWidgetRenderModel>> {
+        val longest = "x".repeat(NamedWidgetRenderModel.MAX_NAME_CODE_POINTS)
+        val three = List(NamedWidgetRenderModel.MAX_NAMES) { index -> longest.dropLast(1) + index }
+        return listOf(
+            "one name" to named(listOf(longest), rest = 0),
+            "the full set of names" to named(three, rest = 0),
+            "the full set and more" to named(three, rest = 32),
+        )
+    }
+
+    /**
+     * A naming model, built the one way it can be built.
+     *
+     * The consent token comes from stored settings that say yes, exactly as it does in the
+     * application: there is no other way to obtain one, which is the point of it.
+     */
+    private fun named(names: List<String>, rest: Int): NamedWidgetRenderModel {
+        val consent = requireNotNull(
+            NameConsent.from(
+                WidgetSettings(
+                    kind = WidgetKind.STATUS,
+                    instanceId = InstanceId("kuma"),
+                    showNames = true,
+                ),
+            ),
+        ) { "settings that say yes produced no consent" }
+
+        val entries = names.mapIndexed { index, name -> failed("m$index", name) } +
+            List(rest) { index -> failed("r$index", "rest-$index.example.invalid") }
+
+        return NamedWidgetRenderModel.of(
+            consent = consent,
+            instance = instance(
+                counts = "▲35 ▼${entries.size}",
+                state = WidgetViewState.Display(WidgetDisplayState.Ok),
+            ),
+            overview = MonitorOverview(entries),
+        )
+    }
+
+    private fun failed(monitorId: String, name: String): MonitorEntry = MonitorEntry.truncating(
+        monitorId = monitorId,
+        name = name,
+        state = MonitorState.FAILED,
+        responseTimeMs = null,
+    )
 
     // --- The measurement -----------------------------------------------------------------------
 
@@ -245,8 +526,16 @@ class WidgetLayoutDeviceTest {
         step: Step,
         model: WidgetRenderModel,
         fontScale: Float,
-    ) {
-        val hosted = hosted(step, model, fontScale)
+    ) = assertFitsIn(description, hosted(step, model, fontScale))
+
+    /**
+     * The measurement itself, given a widget already inside a host view.
+     *
+     * Separated from the model so that both kinds of widget are measured by the same code. A
+     * second copy of these two assertions for the naming variant is how one of them comes to be
+     * relaxed on one side and not the other.
+     */
+    private fun assertFitsIn(description: String, hosted: AppWidgetHostView) {
         val root = widgetRoot(hosted)
         val lines = visibleTextViews(root)
         assertTrue("$description: nothing visible at all", lines.isNotEmpty())
@@ -278,8 +567,18 @@ class WidgetLayoutDeviceTest {
      * as their box, a box-based measure reports every layout as full whether the text grew into
      * it or not, and the waste this test exists to catch would be invisible to it.
      */
-    private fun assertSpareHeight(description: String, step: Step, model: WidgetRenderModel) {
-        val hosted = hosted(step, model, DEFAULT_FONT_SCALE)
+    private fun assertSpareHeight(description: String, step: Step, model: WidgetRenderModel) =
+        assertSpareHeightIn(description, hosted(step, model, DEFAULT_FONT_SCALE))
+
+    /**
+     * @param fillsTheBox whether this widget is expected to use the height it was given. False
+     *   for a widget that has less to show than its box was measured for — see the ceiling below.
+     */
+    private fun assertSpareHeightIn(
+        description: String,
+        hosted: AppWidgetHostView,
+        fillsTheBox: Boolean = true,
+    ) {
         val root = widgetRoot(hosted)
         val ink = inkHeight(root)
         val free = (root.height - ink).toFloat() / root.height
@@ -288,7 +587,8 @@ class WidgetLayoutDeviceTest {
         assertTrue(
             "$description: only $percent% of the height is spare, " +
                 "${(MIN_FREE_HEIGHT_FRACTION * 100).toInt()}% is the floor " +
-                "(${ink}px of text in ${root.height}px${hostPadding(hosted)})",
+                "(${ink}px of text in ${root.height}px${hostPadding(hosted)}); " +
+                "by line: ${inkByLine(root)}",
             free >= MIN_FREE_HEIGHT_FRACTION,
         )
         // The ceiling asks whether the content grew into its box, and only the counts can do
@@ -298,6 +598,14 @@ class WidgetLayoutDeviceTest {
         // yet" with 64 % of the height spare, which is the truth about that state.
         val counts = root.findViewById<View>(R.id.widget_counts)
         if (counts == null || counts.visibility != View.VISIBLE) return
+
+        // The second exemption, and it has the same shape as the first. A widget that names
+        // monitors is given a box measured for the full set of them — three names and a count of
+        // the rest — and its counts line is capped so that the full set still fits. With one name
+        // in that box the height is genuinely underused, and there is nothing it should be filled
+        // with: growing the figures until it looks full is what the cap exists to prevent. So the
+        // ceiling is asked of the full case, which is the case the box was measured for.
+        if (!fillsTheBox) return
 
         assertTrue(
             "$description: $percent% of the height is spare, " +
@@ -330,6 +638,25 @@ class WidgetLayoutDeviceTest {
             .sumOf { row -> rowInk(row) }
     }
 
+    /**
+     * Which line contributes how much, for the failure message.
+     *
+     * A sum says that something does not fit; it does not say what to change. This was written
+     * after a failure that cost two wrong guesses: the line responsible turned out to be the one
+     * that scales, and nothing in the message had pointed at it. Resource names and measurements
+     * only — no text of the widget's own, so the message carries no instance or monitor name.
+     */
+    private fun inkByLine(root: View): String {
+        if (root !is ViewGroup) return "not a group"
+        return (0 until root.childCount)
+            .map { index -> root.getChildAt(index) }
+            .filter { row -> row.visibility == View.VISIBLE }
+            .joinToString(", ") { row ->
+                val size = (row as? TextView)?.textSize?.toInt() ?: 0
+                "${name(row)}=${rowInk(row)}px@${size}px"
+            }
+    }
+
     private fun rowInk(row: View): Int = when (row) {
         is TextView -> row.layout?.height ?: 0
         is ViewGroup -> visibleTextViews(row).maxOfOrNull { it.layout?.height ?: 0 } ?: 0
@@ -347,6 +674,23 @@ class WidgetLayoutDeviceTest {
         step: Step,
         model: WidgetRenderModel,
         fontScale: Float,
+    ): AppWidgetHostView = hostedViews(
+        step,
+        WidgetViews.build(scaled(fontScale), APP_WIDGET_ID, model, step.layout),
+        fontScale,
+    )
+
+    /**
+     * Any prepared views inside a real host view, measured at the given box and font scale.
+     *
+     * It takes the views rather than a model because there are two kinds of widget now and they
+     * are built by two separate functions — which is the arrangement that keeps a nameless model
+     * out of the naming renderer, and it holds here as well.
+     */
+    private fun hostedViews(
+        step: Step,
+        views: RemoteViews,
+        fontScale: Float,
     ): AppWidgetHostView {
         val context = scaled(fontScale)
         val widthPx = px(context, step.widthDp)
@@ -356,7 +700,7 @@ class WidgetLayoutDeviceTest {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             val view = AppWidgetHostView(context)
             view.setAppWidget(APP_WIDGET_ID, providerInfo)
-            view.updateAppWidget(WidgetViews.build(context, APP_WIDGET_ID, model, step.layout))
+            view.updateAppWidget(views)
             view.measure(exactly(widthPx), exactly(heightPx))
             view.layout(0, 0, widthPx, heightPx)
             hosted = view
@@ -417,7 +761,16 @@ class WidgetLayoutDeviceTest {
         updatedAtEpochMs = UPDATED_AT,
     )
 
-    /** One box the widget is declared for, and the layout the platform shows in it. */
+    /**
+     * One box the widget is declared for, and the layout the platform shows in it.
+     *
+     * The second half of that sentence is a claim, and for a while it was no more than one: every
+     * test here builds the layout it names and measures that, so a box paired with the wrong
+     * layout measures the wrong thing and passes. It did — the box carrying names was paired with
+     * a layout the platform could not reach at that size. `WidgetStepChoiceDeviceTest` is what
+     * holds the pairing to the platform's own choice, and the tables below are sound only because
+     * it does.
+     */
     private data class Step(
         val description: String,
         val layout: WidgetViews.Layout,
@@ -430,6 +783,13 @@ class WidgetLayoutDeviceTest {
         const val PROVIDER = "io.github.jellyforgedev.widgora.widget.CountsWidgetProvider"
         const val APP_WIDGET_ID = 4714
         const val UPDATED_AT = 1_700_000_000_000L
+
+        /** The instance name every model in this test carries, and the title without consent. */
+        const val TITLE = "Uptime Kuma"
+
+        /** The two lines of the title row, by resource name, as [lines] reports them. */
+        const val TITLE_ID = "widget_title"
+        const val TITLE_MORE_ID = "widget_title_more"
 
         const val DEFAULT_FONT_SCALE = 1.0f
 
@@ -482,6 +842,49 @@ class WidgetLayoutDeviceTest {
                 layout = WidgetViews.Layout.FULL,
                 widthDp = WidgetSizes.LARGE_WIDTH_DP,
                 heightDp = WidgetSizes.LARGE_HEIGHT_DP,
+            ),
+        )
+
+        /**
+         * The steps a widget **with consent** is offered, smallest first.
+         *
+         * The first two are the ones with no line for a name, where consent shows itself in the
+         * title instead; the last two are the step that carries the names, measured at the
+         * narrowest width it can be given as well as at the widest — three names on a 300dp line
+         * wrap onto more rows than they do on a 640dp one, so the narrow case is the one that
+         * decides whether the step fits.
+         *
+         * The order matters to the tests that take "the two smaller steps" by index: those are the
+         * two whose title line changes.
+         */
+        val NAMING_STEPS = listOf(
+            Step(
+                description = "compact with consent at ${WidgetSizes.MIN_WIDTH_DP}×" +
+                    "${WidgetSizes.MIN_HEIGHT_DP}dp",
+                layout = WidgetViews.Layout.COMPACT,
+                widthDp = WidgetSizes.MIN_WIDTH_DP,
+                heightDp = WidgetSizes.MIN_HEIGHT_DP,
+            ),
+            Step(
+                description = "full with consent at ${WidgetSizes.MIN_WIDTH_DP}×" +
+                    "${WidgetSizes.FULL_HEIGHT_DP}dp",
+                layout = WidgetViews.Layout.FULL,
+                widthDp = WidgetSizes.MIN_WIDTH_DP,
+                heightDp = WidgetSizes.FULL_HEIGHT_DP,
+            ),
+            Step(
+                description = "named at ${WidgetSizes.MIN_WIDTH_DP}×" +
+                    "${WidgetSizes.NAMES_HEIGHT_DP}dp",
+                layout = WidgetViews.Layout.FULL_NAMED,
+                widthDp = WidgetSizes.MIN_WIDTH_DP,
+                heightDp = WidgetSizes.NAMES_HEIGHT_DP,
+            ),
+            Step(
+                description = "named at ${WidgetSizes.LARGE_WIDTH_DP}×" +
+                    "${WidgetSizes.NAMES_HEIGHT_DP}dp",
+                layout = WidgetViews.Layout.FULL_NAMED,
+                widthDp = WidgetSizes.LARGE_WIDTH_DP,
+                heightDp = WidgetSizes.NAMES_HEIGHT_DP,
             ),
         )
     }

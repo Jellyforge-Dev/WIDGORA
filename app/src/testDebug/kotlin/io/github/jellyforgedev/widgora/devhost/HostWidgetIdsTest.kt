@@ -17,7 +17,16 @@ import kotlin.test.assertEquals
  */
 class HostWidgetIdsTest {
 
-    private val ours = "io.github.jellyforgedev.widgora.widget.CountsWidgetProvider"
+    private val counts = "io.github.jellyforgedev.widgora.widget.CountsWidgetProvider"
+
+    /**
+     * Two of ours, although only one exists today.
+     *
+     * The second name is what this is for: the host now reads every installed provider of the
+     * package, so an identifier bound to any of them is ours. With the previous single-name form
+     * a widget of the second type would have been released and replaced on every start.
+     */
+    private val ours = listOf(counts, "io.github.jellyforgedev.widgora.widget.FutureProvider")
 
     @Test
     fun aFirstRunAsksForAnIdentifier() {
@@ -44,7 +53,25 @@ class HostWidgetIdsTest {
     fun anIdentifierStillNamingOurWidgetIsUsedAgain() {
         assertEquals(
             HostWidgetDecision.Reuse(17),
-            HostWidgetIds.decide(17, ours, ours),
+            HostWidgetIds.decide(17, counts, ours),
+        )
+    }
+
+    /** Any provider of this package counts, not only the first one in the list. */
+    @Test
+    fun anIdentifierNamingAnotherOfOurProvidersIsUsedAgainToo() {
+        assertEquals(
+            HostWidgetDecision.Reuse(17),
+            HostWidgetIds.decide(17, ours.last(), ours),
+        )
+    }
+
+    /** A host of a package that declares no provider has nothing of ours to reuse. */
+    @Test
+    fun withoutAnyProviderOfOursNothingIsReused() {
+        assertEquals(
+            HostWidgetDecision.ReleaseAndAllocate(17),
+            HostWidgetIds.decide(17, counts, emptyList()),
         )
     }
 

@@ -69,7 +69,10 @@ internal object WidgetRefreshScheduler {
      * the application's data, or a cancellation that never arrived.
      */
     fun applyToPlacedWidgets(context: Context) {
-        when (WidgetRefreshPlan.scheduleFor(WidgetUpdater.widgetIds(context).size)) {
+        // Every widget of this application, not those of one provider. One periodic run serves
+        // all the types, so the question is whether *any* widget is placed; counting one
+        // provider's would cancel the refresh the moment the only widget left was of another type.
+        when (WidgetRefreshPlan.scheduleFor(WidgetUpdater.allWidgetIds(context).size)) {
             RefreshSchedule.ENQUEUE -> schedule(context)
             RefreshSchedule.CANCEL -> cancel(context)
         }

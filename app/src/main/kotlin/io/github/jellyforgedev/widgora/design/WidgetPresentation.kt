@@ -59,6 +59,15 @@ data class WidgetPresentation(
         const val MARK_UNREADABLE = "!!"
 
         /**
+         * The widget points at an instance that is gone: the mark asks rather than blames.
+         *
+         * Distinct from [MARK_NOT_SET_UP], because the two situations call for different things.
+         * "Add one" is wrong here — there may be several instances, and the one this widget was
+         * configured for is not among them. What is needed is to configure this widget again.
+         */
+        const val MARK_INSTANCE_GONE = "?"
+
+        /**
          * The marks are deliberately plain characters rather than icons: the project adds no
          * icon library, and a glyph from the text font cannot go missing on a television.
          */
