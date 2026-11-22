@@ -531,8 +531,17 @@ class WidgetHostActivity : Activity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) info.maxResizeHeight else 0
 
         return HostSizes.offered(
-            declaredWidthDp = info.minWidth.toDp(),
-            declaredHeightDp = info.minHeight.toDp(),
+            // The resize floor rather than the size a host would place the widget at, and that is
+            // a correction rather than a preference. The three kinds are placed at three different
+            // boxes — the counts widget at its smallest, the selection widget at its largest — so
+            // taking the placement size as the first step would offer that kind one box and hide
+            // the two smaller layouts it is equally built for. The floor is the same figure for
+            // all three kinds, so the steps come out as the same three boxes whatever is placed,
+            // which is what a harness for looking at layouts should show.
+            declaredWidthDp = info.minResizeWidth.toDp().takeIf { width -> width > 0 }
+                ?: info.minWidth.toDp(),
+            declaredHeightDp = info.minResizeHeight.toDp().takeIf { height -> height > 0 }
+                ?: info.minHeight.toDp(),
             // The one figure that cannot be read from the metadata: where the widget changes
             // from one layout to the other. This host exists to look at WIDGORA's own widget, so
             // it reads that from WIDGORA's own constants rather than guessing at a midpoint.

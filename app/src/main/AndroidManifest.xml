@@ -107,6 +107,46 @@
                 android:resource="@xml/counts_widget_info" />
         </receiver>
 
+        <!--
+          The other two widget kinds. Everything said about the receiver above applies to both:
+          not exported, the four protected actions declared for the same reasons, and the metadata
+          is what makes each one a kind of its own.
+
+          A kind is a provider rather than an option on one provider because a host binds a
+          placement to a provider class name and reads the sizes from that provider's metadata.
+          One provider with three behaviours would mean one set of declared sizes for three
+          surfaces, and a widget placed as one kind could be shown as another.
+        -->
+        <receiver
+            android:name=".widget.CertificatesWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_label_certificates">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/certificates_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.SelectionWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_label_selection">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/selection_widget_info" />
+        </receiver>
+
     </application>
 
 </manifest>

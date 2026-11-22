@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What a host is told about the selected-monitors widget before it ever draws one.
+
+  As with the certificates widget, everything shared with counts_widget_info.xml means the same
+  thing and carries the same value; only what differs is explained here.
+
+  ### Why this one is placed at the largest box it accepts
+
+  A selection is a list the user assembled by hand, one monitor at a time, and a list somebody
+  assembled is a list they mean to read. The box below is the one that shows eight of them, in two
+  columns; smaller boxes show four and two, and the widget works at both.
+
+  The resize floor is therefore well below the placement size, which is the same arrangement the
+  certificates widget uses and for the same reason: the floor is a promise about what the widget
+  can still draw, not a statement about how much room it deserves.
+
+  The cell figures are twice the counts widget's width and twice its height, which is the same
+  proportion its dp figures have.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="io.github.jellyforgedev.widgora.widget.config.WidgetConfigActivity"
+    android:description="@string/widget_description_selection"
+    android:initialLayout="@layout/widget_list_large"
+    android:maxResizeHeight="320dp"
+    android:maxResizeWidth="640dp"
+    android:minHeight="320dp"
+    android:minResizeHeight="170dp"
+    android:minResizeWidth="300dp"
+    android:minWidth="640dp"
+    android:previewLayout="@layout/widget_list_large"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="4"
+    android:targetCellWidth="6"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />

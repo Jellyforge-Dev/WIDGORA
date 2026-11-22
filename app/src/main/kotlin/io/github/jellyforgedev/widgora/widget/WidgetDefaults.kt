@@ -51,11 +51,12 @@ object WidgetDefaults {
                 )
             }
 
-            // No default, deliberately. Neither kind has ever been placed, so there is no earlier
-            // behaviour to preserve, and both would need an answer that cannot be derived: a
-            // selection is a list only the user has, and a certificate widget pointed at
-            // whichever instance came first would be the silent re-pointing the project rejects.
-            // Such a widget says it is not set up, and the configuration step is how it is.
+            // No default, deliberately. Neither kind existed before the configuration step did, so
+            // every widget of either one has an entry and there is no earlier behaviour to
+            // preserve. Both would also need an answer that cannot be derived: a selection is a
+            // list only the user has, and a certificates widget pointed at whichever instance came
+            // first would be the silent re-pointing the project rejects. A widget of these kinds
+            // without an entry says it is not set up, and the configuration step is how it is.
             WidgetKind.CERTIFICATES, WidgetKind.SELECTION -> null
         }
 }

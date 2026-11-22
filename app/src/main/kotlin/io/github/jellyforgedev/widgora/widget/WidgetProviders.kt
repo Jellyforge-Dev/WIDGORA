@@ -20,8 +20,9 @@ import io.github.jellyforgedev.widgora.core.data.WidgetKind
  * provider would silently be one nothing can place, and a provider added without a kind would be
  * a widget whose configuration step does not know what it is looking at.
  *
- * Two of the three kinds have no provider yet. That is stated as `null` rather than left out, so
- * the absence is a decision in this file rather than a gap in it.
+ * All three kinds have a provider. The return type stays nullable all the same: it is what lets a
+ * future kind be added to [WidgetKind] and answered here with a stated "none yet" rather than with
+ * a class that does not exist.
  */
 object WidgetProviders {
 
@@ -33,10 +34,8 @@ object WidgetProviders {
      */
     fun classNameOf(kind: WidgetKind): String? = when (kind) {
         WidgetKind.STATUS -> CountsWidgetProvider::class.java.name
-
-        // Decided and not implemented; see ARCHITECTURE.md section 5a. The configuration screen
-        // is built so that adding a provider here is all it needs on this side.
-        WidgetKind.CERTIFICATES, WidgetKind.SELECTION -> null
+        WidgetKind.CERTIFICATES -> CertificatesWidgetProvider::class.java.name
+        WidgetKind.SELECTION -> SelectionWidgetProvider::class.java.name
     }
 
     /** The kind a provider class serves, or `null` for a class that is not one of ours. */

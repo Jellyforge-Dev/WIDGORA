@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A list widget at the box it is placed in by default: four items.
+
+  ### Why four
+
+  Measured, like the other two. The box is 300 x 250 dp, of which the host takes 24 dp of height
+  and this layout's own padding 16 dp, leaving 210 dp. A title line at 20 sp and five lines at the
+  18 sp floor, all at a font scale of 1.3, need about 194 dp of it. A fifth item would not fit at
+  that scale, and the text does not go below the floor to make room for one.
+
+  Everything but the number of items and the padding is identical to the compact layout, and a
+  test holds the shared lines of all three list layouts against one another so that a change to
+  one of them cannot quietly skip the others.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:contentDescription="@string/widget_open_app"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:padding="@dimen/widget_padding_compact">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/app_name"
+            android:textColor="@color/widget_on_surface"
+            android:textSize="@dimen/widget_text_list_title" />
+
+        <TextView
+            android:id="@+id/widget_title_more"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/widget_padding_compact"
+            android:gravity="end"
+            android:maxLines="1"
+            android:textColor="@color/widget_on_surface_muted"
+            android:textSize="@dimen/widget_text_list_title"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textColor="@color/widget_on_surface_muted"
+            android:textSize="@dimen/widget_text_list_row"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/widget_row_0"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/widget_on_surface"
+                android:textSize="@dimen/widget_text_list_row"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/widget_row_0_detail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/widget_padding_compact"
+                android:gravity="end"
+                android:maxLines="1"
+                android:textColor="@color/widget_on_surface_muted"
+                android:textSize="@dimen/widget_text_list_row"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/widget_row_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/widget_on_surface"
+                android:textSize="@dimen/widget_text_list_row"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/widget_row_1_detail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/widget_padding_compact"
+                android:gravity="end"
+                android:maxLines="1"
+                android:textColor="@color/widget_on_surface_muted"
+                android:textSize="@dimen/widget_text_list_row"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/widget_row_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/widget_on_surface"
+                android:textSize="@dimen/widget_text_list_row"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/widget_row_2_detail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/widget_padding_compact"
+                android:gravity="end"
+                android:maxLines="1"
+                android:textColor="@color/widget_on_surface_muted"
+                android:textSize="@dimen/widget_text_list_row"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/widget_row_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/widget_on_surface"
+                android:textSize="@dimen/widget_text_list_row"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/widget_row_3_detail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/widget_padding_compact"
+                android:gravity="end"
+                android:maxLines="1"
+                android:textColor="@color/widget_on_surface_muted"
+                android:textSize="@dimen/widget_text_list_row"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_state"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/dashboard_state_loading"
+            android:textColor="@color/widget_on_surface_muted"
+            android:textSize="@dimen/widget_text_list_row" />
+
+        <TextView
+            android:id="@+id/widget_footer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/widget_padding_compact"
+            android:gravity="end"
+            android:maxLines="1"
+            android:text="@string/dashboard_no_data_yet"
+            android:textColor="@color/widget_on_surface_muted"
+            android:textSize="@dimen/widget_text_list_row" />
+
+    </LinearLayout>
+
+</LinearLayout>

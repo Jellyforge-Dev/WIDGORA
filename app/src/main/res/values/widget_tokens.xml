@@ -40,6 +40,14 @@
       height the compact variant does not have on a margin that is already there.
     -->
     <dimen name="widget_padding_compact">8dp</dimen>
+    <!--
+      WidgoraSpacing.Tiny, for the smallest box of a list widget.
+
+      Smaller again than the compact counts variant's, and for the same reason taken one step
+      further: that box has to carry four lines of text, and every dp of padding is a dp the
+      fourth line does not get. The host's own 12/4/12/20 dp is still there around it.
+    -->
+    <dimen name="widget_padding_tiny">4dp</dimen>
     <!-- WidgoraFocus.BorderWidth -->
     <dimen name="widget_focus_border">4dp</dimen>
     <!-- WidgoraFocus.RestingBorderWidth -->
@@ -62,6 +70,25 @@
       font scale is a question for the measurement test and not for this comment.
     -->
     <dimen name="widget_text_names">18sp</dimen>
+
+    <!--
+      The two sizes of a list widget.
+
+      WidgoraText.Label.size for the title line, and the floor for everything below it. A list
+      widget has no line that scales: its content is a number of named items, and a surface whose
+      text grows with the box would show two items in letters twice the size of eight items'. So
+      the sizes are fixed, the title is one step above the rest, and how many items fit is decided
+      by the box rather than by shrinking anything.
+    -->
+    <!-- WidgoraText.Label.size -->
+    <dimen name="widget_text_list_title">20sp</dimen>
+    <!--
+      WidgoraText.Caption.size — the items, the state, the time and the empty statement.
+
+      One size for all four, deliberately: each of them is already at the floor this project sets
+      for a surface read from three metres away, so there is no step left between them to make.
+    -->
+    <dimen name="widget_text_list_row">18sp</dimen>
 
     <!--
       The compact variant's three sizes. Smaller than the full variant's, every one of them still

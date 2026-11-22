@@ -11,12 +11,16 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.lifecycle.lifecycleScope
 import androidx.tv.material3.Surface
 import io.github.jellyforgedev.widgora.WidgoraApplication
+import io.github.jellyforgedev.widgora.core.data.SnapshotRepository
 import io.github.jellyforgedev.widgora.core.data.StorageWriteResult
 import io.github.jellyforgedev.widgora.core.data.WidgetSettings
 import io.github.jellyforgedev.widgora.core.data.WidgetSettingsRepository
 import io.github.jellyforgedev.widgora.design.WidgoraTheme
+import io.github.jellyforgedev.widgora.model.InstanceId
 import io.github.jellyforgedev.widgora.widget.WidgetUpdater
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The configuration step a host runs when one of WIDGORA's widgets is placed.
@@ -77,6 +81,7 @@ class WidgetConfigActivity : ComponentActivity() {
             kind = request.kind,
             instances = widgora.instanceStore.instances,
             settings = RepositoryWidgetSettingsStore(widgora.widgetSettings),
+            monitors = SnapshotMonitorCatalogueSource(widgora.snapshots),
         )
 
         setContent {
@@ -136,4 +141,50 @@ internal class RepositoryWidgetSettingsStore(
         appWidgetId: Int,
         settings: WidgetSettings,
     ): StorageWriteResult = repository.save(appWidgetId, settings)
+}
+
+/**
+ * The monitors of an instance, obtained the only way they can be: by asking it.
+ *
+ * ### Why this screen retrieves at all
+ *
+ * It is the one screen that has to. A widget is placed from a launcher, which may start this
+ * activity in a process that has just been created for it, and the monitors a user is to pick from
+ * are not stored anywhere — they are what the instance reports. So a selection widget's
+ * configuration asks, and the screen says while it is asking.
+ *
+ * The retrieval is the application's own, not a second client: [SnapshotRepository.refresh] already
+ * knows which instances are eligible, reads the credential where it is kept, and publishes what it
+ * found. Building a separate request here would mean a second place that reads a secret.
+ *
+ * ### Why the dispatcher is named here
+ *
+ * The repository's contract says a refresh blocks the calling coroutine, and the screen calls into
+ * the holder from a composition, which runs on the main thread. The hop to the IO dispatcher
+ * therefore belongs at this edge, which is the one piece of this screen that knows about Android at
+ * all.
+ *
+ * ### What counts as unavailable
+ *
+ * Anything that leaves no items: an instance the refresh did not retrieve — switched off, no usable
+ * credential, unreachable — and an instance that is not in the published list at all. The screen
+ * reports that as a failure the user can retry, which is the truth about all of them; an instance
+ * that answered and has no monitors is a different case and arrives as an empty list.
+ */
+internal class SnapshotMonitorCatalogueSource(
+    private val snapshots: SnapshotRepository,
+) : MonitorCatalogueSource {
+
+    override suspend fun monitorsOf(instanceId: InstanceId): List<MonitorChoice>? =
+        withContext(Dispatchers.IO) {
+            snapshots.refresh()
+            val overview = snapshots.views.value
+                .firstOrNull { view -> view.instanceId == instanceId }
+                ?.overview
+                ?: return@withContext null
+
+            overview.entries.map { entry ->
+                MonitorChoice(monitorId = entry.monitorId, label = entry.name)
+            }
+        }
 }

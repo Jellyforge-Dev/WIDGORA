@@ -564,8 +564,11 @@ a widget can be placed and operated without waiting for a launcher.
 Implemented since: the **configuration step**, which asks which instance a widget shows and
 whether it may name monitors, and the **consent rule** that replaces the module boundary for
 monitor names. Both are exercised on an emulator `[V]` and neither has been seen on a television
-yet `[U]`. What is decided and still **not** implemented is three widget types instead of one;
-only the status type exists.
+yet `[U]`.
+
+**All three types now exist**, each with its own provider, its own metadata and its own placement
+box; the two newer ones draw a list of named items and share one set of three layouts. Measured on
+an emulator at three font scales `[V]`, not yet seen on a television `[U]`.
 
 WIDGORA supplies standard Android app widgets — an `AppWidgetProvider` per type, each handing the
 host a `RemoteViews` hierarchy. Any launcher able to host widgets can display them, which makes
@@ -617,11 +620,16 @@ other with more than an identifier.
 
 ### Three types, three providers
 
-| Type | What it shows | Monitor names |
-|---|---|---|
-| **Status** | the counts per state, as marks and digits, for one instance | a switch, off by default; when on, the affected items are named |
-| **Certificates** | items whose certificate expires within the horizon, soonest first | a switch, off by default; without it, only how many and how soon |
-| **Selection** | items the user picked, with their state, under the counts for the whole instance | inherent: the selection is what grants them |
+| Type | What it shows | Placed at | Monitor names |
+|---|---|---|---|
+| **Status** | the counts per state, as marks and digits, for one instance | 300 × 170 dp | a switch, off by default; when on, the affected items are named |
+| **Certificates** | items whose certificate the source reports as running out within the horizon, or as ones it will not vouch for | 300 × 250 dp | no switch: the screen states that names are shown, and saving is the consent |
+| **Selection** | items the user picked, with their state, under the counts for the selection | 640 × 320 dp | inherent: the selection is what grants them, and an empty one cannot be saved |
+
+Each type is placed at the box its own content needs and resizes within the same range — the floor
+is 300 × 170 dp for all three, so every type has a compact, a full and a large variant. A switch
+would have been the wrong question for the certificates type: a list of certificates is a list of
+the hosts they belong to, so a version of it that may not name them has nothing to show.
 
 Three providers rather than one provider with a setting, because a host's picker lists providers.
 A user who wants a certificate widget should find one in that list and not place a generic widget
@@ -678,6 +686,18 @@ Four things came out of building it that are decisions rather than details:
   package would run the step on one television and skip it on another. The second reason stands
   on its own — the flag lets a host place a widget without asking anything, and the instance
   question is the point of the step.
+
+**The selection type's list is read from the instance, and that is the one thing on this screen
+that takes time.** Nothing stores the monitors of an instance — they are what it reports — and a
+widget is placed from a launcher, which may start this screen in a process created for it. So the
+screen retrieves, through the application's own repository rather than a second client, and says
+which of four things is true while it does: asking, could not ask, asked and there are none, or
+here they are. A list that was empty in three of those would be a screen that lies in two of them.
+Three rules around it: an identifier storage could not round-trip is not offered at all, a pick
+beyond the stored limit of twenty is refused with a line saying so rather than silently dropping
+the oldest, and a picked monitor the instance no longer lists is dropped once the list has
+actually been read — the screen cannot offer it to be unpicked, so keeping it would keep an entry
+the user can neither see nor remove. A failed read drops nothing.
 
 **A widget placed before the step existed keeps working.** It has no stored entry, and what
 applies to it is a defined default rather than a guess: the first stored instance and no monitor
@@ -772,15 +792,39 @@ thirty-five names in a captured response of a real installation appears in it.
 
 ### What a widget shows at each size
 
-Three size steps for the status type now, and the third one is a result of measuring rather than
-of planning. The line budgets for the two types that do not exist yet are still a starting point
-to be corrected by their first measurement.
+Three size steps for every type, and all three budgets are measured rather than planned.
 
 | | compact | full | large |
 |---|---|---|---|
 | Status | title, counts, state and time; `[V]` with consent the title names the first affected item | the same, figures scaled up | `[V]` the instance's title plus up to 3 affected items named, where the user allowed it |
-| Certificates | how many within the horizon, and the smallest figure | up to 3 rows | up to 6 rows |
-| Selection | the instance's counts plus 2 rows | plus 4 rows | plus 8 rows |
+| Certificates | `[V]` 2 items | `[V]` 4 items | `[V]` 8 items, in two columns |
+| Selection | `[V]` 2 items | `[V]` 4 items | `[V]` 8 items, in two columns |
+
+**The two list types share one set of layouts**, because they differ in what a row says and not in
+how a row is arranged: a title line with the count of what was left out, the items, and a bottom
+line carrying the state and the time. Each item is two views — the name may be shortened and the
+figure beside it may not, which is the division the status type's bottom line already makes.
+
+**Eight items need two columns, and that is what the width is for.** Ten lines of text at the 18 sp
+floor need about 320 dp at a font scale of 1.3, and the largest box offers 296; four lines of two
+items need about 194 `[V]`. A column is about 300 dp wide, which is what a row has in the two
+smaller boxes, so an item is no more cramped there than here. The compact step pays for its fourth
+line with a 4 dp padding instead of 8.
+
+**A list widget has no line that scales**, unlike the counts widget. Its content is a number of
+named items, and text that grew with the box would show two items in letters twice the size of
+eight items'. So the sizes are fixed at the floor, and what the box decides is how many items fit.
+The rule when a budget does not measure up is therefore stated in advance: carry fewer items, never
+smaller text.
+
+**The certificates type attributes its figures once, in the state line** — "per source", in place
+of the usual word for a current value. Every figure it shows is the source's claim: the days
+remaining and the validity are two gauges the first integration publishes, and it never clears them.
+A row has about twenty characters at the text size this project insists on, so repeating the
+attribution in each row would leave no room for a name. An outdated value, an unreachable instance
+or a notice keeps its own wording there, because that is the more urgent thing to say. Nothing in
+any wording claims a certificate has expired: the gauge behind a no is written as a plain no both
+for a certificate that is genuinely bad and for one the source has no opinion on.
 
 **The names turned out to need a step of their own**, and the plan said otherwise. The intention
 was names in the full step and the large one alike. Measured in a real host view, at 300 × 250 dp
@@ -868,11 +912,14 @@ genuinely underused, and there is nothing it should be filled with, since growin
 what the cap exists to prevent.
 
 More entries than rows produces the first *n* in the type's own order followed by a count of the
-rest. A widget draws at most twelve rows whatever its size, so that an installation with a
-thousand monitors cannot build a hierarchy that has to cross a process boundary.
+rest, in the line beside the title. A widget draws at most eight rows whatever its size — the
+largest budget — and the model that feeds it carries no more than that, so a name no surface can
+show is never handed to another process in the first place.
 
-Every empty case is a sentence rather than blank space: nothing expiring within the horizon,
-no monitor checking a certificate at all, no item selected. The minimum sizes of each type are
+Every empty case is a sentence rather than blank space: nothing running out within the horizon,
+none of the picked items in the data. With nothing to list, the title line gives its room to the
+sentence — a widget with no items is not reporting on an instance, it is reporting that there is
+nothing to report. The minimum sizes of each type are
 measured inside a real host view at several font scales, because a host does not hand a widget
 the box it declared — that is how the first type's declared minimum turned out to be one it could
 not keep.
@@ -1185,7 +1232,12 @@ adds indirection without benefit.
 | How long a television in a low-power state defers a periodic refresh, and what a widget therefore shows when the device wakes | `[U]` |
 | Whether the broadcasts that start and stop the periodic refresh reach the provider on the target device. The documentation states only that the filter must accept the update action and says nothing either way about the other two, so both are declared and the delivery is to be confirmed by placing and removing a widget | `[U]` |
 | Whether to strip the unused `FOREGROUND_SERVICE` permission the work library contributes, given it is declared for a fallback path WIDGORA never takes | `[O]` |
-| The minimum sizes of the second and third widget type, measured inside a real host view at several font scales rather than estimated | `[U]` |
+| ~~The minimum sizes of the second and third widget type, measured inside a real host view at several font scales rather than estimated~~ — **measured**: two, four and eight items, the last in two columns, at font scales 1.0, 1.15 and 1.3 inside a real host view | `[V]` |
+| Whether two items in the compact box and eight in two columns are legible and useful on a television from three metres, and whether the figure beside a name is read as belonging to it | `[U]` |
+| Whether "per source" in the state line is understood as qualifying the figures above it, or reads as a state of its own | `[U]` |
+| Whether a certificates widget should name its instance at all, given its title line is the instance's name while the type is only visible in a host's picker | `[O]` |
+| Whether the source keeps a certificate's figures for a monitor that is paused, which decides whether such an item belongs in the list at all. Nothing is assumed: what the source reports is what is shown, with the item's own mark beside it | `[O]` |
+| Whether the retrieval the selection step performs is acceptable on a television that has just been woken by a launcher, or whether it needs a visible timeout of its own | `[U]` |
 | ~~Whether up to three monitor names fit the full step of the status widget, as the size table assumed~~ — **measured, and they do not**: 14 % of the height spare against a floor of 15 % with one name, and the counts line squeezed to 82 px for 83 px of text with three. They have a size step of their own; the smaller boxes name the first affected item in their title line instead | `[V]` |
 | ~~Whether each size step actually receives the variant it was built for~~ — **no, and not one of the three did.** The sizes handed to the platform were the declared boxes, while the platform compares them against the box minus the framework's host padding: the naming step was unreachable, and the full step fitted nothing and was served the compact variant by the documented fallback. Found on a television, reproduced on an emulator, and now held by a test that hands over the whole size map and lets the platform choose | `[V]` |
 | Whether a host launcher applies more padding than the framework's default, which would cost the tallest step its names while leaving the widget itself correct | `[U]` |

@@ -198,11 +198,11 @@ object WidgetUpdater {
     }
 
     /**
-     * The one place the two renderers are chosen between.
+     * The one place the renderers are chosen between.
      *
-     * A `when` over a sealed type rather than an overload: the two build functions take one model
-     * each and neither can be reached with the other's model, so there is no call on which a
-     * nameless model could end up in the naming renderer.
+     * A `when` over a sealed type rather than an overload: each build function takes one model and
+     * none can be reached with another's, so there is no call on which a nameless model could end
+     * up in a renderer that draws names.
      */
     internal fun viewsFor(
         context: Context,
@@ -211,5 +211,6 @@ object WidgetUpdater {
     ): RemoteViews = when (render) {
         is WidgetRender.Nameless -> WidgetViews.build(context, appWidgetId, render.model)
         is WidgetRender.Named -> WidgetViews.buildNaming(context, appWidgetId, render.model)
+        is WidgetRender.Listed -> WidgetListViews.build(context, appWidgetId, render.model)
     }
 }

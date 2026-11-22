@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What a host is told about the certificates widget before it ever draws one.
+
+  Everything here that is also in counts_widget_info.xml means the same thing and is the same
+  value, with one deliberate exception: the box this widget is placed in. The reasoning for the
+  shared parts is in that file and is not repeated here; what follows is only what differs.
+
+  ### The declared size and the resize floor are not the same figure
+
+  minWidth and minHeight are what a host without a cell grid places the widget at, and
+  targetCellWidth and targetCellHeight are what a host with one uses from Android 12 onwards. Both
+  say 300 x 250 dp, which is the box that lists four certificates — a list of two is a list that
+  mostly says "and more".
+
+  The resize floor stays at 300 x 170 dp, which is a promise this widget keeps: at that size it
+  lists two, measured in a real host view at three font scales. So the widget can be made as small
+  as the counts widget, it is simply not placed that way.
+
+  The cell figures follow the same proportion the counts widget's do — three cells of its width,
+  one cell more of its height.
+
+  ### The layout a host inflates before the first update
+
+  The list layout for the box above, whose default texts say that nothing has loaded rather than
+  showing a specimen certificate. A specimen would be a fabricated figure about somebody's
+  infrastructure sitting in a widget picker.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="io.github.jellyforgedev.widgora.widget.config.WidgetConfigActivity"
+    android:description="@string/widget_description_certificates"
+    android:initialLayout="@layout/widget_list"
+    android:maxResizeHeight="320dp"
+    android:maxResizeWidth="640dp"
+    android:minHeight="250dp"
+    android:minResizeHeight="170dp"
+    android:minResizeWidth="300dp"
+    android:minWidth="300dp"
+    android:previewLayout="@layout/widget_list"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="3"
+    android:targetCellWidth="3"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />
