@@ -83,6 +83,9 @@ object WidgetLaunch {
             AppWidgetManager.EXTRA_APPWIDGET_ID,
             AppWidgetManager.INVALID_APPWIDGET_ID,
         ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
-        return validAppWidgetId(candidate, WidgetUpdater.widgetIds(context))
+        // Every widget of this application, whatever its type. A press on a certificate widget is
+        // a widget launch exactly as a press on a counts widget is, and asking only one provider
+        // would make the second type's widgets open the application as though from nowhere.
+        return validAppWidgetId(candidate, WidgetUpdater.allWidgetIds(context))
     }
 }

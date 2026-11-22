@@ -26,15 +26,47 @@
     android:orientation="vertical"
     android:padding="@dimen/widget_padding">
 
-    <TextView
-        android:id="@+id/widget_title"
+    <!--
+      The title, and beside it the count of the affected items the title has no room to name.
+
+      Two views rather than one text: the part that may be shortened and the part that may not are
+      different parts. With the user's consent the title names the first failed monitor, and the
+      count of the others keeps its own width while the name gives way — in a single text ending
+      in "+2" the ellipsis would eat the "+2" first, which is the one piece of it that cannot be
+      inferred from anything else.
+
+      Without consent, or with nothing wrong, the count stays gone and the title is the instance's
+      name, exactly as before.
+    -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:text="@string/app_name"
-        android:textColor="@color/widget_on_surface"
-        android:textSize="@dimen/widget_text_title" />
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/app_name"
+            android:textColor="@color/widget_on_surface"
+            android:textSize="@dimen/widget_text_title" />
+
+        <TextView
+            android:id="@+id/widget_title_more"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/widget_padding"
+            android:ellipsize="end"
+            android:gravity="end"
+            android:maxLines="1"
+            android:textColor="@color/widget_on_surface_muted"
+            android:textSize="@dimen/widget_text_title"
+            android:visibility="gone" />
+
+    </LinearLayout>
 
     <!--
       The counts take whatever height is left and are scaled to fill it.
@@ -65,6 +97,16 @@
         android:textSize="@dimen/widget_text_counts"
         android:visibility="gone" />
 
+    <!--
+      No line for a monitor name, deliberately, and the absence is a measurement rather than a
+      preference. Two such lines were in this layout and were taken out again: with them the
+      widget did not keep the spare height this project asks for in the box this layout is used
+      in — 14 % against a floor of 15 % with a single name. The names live in
+      widget_counts_named.xml, which is offered to a host only for a taller box.
+
+      So a widget with consent and a widget without it draw the same thing here. That is better
+      than the alternative, which was a widget with its bottom line cut off.
+    -->
     <TextView
         android:id="@+id/widget_state"
         android:layout_width="match_parent"

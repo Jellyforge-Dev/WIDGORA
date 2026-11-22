@@ -336,7 +336,11 @@ class DesignSystemTest {
     @Test
     fun theDisplayStatesAndTheWidgetOnlyMarksAreDistinct() {
         val marks = displayStates().map { presentationOf(it).mark } +
-            WidgetPresentation.MARK_NOT_SET_UP
+            WidgetPresentation.MARK_NOT_SET_UP +
+            // The widget whose instance is gone has a mark of its own, because "add an instance"
+            // is the wrong instruction there: instances may well exist, and the one this widget
+            // was configured for is not among them.
+            WidgetPresentation.MARK_INSTANCE_GONE
 
         assertEquals(marks.size, marks.distinct().size, marks.toString())
         // The unreadable-settings mark is deliberately the mark for a fault, which the error state
@@ -603,7 +607,11 @@ class DesignSystemTest {
 
     private fun everyStateLineMark(): Set<String> =
         everyStateLinePresentation().map { it.mark }.toSet() +
-            setOf(WidgetPresentation.MARK_NOT_SET_UP, WidgetPresentation.MARK_UNREADABLE)
+            setOf(
+                WidgetPresentation.MARK_NOT_SET_UP,
+                WidgetPresentation.MARK_UNREADABLE,
+                WidgetPresentation.MARK_INSTANCE_GONE,
+            )
 
     private fun displayStates(): List<WidgetDisplayState> = listOf(
         WidgetDisplayState.Loading,

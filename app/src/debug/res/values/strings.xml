@@ -15,7 +15,7 @@
       names the step as well as the size, because there are more than two of them now and
       "larger" stops being an instruction once the largest one is reached.
     -->
-    <string name="debug_host_size">Size %1$d of %2$d: %3$d × %4$d dp</string>
+    <string name="debug_host_size">Size %1$d of %2$d: %3$d × %4$d dp · %5$s</string>
 
     <string name="debug_host_size_next">Next size</string>
 
@@ -26,5 +26,23 @@
     <string name="debug_host_bind_refused">Not allowed to host widgets yet. Run this on a computer connected to this device, then open this screen again:\n\n%1$s</string>
 
     <string name="debug_host_no_info">The widget could not be read back from the system.</string>
+
+    <!--
+      The controls that came with the configuration step. The type button only appears with more
+      than one provider installed, which today never happens; the two beside it are what make the
+      application's own cleanup observable on a television — a removed widget is what triggers
+      onDeleted, and the last one going is what triggers onDisabled.
+    -->
+    <string name="debug_host_type_next">Next type</string>
+    <string name="debug_host_reconfigure">Set up again</string>
+    <string name="debug_host_remove">Remove widget</string>
+    <string name="debug_host_place">Place widget</string>
+
+    <string name="debug_host_configuring">Waiting for the configuration step…</string>
+    <string name="debug_host_configuration_cancelled">Configuration cancelled. Nothing was attached.</string>
+    <string name="debug_host_configuration_unavailable">This widget declares no configuration step.</string>
+    <string name="debug_host_reconfigured">Set up again.</string>
+    <string name="debug_host_removed">Widget removed.</string>
+    <string name="debug_host_no_provider">This package declares no widget provider.</string>
 
 </resources>

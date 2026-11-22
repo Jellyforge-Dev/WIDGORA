@@ -127,10 +127,59 @@
     -->
     <string name="widget_config_unreadable">The saved settings cannot be read.</string>
     <!--
+      The instance this widget was configured for no longer exists. Deliberately not the wording
+      of widget_not_set_up: other instances may well be set up, and what is needed is not to add
+      one but to configure this widget again.
+    -->
+    <string name="widget_instance_gone">The chosen instance no longer exists. Set this widget up again.</string>
+    <!--
       The time on the compact variant, where it shares a line with the state. Short on purpose:
       the long sentence would be cut off there, and the time is the part that has to survive.
     -->
     <string name="widget_updated_compact">at %1$s</string>
+    <!--
+      How many further items are affected, beside the one the title names. A resource rather than
+      a plus sign joined to a number in code, for the reason the separator above is one: the form
+      a count takes beside a name is a decision a translation may need to make differently, and a
+      decision made in code is one no translation can reach.
+    -->
+    <string name="widget_title_more">+%1$d</string>
+
+    <!--
+      The configuration step a host runs when a widget is placed. One screen serves all three
+      widget types, so its title names the act rather than the type; the type is named in a line
+      of its own below it.
+    -->
+    <string name="widget_config_title">Set up widget</string>
+    <string name="widget_config_hint">Choose with the directional pad, confirm with OK. Back leaves without saving.</string>
+
+    <!-- The type of widget being configured, read from the provider that started this screen. -->
+    <string name="widget_config_kind_status">Status overview</string>
+    <string name="widget_config_kind_certificates">Certificates</string>
+    <string name="widget_config_kind_selection">Selected monitors</string>
+
+    <!--
+      The instance question is asked even when there is only one to choose. It is what makes a
+      widget point at *an* instance rather than at whichever happens to be first, and that is the
+      part a second instance will depend on.
+    -->
+    <string name="widget_config_instance">Instance</string>
+    <string name="widget_config_no_instance">No instance set up yet. Open WIDGORA, add one, and set the widget up afterwards.</string>
+
+    <!--
+      The consent. The label is the question and the line below it says what agreeing to it means,
+      because consent the user did not understand they were giving is not consent. It names the
+      reason too: a monitor name usually names a machine in the user's own network, and a widget
+      is drawn by another application.
+    -->
+    <string name="widget_config_show_names">Show monitor names</string>
+    <string name="widget_config_show_names_hint">Off by default. When on, this widget names the monitors that are not working — in a small widget, the first of them takes the place of the title. A monitor name usually contains a host name from your network, and the widget is drawn by the launcher.</string>
+    <string name="widget_config_on">On</string>
+    <string name="widget_config_off">Off</string>
+
+    <string name="widget_config_save">Save</string>
+    <string name="widget_config_cancel">Cancel</string>
+    <string name="widget_config_save_failed">Could not be saved. The settings file cannot be written.</string>
 
     <string name="settings_title">Uptime Kuma instance</string>
     <string name="settings_back_hint">Press back to leave this screen.</string>

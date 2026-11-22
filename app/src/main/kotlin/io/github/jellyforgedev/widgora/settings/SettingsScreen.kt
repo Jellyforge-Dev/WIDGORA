@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -75,6 +76,7 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
     val state by holder.state.collectAsState()
     val scope = rememberCoroutineScope()
     val firstField = remember { FocusRequester() }
+    val saveButton = remember { FocusRequester() }
     val scrollState = rememberScrollState()
 
     LaunchedEffect(Unit) {
@@ -175,6 +177,22 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
             // take it into its dictionary. An earlier version used ordinary text for the revealed
             // state and produced a suggestion strip on a television — see [keyboardTypeFor].
             keyboardType = keyboardTypeFor(EditableField.API_KEY, state.apiKeyVisible),
+            /*
+             * Where "down" goes from the last field of the form, stated rather than left to the
+             * focus system's geometry.
+             *
+             * Measured on a television `[V]`: without this, one press down from this field landed
+             * on **delete**. The row below holds several buttons side by side, the field above
+             * them is full width, and the focus system picks the candidate nearest the middle of
+             * the screen — which on a wide display is not the first button. A user walking down
+             * the form arrived at the control that destroys the instance, one centre press from
+             * losing it.
+             *
+             * The same defect was found and fixed on the configuration step before this one, and
+             * finding it twice is the reason it is written down in both places: it is a property
+             * of a full-width field above a row of buttons, not of one screen.
+             */
+            modifier = Modifier.focusProperties { down = saveButton },
             // Always present, never only when there is something to reveal. A button that comes
             // and goes changes the focus order under the user's thumb, which on a remote is worse
             // than a button that reveals an empty field.
@@ -213,18 +231,21 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(WidgoraSpacing.Medium)) {
-            Action(stringResource(R.string.settings_save)) { scope.launch { holder.save() } }
+            Action(
+                text = stringResource(R.string.settings_save),
+                focusRequester = saveButton,
+            ) { scope.launch { holder.save() } }
             Action(stringResource(R.string.settings_test)) {
                 scope.launch { holder.testConnection() }
             }
             if (state.existing) {
-                Action(stringResource(R.string.settings_delete), holder::requestDelete)
+                Action(stringResource(R.string.settings_delete), onClick = holder::requestDelete)
             }
             // Only offered while storage cannot be read. With a readable file there is a named
             // instance to delete instead, and throwing the whole file away would be a blunter
             // instrument than the situation calls for.
             if (state.configurationUnreadable) {
-                Action(stringResource(R.string.settings_reset), holder::requestReset)
+                Action(stringResource(R.string.settings_reset), onClick = holder::requestReset)
             }
             DebugWidgetHostAction()
         }
@@ -248,7 +269,10 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
                 Action(stringResource(R.string.settings_delete_confirm)) {
                     scope.launch { holder.confirmDelete() }
                 }
-                Action(stringResource(R.string.settings_delete_cancel), holder::cancelDelete)
+                Action(
+                    stringResource(R.string.settings_delete_cancel),
+                    onClick = holder::cancelDelete,
+                )
             }
         }
 
@@ -258,7 +282,10 @@ fun SettingsScreen(holder: SettingsStateHolder, modifier: Modifier = Modifier) {
                 Action(stringResource(R.string.settings_reset_confirm)) {
                     scope.launch { holder.confirmReset() }
                 }
-                Action(stringResource(R.string.settings_reset_cancel), holder::cancelReset)
+                Action(
+                    stringResource(R.string.settings_reset_cancel),
+                    onClick = holder::cancelReset,
+                )
             }
         }
     }
@@ -375,6 +402,15 @@ private fun LabelledField(
     // one kind of field this screen may not have: a caller that forgot it would get a keyboard
     // that suggests and learns, and nothing would say so.
     keyboardType: KeyboardType,
+    /**
+     * Applied to the row that holds the field and the button beside it.
+     *
+     * It exists for one caller: the last field of the form, which has to state where the focus
+     * goes downwards. Put on the row rather than on the surface inside it so that it holds for
+     * that button as well — both are on the last line, and both had the same press downwards
+     * landing on the wrong control.
+     */
+    modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
     masked: Boolean = false,
     placeholder: String? = null,
@@ -429,6 +465,7 @@ private fun LabelledField(
             color = WidgoraColors.OnSurface,
         )
         Row(
+            modifier = modifier,
             horizontalArrangement = Arrangement.spacedBy(WidgoraSpacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -524,8 +561,16 @@ private fun RestingValue(value: String, masked: Boolean, placeholder: String?) {
 }
 
 @Composable
-private fun Action(text: String, onClick: () -> Unit) {
-    Button(onClick = onClick) {
+private fun Action(
+    text: String,
+    focusRequester: FocusRequester? = null,
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = onClick,
+        modifier = focusRequester?.let { requester -> Modifier.focusRequester(requester) }
+            ?: Modifier,
+    ) {
         Text(
             text = text,
             fontSize = WidgoraText.Label.size,

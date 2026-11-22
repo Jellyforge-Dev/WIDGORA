@@ -37,12 +37,16 @@ object HostWidgetIds {
      * @param boundProviderClassName the provider the system says that identifier is bound to, or
      *   `null` when it is bound to nothing — which is what an uninstalled application or a
      *   binding that was never finished looks like
-     * @param ourProviderClassName the provider this host exists to show
+     * @param ourProviderClassNames every provider this host may show, which is every provider of
+     *   the application. A list rather than one name because there are three widget types to
+     *   come: a stored identifier bound to the second of them is still ours and still reusable,
+     *   whereas the previous single-name form would have released it and allocated a new one on
+     *   every start.
      */
     fun decide(
         storedAppWidgetId: Int?,
         boundProviderClassName: String?,
-        ourProviderClassName: String,
+        ourProviderClassNames: List<String>,
     ): HostWidgetDecision = when {
         storedAppWidgetId == null -> HostWidgetDecision.Allocate
 
@@ -50,7 +54,7 @@ object HostWidgetIds {
         // and treating it as one would ask the system to give back something it never gave out.
         storedAppWidgetId == NO_APP_WIDGET_ID -> HostWidgetDecision.Allocate
 
-        boundProviderClassName == ourProviderClassName ->
+        boundProviderClassName != null && boundProviderClassName in ourProviderClassNames ->
             HostWidgetDecision.Reuse(storedAppWidgetId)
 
         else -> HostWidgetDecision.ReleaseAndAllocate(storedAppWidgetId)

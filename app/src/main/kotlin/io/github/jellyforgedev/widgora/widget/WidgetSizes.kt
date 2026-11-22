@@ -13,6 +13,14 @@ package io.github.jellyforgedev.widgora.widget
  *
  * A test reads the provider's XML and holds it against these figures, so the two cannot drift.
  *
+ * ### These are declared boxes, and none of them is a key the platform compares
+ *
+ * Every figure below is a box a host may offer. What the widget is *given* is that box minus the
+ * host's own padding, so the keys of the size map are these figures minus that padding;
+ * [WidgetStepSizes] does the subtraction and carries the evidence. Using a figure from here as a
+ * key directly is the defect that made the tallest step unreachable — a reader reaching for one of
+ * these constants to pair with a layout is reaching for the wrong number.
+ *
  * ### The figures, and where they come from
  *
  * Measured on a device rather than estimated, after a television showed the compact variant cut
@@ -66,4 +74,29 @@ object WidgetSizes {
 
     /** The largest height the widget is declared for. */
     const val LARGE_HEIGHT_DP = 320
+
+    /**
+     * The height from which a widget with consent also draws the monitor names.
+     *
+     * **Measured, and the measurement overturned the plan.** The intention was names in the full
+     * step and the large one alike. In the full step at 300 × 250 dp they do not fit: with a
+     * single name only 14 % of the height was left spare against a floor of 15 %, and with three
+     * the counts line was squeezed to 82 px for 83 px of text — both read out of a real host view
+     * on an emulator `[V]`. Two lines were added and the box did not grow.
+     *
+     * So consent does not change what a widget draws in a box that size. It draws exactly what a
+     * widget without consent draws, and the names appear once the host gives it a taller box. The
+     * alternatives were worse: raising the full step would take the full layout away from every
+     * widget that has no names to show, and shortening the names to fit would spend the width on
+     * something nobody can read from a sofa.
+     *
+     * The figure is the declared maximum height. **That is what makes the step reachable, and for
+     * one round of this work it was what made it unreachable** — the figure was used as the size
+     * map's key as well, where it had to be the maximum *minus the host's padding*, and a key
+     * above every box a host can give is a step that never applies. A television showed exactly
+     * that: names allowed, a monitor down, the largest box, and the full variant drawn with no
+     * names in it. The key is now derived in [WidgetStepSizes]; this stays the declared box.
+     */
+    const val NAMES_HEIGHT_DP = LARGE_HEIGHT_DP
+
 }

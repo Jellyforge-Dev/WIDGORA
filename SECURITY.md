@@ -246,6 +246,9 @@ by the user, for the reason given in section 5.
 
 ### A widget may name a monitor only by consent
 
+**Implemented** `[V]`, with the four tests below in place and green on an emulator. Real
+television hardware remains unverified `[U]`.
+
 App widgets are the route that exists today, and they break the arrangement above in one specific
 place. The guarantee above rests on a **module boundary**, and a widget provider lives in the
 application module, where everything is reachable. Two of the three widget types are also meant
@@ -265,13 +268,38 @@ What replaces it:
   holds its field list. The other can carry names. The two build functions take one model each
   and there is no overload accepting both, so a nameless model cannot reach the naming renderer
   or the reverse.
-- **A consent token with a private constructor**, produced in exactly one place: the reader of a
-  widget's stored settings, and only for a widget that is allowed names. The named model cannot
-  be constructed without one. The point is not that it is unforgeable — within a module nothing
-  is — but that it cannot be produced absent-mindedly, and that producing one elsewhere is a
-  visible, deliberate edit in review.
+- **A consent token with a private constructor**, and the one function that produces it takes a
+  widget's stored settings and returns nothing unless they say yes. So the only material a token
+  can be made from is a real consent: there is no expression anywhere in the application that
+  yields one otherwise, and adding one would mean editing that file, which is a visible,
+  deliberate change in review. The point is not that it is unforgeable — within a module nothing
+  is — but that it cannot be produced absent-mindedly.
+- **The two renderers have different names**, not one name with two signatures, so there is no
+  call site at which the wrong model could be passed and resolved by overload selection.
+- **The named model's own `toString` prints the number of names and not the names.** It is the
+  one type in the chain allowed to hold them, which is exactly why its textual form must not
+  carry them: a log line, an assertion message or a crash report is not a widget. A test asserts
+  it.
 - **Off by default**, per placed widget, for the counts and certificate types. Nothing is global:
   consent given for one widget says nothing about another.
+- **With consent, a name now crosses in every size step, and that is a widening** of what this
+  section described before. It used to say that the two smaller steps carried no name at all,
+  because the names did not fit there as a list; they now give up their *title* line instead,
+  which carries the first affected item's name. Recorded as a change rather than quietly
+  replaced: the earlier sentence was a true statement about a narrower behaviour, and a security
+  document that lets a widening pass as a detail is the one nobody can rely on. What bounds it is
+  that it is still **one** name — the first affected one, and only where something is actually
+  wrong — in one line, only with a stored yes, and that the device test asserts no second view
+  carries a name.
+- **Until this round the largest box carried one name and not the list, whatever this section
+  said.** The step built for the names was never chosen on a device: its size was handed to the
+  platform as the box a host offers, while the platform compares against that box minus the
+  padding its own host view takes, so the step asked for more height than the largest box can
+  give. What a television actually drew was the full variant with one name in its title.
+  Correcting it therefore *increases* what crosses in that one box — from one name to up to three,
+  which is what this document had been describing as though it were already so. The claim was true
+  of the intent and false of the behaviour, and keeping those apart is what a security document is
+  for; ARCHITECTURE.md §5a carries the arithmetic and the evidence.
 - **For the selection type, the selection is the consent**, and the configuration screen says so
   in words — that the monitors chosen there will appear by name in that widget. Consent the user
   did not understand they were giving is not consent, so it is spelled out at the moment it is
@@ -293,6 +321,81 @@ only as good as they are:
    through the serialisation a host receives. This is the test that matters: that hierarchy is
    the thing that actually crosses into another process, and the ones above only describe what
    was intended to be put into it.
+
+The fourth test asks two different questions since the title line was given to the first affected
+item, and the second one is the harder of the two. Without consent it still asks whether **any**
+of the 35 names appears, in any step. With consent, in the two steps that have no line for a list,
+it asks whether **exactly one** appears and whether it is the right one: the name the title line
+was given, in that line, and no name in any other view. Counting is done per view rather than per
+name, because names in a real installation are substrings of one another — a shorter name
+contained in the one on display appears too, and in the same string. A second *view* carrying a
+name is the finding; a second match inside the one line that is supposed to carry one is not.
+
+**A further test, outside those four, is what made the claim above true.** All four build the
+hierarchy for a named size step and then examine it, which answers what a step carries and says
+nothing about which step a box is given — and that is where the behaviour diverged from this
+document. The additional test names no step: it hands the platform the whole set, lays it out in a
+real host view at each box a host may offer, and reads out of the inflated hierarchy which variant
+arrived. It was run against the unfixed code and failed `[V]`. Without it, the four tests above
+would keep passing on a widget nobody can obtain.
+
+Two things about those tests are worth recording, because both were corrections `[V]`:
+
+- **The recording describes only working monitors**, and a status widget names the ones that are
+  not working. Run against it unchanged, the tests asserting that no name appears would have
+  passed because there was nothing to name — proving nothing at all. Every item is therefore
+  treated as failed, which is the one condition under which a name could reach a widget.
+- **The counter-check caught a test, not the code.** The first version of the device test built a
+  model with no data in it; the widget then reports that it is loading and draws neither the
+  counts nor the names, and the half asserting that names *do* cross the parcel failed for a
+  reason that had nothing to do with the boundary. A suite whose negative halves pass while its
+  positive half is broken is a suite reporting care it never exercised.
+
+### What the configuration step exposes, and what it does not
+
+The step that asks these questions is an **exported activity**, and it has to be: the party that
+starts it is the host launcher, in another process, and an activity a launcher cannot start is a
+configuration step that never runs. Exported means any application on the device can start it,
+with any identifier in the intent.
+
+What that could achieve is narrow and is named rather than waved away. The screen writes one entry
+into WIDGORA's own per-widget settings file, keyed by the identifier it is handed. An arbitrary
+identifier would therefore write an entry for a widget belonging to somebody else — or for no
+widget at all, which the orphan sweep collects on the next update. It is noise rather than harm,
+and it is still a write on behalf of a caller with no business asking for one, so the identifier
+is **checked against the widget manager rather than believed**: it has to name a widget whose
+provider is in this package and of a type this version recognises. A provider of this package
+that this version has no mapping for is refused as well, deliberately — the screen's questions
+depend on the type, so an unknown type means it does not know what it is asking about, and
+defaulting to the one type that exists would be guessing.
+
+What is **not** reachable through it is a property of the screen rather than of that check, and
+that is the more important half:
+
+- There is no address, no credential and no monitor name on it. The questions are which instance
+  — by the name the user gave it — and whether names may appear.
+- A widget's settings have no field for a credential or an address, which a test asserts, so
+  there is nothing for a write to put one into.
+- No text field exists on the screen at all, so nothing typed can be captured and no keyboard is
+  involved.
+
+The result contract is part of the protection rather than only of the behaviour: `RESULT_CANCELED`
+is set before anything that could fail, and `RESULT_OK` is sent only after a write that reported
+success. A host is never told a widget is configured while nothing reached the file.
+
+**What the shipped package actually exports**, read out of the merged release manifest rather
+than inferred from the source `[V]`:
+
+| Component | Exported | Gate |
+|---|---|---|
+| `MainActivity` | yes | none — it is the launcher entry |
+| `widget.config.WidgetConfigActivity` | **yes** | none; the identifier is checked instead, as above |
+| `widget.CountsWidgetProvider` | no | — |
+
+The three further exported components are the ones a library contributes, each behind a permission
+an ordinary application cannot hold, and they are listed earlier in this section. The widget host
+of the debug build contributes nothing: `BIND_APPWIDGET` does not appear in the release manifest
+at all, and neither does the host activity.
 
 ### Certificate data is topology as well
 
@@ -409,10 +512,15 @@ than merely postponing it:
   the host's process. Layer 1 — exposing very little — therefore becomes the only layer carrying
   weight, and it has to hold **without** the module boundary described in section 3, which made
   monitor names structurally unreachable from the bridge. A widget provider lives in the
-  application module and can reach them. What takes the place of that boundary is now decided and
-  written down in section 3, under "A widget may name a monitor only by consent": two separate
-  render models, a consent token produced in one place, consent given per placed widget, and four
-  tests. It is weaker than the boundary it replaces, and section 3 says so in as many words.
+  application module and can reach them. What takes the place of that boundary is now implemented
+  and written down in section 3, under "A widget may name a monitor only by consent": two separate
+  render models, a consent token that can only be made from a stored yes, consent given per placed
+  widget, and four tests. It is weaker than the boundary it replaces, and section 3 says so in as
+  many words.
+- **One component of this route is exported, and it is not the widget.** The widget provider is
+  not exported; the configuration step is, because a launcher has to be able to start it. What
+  that opens, what is checked, and what the screen does not hold in the first place are in
+  section 3, under "What the configuration step exposes, and what it does not".
 
 The layers are listed in order of how much weight they carried. The strongest does not involve
 identity at all.
@@ -563,7 +671,12 @@ concrete contact path at that time `[O]`.
 | Question | Marker |
 |---|---|
 | Whether deferred consent is workable in practice, given a host shows nothing until approval | `[U]` |
-| ~~What replaces the module boundary that kept monitor names unreachable, now that a widget provider can reach them~~ — **decided**, see section 3: two render models, a consent token produced in one place, consent per placed widget, four tests. Weaker than the boundary, and recorded as weaker | `[V]` |
+| ~~What replaces the module boundary that kept monitor names unreachable, now that a widget provider can reach them~~ — **implemented**, see section 3: two render models, a consent token that can only be made from a stored yes, consent per placed widget, four tests green on an emulator. Weaker than the boundary, and recorded as weaker | `[V]` |
+| Whether the consent question reads as a question about privacy on a television, where the line explaining it competes with a remote control and a sofa | `[U]` |
+| Whether a user who allowed names expects one of them in the widget's **title** line, now that the two smaller size steps put it there rather than showing no name at all. The consent screen says so in words — "in a small widget, the first of them takes the place of the title" — because "may names appear" and "may a name replace the title" are not obviously the same question; whether that sentence is read and understood from a sofa is what remains open | `[U]` |
+| Whether a host launcher on the target device honours `RESULT_CANCELED` by removing the placement, which is what the step relies on for every way out that is not a successful save | `[U]` |
+| Whether a host that applies no padding of its own reaches the naming step in a smaller box than the largest declared one, now that the threshold is expressed as the size a widget is offered rather than the box a host announces. Functionally harmless — the step was measured to fit in the smaller of those two figures — but it means the list of names can appear in a box this project has not pictured it in, and only a host that behaves that way would show it | `[U]` |
+| Whether the exported configuration activity is reachable in practice by another application on the target device, and whether anything but a launcher ever starts it | `[U]` |
 | Whether a user reading the configuration screen understands that choosing monitors for the third widget type is what allows their names to be displayed in it | `[U]` |
 | Whether the keyboards a television ships with withhold suggestions and dictionary learning for every field this application declares as a password field, which is the behaviour those fields rely on rather than something the platform enforces | `[U]` |
 | Whether notifications are reliably visible on Android TV as a consent prompt | `[U]` |

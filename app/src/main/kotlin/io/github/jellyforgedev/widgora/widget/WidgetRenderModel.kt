@@ -34,6 +34,21 @@ sealed interface WidgetRenderModel {
     data object ConfigurationUnreadable : WidgetRenderModel
 
     /**
+     * This widget was configured for an instance that no longer exists.
+     *
+     * A state of its own, and not the same as [NotSetUp]: other instances may well be set up, and
+     * what is missing is the one this widget was pointed at. The alternative — showing whichever
+     * instance comes first instead — is the behaviour this project rejects outright, because a
+     * widget that quietly starts reporting on a different server is worse than one that says
+     * something is missing.
+     *
+     * It carries no identifier and no name. Which instance is gone is of no use on a surface that
+     * has four lines and cannot offer a repair, and the name of a server is not something to hand
+     * to another process to no purpose.
+     */
+    data object InstanceGone : WidgetRenderModel
+
+    /**
      * One instance, as a widget shows it.
      *
      * @param title the name the user gave the instance, shortened for a widget

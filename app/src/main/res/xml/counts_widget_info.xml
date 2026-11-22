@@ -19,9 +19,24 @@
   matches what the smallest layout actually needs. The figures live in WidgetSizes as well, and
   a test holds the two against each other.
 
-  There is no android:configure yet. Choosing which instance a widget shows, and whether it may
-  name individual monitors, is a later step; until then a widget shows the first instance and
-  never a name.
+  android:configure names the screen a host runs when this widget is placed: which instance it
+  shows, and whether it may name individual monitors. A widget placed before that screen existed
+  has no stored entry, and what applies to it is a defined default rather than a guess — the first
+  instance and no names, which is exactly what such a widget already did. See WidgetDefaults.
+
+  widgetFeatures declares reconfigurable and deliberately not configuration_optional.
+
+  Two reasons, and the first settles it. configuration_optional is
+  WIDGET_FEATURE_CONFIGURATION_OPTIONAL, which the platform introduced at API level 31 — read out
+  of the SDK's own api-versions.xml, where reconfigurable is recorded at 28 and this at 31. This
+  application's minSdk is 28, so on three platform versions the flag is simply ignored: the same
+  package would run the configuration step on one television and skip it on another, and which
+  behaviour a user got would depend on a version nothing on the screen mentions.
+
+  The second reason stands on its own. The flag means a host may place the widget without asking
+  anything, and the instance question is the whole point of the step — it is what makes a widget
+  point at *an* instance rather than at whichever one happens to be first. The default exists for
+  widgets placed before there was a question, not as a way of avoiding it.
 
   previewLayout is read from Android 12 onwards and renders this widget's own layout at its
   default size, which is why that layout's default texts say that nothing has loaded rather than
@@ -29,6 +44,7 @@
   so such a host shows the application icon in its picker.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="io.github.jellyforgedev.widgora.widget.config.WidgetConfigActivity"
     android:description="@string/widget_description"
     android:initialLayout="@layout/widget_counts_compact"
     android:maxResizeHeight="320dp"
@@ -42,4 +58,5 @@
     android:targetCellHeight="2"
     android:targetCellWidth="3"
     android:updatePeriodMillis="0"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />

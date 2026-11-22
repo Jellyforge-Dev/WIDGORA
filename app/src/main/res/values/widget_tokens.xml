@@ -53,6 +53,15 @@
     <dimen name="widget_text_state">20sp</dimen>
     <!-- WidgoraText.Caption.size -->
     <dimen name="widget_text_footer">18sp</dimen>
+    <!--
+      WidgoraText.Caption.size — the affected monitors, where the user allowed them to be named.
+
+      The floor rather than the tile's 20sp, and that follows from the surface rather than from a
+      preference: the names are an addition to a widget that already carries four lines, so they
+      take the smallest size this project permits anywhere. Whether three of them fit at every
+      font scale is a question for the measurement test and not for this comment.
+    -->
+    <dimen name="widget_text_names">18sp</dimen>
 
     <!--
       The compact variant's three sizes. Smaller than the full variant's, every one of them still
@@ -90,6 +99,16 @@
       anywhere else in the application.
     -->
     <dimen name="widget_counts_autosize_max_compact">44sp</dimen>
+    <!--
+      WidgoraText.TileValue.size again — the ceiling for the step that also names monitors.
+
+      Measured, like the one above. Left to grow to the full ceiling the counts line reached 94sp
+      and took 257px of a 592px box, leaving 10 % of the height spare against a floor of 15 %
+      once three names and an overflow count sat beneath it. The same figure as the compact
+      ceiling and for the same reason: a dashboard tile's value size is as large as this line
+      gets anywhere else in the application.
+    -->
+    <dimen name="widget_counts_autosize_max_named">44sp</dimen>
     <!-- WidgoraText.AutoSizeStep -->
     <dimen name="widget_counts_autosize_step">2sp</dimen>
 
